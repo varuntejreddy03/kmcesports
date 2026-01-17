@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
-export default function PaymentPage() {
+function PaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const teamId = searchParams.get('teamId')
@@ -83,10 +83,10 @@ export default function PaymentPage() {
         <div className="content-wrapper">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-4xl font-bold text-center mb-8">Complete Payment</h1>
-            
+
             <Card className="p-8">
               <h2 className="text-2xl font-bold mb-6">Registration Fee</h2>
-              
+
               <div className="bg-cricket-50 p-6 rounded-lg mb-6">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-lg">Team Registration Fee</span>
@@ -100,9 +100,9 @@ export default function PaymentPage() {
               <div className="mb-6">
                 <h3 className="font-bold mb-3">Payment via QR Code:</h3>
                 <div className="flex justify-center mb-4">
-                  <img 
-                    src="/qr-code.jpeg" 
-                    alt="Payment QR Code" 
+                  <img
+                    src="/qr-code.jpeg"
+                    alt="Payment QR Code"
                     className="w-48 h-48 border rounded-lg"
                   />
                 </div>
@@ -119,7 +119,7 @@ export default function PaymentPage() {
                   placeholder="Enter UTR/Transaction ID"
                   required
                 />
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Upload Payment Screenshot
@@ -139,7 +139,7 @@ export default function PaymentPage() {
                 </div>
               </div>
 
-              <Button 
+              <Button
                 onClick={handlePayment}
                 className="w-full"
                 size="lg"
@@ -152,5 +152,13 @@ export default function PaymentPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading Payment Portal...</div>}>
+      <PaymentContent />
+    </Suspense>
   )
 }
