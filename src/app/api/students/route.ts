@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.substring(7)
-    
-    let captainHallTicket = null
+
+    let captainHallTicket: string | null = null
     if (token) {
       const { data: { user } } = await supabase.auth.getUser(token)
       if (user) {

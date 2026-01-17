@@ -19,9 +19,9 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7)
-    
+
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
-    
+
     if (userError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .select('status')
 
     // Get team players if team exists
-    let teamPlayers = []
+    let teamPlayers: any[] = []
     if (teamData) {
       const { data: players } = await supabase
         .from('team_players')
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
           player_role
         `)
         .eq('team_id', teamData.id)
-      
+
       // Get student details for each player
       if (players && players.length > 0) {
         const hallTickets = players.map(p => p.hall_ticket)
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
           .from('student_data')
           .select('hall_ticket, name, year')
           .in('hall_ticket', hallTickets)
-        
+
         teamPlayers = players.map(player => {
           const studentInfo = studentDetails?.find(s => s.hall_ticket === player.hall_ticket)
           return {

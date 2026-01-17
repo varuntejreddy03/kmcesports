@@ -80,7 +80,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cricket-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-cricket-500"></span>
             </span>
-            Season 2024 is Live
+            Season 2026 is Live
           </div>
 
           <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-none bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
