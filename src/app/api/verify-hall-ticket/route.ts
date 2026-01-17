@@ -1,25 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
     const { hallTicket } = await request.json()
-    
+
     if (!hallTicket) {
       return NextResponse.json({ error: 'Hall ticket is required' }, { status: 400 })
     }
 
     const normalizedHallTicket = hallTicket.trim().toUpperCase()
-    
+
     const { data: student, error } = await supabase
       .from('student_data')
       .select('*')
       .eq('hall_ticket', normalizedHallTicket)
       .single()
-    
+
     if (error || !student) {
-      return NextResponse.json({ 
-        error: 'Hall ticket not found in our records' 
+      return NextResponse.json({
+        error: 'Hall ticket not found in our records'
       }, { status: 404 })
     }
 
@@ -28,10 +32,10 @@ export async function POST(request: NextRequest) {
       .select('hall_ticket')
       .eq('hall_ticket', normalizedHallTicket)
       .maybeSingle()
-    
+
     if (existingStudent) {
-      return NextResponse.json({ 
-        error: 'This hall ticket is already registered' 
+      return NextResponse.json({
+        error: 'This hall ticket is already registered'
       }, { status: 409 })
     }
 
@@ -40,15 +44,15 @@ export async function POST(request: NextRequest) {
       .select('team_id')
       .eq('hall_ticket', normalizedHallTicket)
       .maybeSingle()
-    
+
     if (teamPlayer) {
-      return NextResponse.json({ 
-        error: 'This student is already part of a team' 
+      return NextResponse.json({
+        error: 'This student is already part of a team'
       }, { status: 409 })
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       student: {
         hall_ticket: student.hall_ticket,
         name: student.name,
@@ -59,8 +63,8 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('API error:', error)
-    return NextResponse.json({ 
-      error: 'Internal server error' 
+    return NextResponse.json({
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }
