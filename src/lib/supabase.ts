@@ -1,0 +1,110 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+})
+
+// Database types (will be auto-generated from Supabase CLI)
+// Database types (Manually defined based on user schema)
+export type Database = {
+  public: {
+    Tables: {
+      student_data: {
+        Row: {
+          hall_ticket: string
+          name: string
+          year: string
+          phone: string
+          role: 'student' | 'admin'
+          player_role: string | null
+          created_at: string
+        }
+        Insert: {
+          hall_ticket: string
+          name: string
+          year: string
+          phone: string
+          role?: 'student' | 'admin'
+          player_role?: string | null
+          created_at?: string
+        }
+        Update: {
+          hall_ticket?: string
+          name?: string
+          year?: string
+          phone?: string
+          role?: 'student' | 'admin'
+          player_role?: string | null
+          created_at?: string
+        }
+      }
+      teams: {
+        Row: {
+          id: string
+          sport: string
+          team_name: string
+          captain_hall_ticket: string
+          approved: boolean
+        }
+        Insert: {
+          id?: string
+          sport: string
+          team_name: string
+          captain_hall_ticket: string
+          approved?: boolean
+        }
+        Update: {
+          id?: string
+          sport?: string
+          team_name?: string
+          captain_hall_ticket?: string
+          approved?: boolean
+        }
+      }
+      team_players: {
+        Row: {
+          team_id: string
+          hall_ticket: string
+        }
+        Insert: {
+          team_id: string
+          hall_ticket: string
+        }
+        Update: {
+          team_id?: string
+          hall_ticket?: string
+        }
+      }
+      payments: {
+        Row: {
+          team_id: string
+          amount: number
+          utr: string
+          screenshot_url: string
+          verified: boolean
+        }
+        Insert: {
+          team_id: string
+          amount: number
+          utr: string
+          screenshot_url: string
+          verified?: boolean
+        }
+        Update: {
+          team_id?: string
+          amount?: number
+          utr?: string
+          screenshot_url?: string
+          verified?: boolean
+        }
+      }
+    }
+  }
+}
