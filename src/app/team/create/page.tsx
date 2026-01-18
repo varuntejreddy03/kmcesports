@@ -104,8 +104,23 @@ export default function CreateTeamPage() {
       if (teamError) throw teamError
 
       const playersToAdd = [
-        { team_id: team.id, hall_ticket: captain.hall_ticket, player_role: captain.player_role || 'all-rounder', is_captain: true },
-        ...selectedPlayers.map(p => ({ team_id: team.id, hall_ticket: p.hall_ticket, player_role: p.player_role || 'all-rounder', is_captain: false }))
+        {
+          team_id: team.id,
+          hall_ticket: captain.hall_ticket,
+          student_id: captain.hall_ticket,
+          player_role: captain.player_role || 'all-rounder',
+          is_captain: true
+        },
+        ...selectedPlayers.map(p => {
+          const ht = p.hall_ticket || (p as any).student_id || (p as any).id;
+          return {
+            team_id: team.id,
+            hall_ticket: ht,
+            student_id: ht,
+            player_role: p.player_role || 'all-rounder',
+            is_captain: false
+          };
+        })
       ]
 
       const { error: playersError } = await supabase.from('team_players').insert(playersToAdd)

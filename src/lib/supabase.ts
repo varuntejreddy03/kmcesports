@@ -49,37 +49,60 @@ export type Database = {
         Row: {
           id: string
           sport: string
-          team_name: string
-          captain_hall_ticket: string
+          name: string
+          captain_id: string
           approved: boolean
+          registration_fee?: number
+          status?: string
+          payment_status?: string
         }
         Insert: {
           id?: string
           sport: string
-          team_name: string
-          captain_hall_ticket: string
+          name: string
+          captain_id: string
           approved?: boolean
+          registration_fee?: number
+          status?: string
+          payment_status?: string
         }
         Update: {
           id?: string
           sport?: string
-          team_name?: string
-          captain_hall_ticket?: string
+          name?: string
+          captain_id?: string
           approved?: boolean
+          registration_fee?: number
+          status?: string
+          payment_status?: string
         }
       }
       team_players: {
         Row: {
+          id: string
           team_id: string
           hall_ticket: string
+          student_id: string
+          player_role: string | null
+          is_captain: boolean
+          created_at: string
         }
         Insert: {
+          id?: string
           team_id: string
           hall_ticket: string
+          student_id: string
+          player_role?: string | null
+          is_captain?: boolean
+          created_at?: string
         }
         Update: {
           team_id?: string
           hall_ticket?: string
+          student_id?: string
+          player_role?: string | null
+          is_captain?: boolean
+          created_at?: string
         }
       }
       payments: {

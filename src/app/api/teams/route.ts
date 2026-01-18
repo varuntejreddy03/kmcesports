@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       .from('teams')
       .insert({
         name: teamName,
-        captain_id: selectedPlayers[0].studentId,
+        captain_id: selectedPlayers[0].studentId || selectedPlayers[0].hall_ticket,
         status: 'approved'
       })
       .select()
@@ -30,12 +30,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert team players
-    const teamPlayersData = selectedPlayers.map((player: any) => ({
-      team_id: newTeam.id,
-      student_id: player.studentId,
-      hall_ticket: player.studentId,
-      player_role: player.playerRole
-    }))
+    const teamPlayersData = selectedPlayers.map((player: any, index: number) => {
+      const id = player.studentId || player.hall_ticket;
+      return {
+        team_id: newTeam.id,
+        student_id: id,
+        hall_ticket: id,
+        player_role: player.playerRole || player.player_role,
+        is_captain: index === 0
+      };
+    })
 
     const { error: playersError } = await supabase
       .from('team_players')
