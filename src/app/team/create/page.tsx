@@ -20,6 +20,8 @@ export default function CreateTeamPage() {
   const [showRoleModal, setShowRoleModal] = useState(false)
   const [playerToAdd, setPlayerToAdd] = useState<StudentData | null>(null)
   const [selectedRole, setSelectedRole] = useState('all-rounder')
+  const [isEditing, setIsEditing] = useState(false)
+  const [existingTeamId, setExistingTeamId] = useState<string | null>(null)
 
   useEffect(() => {
     init()
@@ -37,6 +39,38 @@ export default function CreateTeamPage() {
       if (!currentStudent) { setError('Profile error. Contact Admin.'); setLoading(false); return }
       setCaptain(currentStudent)
 
+      const { data: teamData } = await supabase.from('teams').select('*').eq('captain_id', currentStudent.hall_ticket).maybeSingle()
+
+      if (teamData) {
+        setIsEditing(true)
+        setExistingTeamId(teamData.id)
+        setTeamName(teamData.name)
+
+        const { data: players } = await supabase.from('team_players').select('*').eq('team_id', teamData.id)
+        if (players) {
+          const captainPlayer = players.find(p => p.is_captain)
+          const otherPlayers = players.filter(p => !p.is_captain)
+
+          // Get student details for these players
+          const hts = otherPlayers.map(p => p.hall_ticket)
+          const { data: sData } = await supabase.from('student_data').select('*').in('hall_ticket', hts)
+
+          const formattedPlayers = otherPlayers.map(p => ({
+            ...sData?.find(s => s.hall_ticket === p.hall_ticket),
+            player_role: p.player_role
+          })) as StudentData[]
+
+          setSelectedPlayers(formattedPlayers)
+        }
+      }
+
+      // Check if player in another team
+      const { data: playerInTeam } = await supabase.from('team_players').select('team_id').eq('hall_ticket', currentStudent.hall_ticket).maybeSingle()
+      if (playerInTeam && (!teamData || playerInTeam.team_id !== teamData.id)) {
+        router.push('/dashboard')
+        return
+      }
+
       // Get all students
       let allStudentsData: StudentData[] = []
       let page = 0
@@ -53,10 +87,6 @@ export default function CreateTeamPage() {
       const studentsOnly = allStudentsData.filter(s => s.role?.toLowerCase() !== 'admin' && s.hall_ticket !== 'ADMIN')
       setAllStudents(studentsOnly)
       setTakenHallTickets(new Set(takenData?.map(p => p.hall_ticket) || []))
-
-      if (takenData?.some(p => p.hall_ticket === currentStudent.hall_ticket)) {
-        router.push('/dashboard')
-      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -94,18 +124,29 @@ export default function CreateTeamPage() {
     setSubmitting(true)
     setError(null)
     try {
-      const { data: team, error: teamError } = await supabase.from('teams').insert({
-        sport: 'cricket',
-        name: teamName,
-        captain_id: captain.hall_ticket,
-        approved: false
-      }).select().single()
+      let teamId = existingTeamId
 
-      if (teamError) throw teamError
+      if (isEditing && teamId) {
+        const { error: updateError } = await supabase.from('teams').update({ name: teamName }).eq('id', teamId)
+        if (updateError) throw updateError
+
+        // Delete existing players to replace (simple approach) or diff them
+        await supabase.from('team_players').delete().eq('team_id', teamId)
+      } else {
+        const { data: team, error: teamError } = await supabase.from('teams').insert({
+          sport: 'cricket',
+          name: teamName,
+          captain_id: captain.hall_ticket,
+          approved: false
+        }).select().single()
+
+        if (teamError) throw teamError
+        teamId = team.id
+      }
 
       const playersToAdd = [
         {
-          team_id: team.id,
+          team_id: teamId,
           hall_ticket: captain.hall_ticket,
           student_id: captain.hall_ticket,
           player_role: captain.player_role || 'all-rounder',
@@ -114,7 +155,7 @@ export default function CreateTeamPage() {
         ...selectedPlayers.map(p => {
           const ht = p.hall_ticket || (p as any).student_id || (p as any).id;
           return {
-            team_id: team.id,
+            team_id: teamId,
             hall_ticket: ht,
             student_id: ht,
             player_role: p.player_role || 'all-rounder',
@@ -126,7 +167,12 @@ export default function CreateTeamPage() {
       const { error: playersError } = await supabase.from('team_players').insert(playersToAdd)
       if (playersError) throw playersError
 
-      router.push(`/payment?teamId=${team.id}`)
+      if (!isEditing) {
+        router.push(`/payment?teamId=${teamId}`)
+      } else {
+        setError('Team updated successfully!')
+        setTimeout(() => router.push('/dashboard'), 1500)
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -145,7 +191,7 @@ export default function CreateTeamPage() {
       <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0f172a]/80">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/dashboard" className="text-cricket-400 font-bold flex items-center gap-2"><span>←</span> Dashboard</Link>
-          <div className="font-black text-xl tracking-tighter uppercase italic">Create<span className="text-cricket-500">Team</span></div>
+          <div className="font-black text-xl tracking-tighter uppercase italic">{isEditing ? 'Edit' : 'Create'}<span className="text-cricket-500">Team</span></div>
         </div>
       </nav>
 
@@ -185,9 +231,14 @@ export default function CreateTeamPage() {
             <div className="bg-white/5 border border-white/10 rounded-[40px] p-8">
               <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
                 <h3 className="text-2xl font-black uppercase tracking-widest text-cricket-400">Current Squad</h3>
-                <span className={`text-xl font-black ${selectedPlayers.length + 1 >= 11 ? 'text-green-400' : 'text-orange-500'}`}>
-                  {selectedPlayers.length + 1}/15
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className={`text-xl font-black ${selectedPlayers.length + 1 >= 11 ? 'text-green-400' : 'text-orange-500'}`}>
+                    {selectedPlayers.length + 1}/15 Players
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                    {15 - (selectedPlayers.length + 1)} slots remaining
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -246,7 +297,7 @@ export default function CreateTeamPage() {
               disabled={submitting || selectedPlayers.length < 10 || !teamName}
               className="w-full py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-3xl font-black text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
             >
-              {submitting ? 'Creating Squad...' : 'Finalize Squad 🚀'}
+              {submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Squad 🚀' : 'Finalize Squad 🚀')}
             </button>
 
             {error && (

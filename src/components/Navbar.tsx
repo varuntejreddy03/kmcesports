@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { supabase } from '@/lib/supabase'
 
 export default function Navbar() {
@@ -36,6 +37,7 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center space-x-1 bg-white/5 border border-white/10 p-1 rounded-2xl backdrop-blur-md">
+            <NavLink href="/#schedule" active={false}>Schedule Fixtures</NavLink>
             {user ? (
               <>
                 <NavLink href="/dashboard" active={pathname === '/dashboard'}>Dashboard</NavLink>
@@ -47,7 +49,9 @@ export default function Navbar() {
                   Logout
                 </button>
               </>
-            ) : null}
+            ) : (
+              <NavLink href="/auth/login" active={pathname === '/auth/login'}>Login</NavLink>
+            )}
           </div>
 
           <button
@@ -62,20 +66,27 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Menu */}
-      <div className={`md:hidden items-center transition-all duration-500 overflow-hidden ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="px-4 pt-4 pb-6 space-y-2 bg-[#0f172a]/95 backdrop-blur-2xl border-b border-white/10">
+      <div className={`md:hidden transition-all duration-500 overflow-hidden ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+        <div className="px-6 pt-10 pb-16 space-y-4 bg-[#0f172a]/95 backdrop-blur-3xl border-t border-white/5 shadow-2xl">
+          <MobileNavLink href="/#schedule" onClick={() => setIsMenuOpen(false)}>Schedule Fixtures</MobileNavLink>
           {user ? (
             <>
-              <MobileNavLink href="/dashboard">Dashboard</MobileNavLink>
-              <MobileNavLink href="/team/create">Create Team</MobileNavLink>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-3 text-red-400 font-black text-[10px] uppercase tracking-widest hover:bg-white/5 rounded-xl transition-all"
-              >
-                Logout
-              </button>
+              <MobileNavLink href="/dashboard" onClick={() => setIsMenuOpen(false)}>Dashboard</MobileNavLink>
+              <MobileNavLink href="/team/create" onClick={() => setIsMenuOpen(false)}>Create Team</MobileNavLink>
+              <div className="pt-4 mt-6 border-t border-white/5">
+                <button
+                  onClick={() => { handleLogout(); setIsMenuOpen(false); }}
+                  className="w-full text-left px-6 py-4 text-red-400 font-black text-xs uppercase tracking-[0.2em] hover:bg-red-500/10 rounded-2xl transition-all flex items-center gap-3"
+                >
+                  <span className="text-xl">🚪</span> Sign Out
+                </button>
+              </div>
             </>
-          ) : null}
+          ) : (
+            <div className="pt-4 mt-6 border-t border-white/5">
+              <MobileNavLink href="/auth/login" onClick={() => setIsMenuOpen(false)}>Login to Portal</MobileNavLink>
+            </div>
+          )}
         </div>
       </div>
     </nav>
@@ -93,9 +104,13 @@ function NavLink({ href, active, children }: { href: string, active: boolean, ch
   )
 }
 
-function MobileNavLink({ href, children }: { href: string, children: React.ReactNode }) {
+function MobileNavLink({ href, onClick, children }: { href: string, onClick?: () => void, children: React.ReactNode }) {
   return (
-    <Link href={href} className="block px-4 py-3 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-white hover:bg-white/5 rounded-xl transition-all">
+    <Link
+      href={href}
+      onClick={onClick}
+      className="block px-6 py-4 text-slate-400 font-black text-xs uppercase tracking-[0.2em] hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+    >
       {children}
     </Link>
   )

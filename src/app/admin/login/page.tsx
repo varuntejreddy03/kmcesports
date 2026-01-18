@@ -72,62 +72,90 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative Orbs */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cricket-600/10 blur-[120px] rounded-full translate-x-1/2 translate-y-1/2"></div>
+    <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Governance Themed Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-20%] right-[-20%] w-[60%] h-[60%] bg-indigo-600/10 blur-[150px] rounded-full"></div>
+        <div className="absolute bottom-[-20%] left-[-20%] w-[60%] h-[60%] bg-slate-800/20 blur-[150px] rounded-full shadow-2xl"></div>
+      </div>
 
-      <div className="max-w-md w-full relative z-10">
-        <div className="text-center mb-12">
-          <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 rounded-[28px] flex items-center justify-center text-4xl mx-auto mb-8 shadow-2xl rotate-3">⚖️</div>
-          <h1 className="text-4xl font-black tracking-tight mb-2 uppercase italic leading-none">Command Center</h1>
-          <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[10px]">Governance & Management</p>
+      <div className="max-w-xl w-full relative z-10 transition-all duration-700">
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-flex items-center gap-3 group mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded-3xl flex items-center justify-center shadow-2xl border border-white/5">
+              <span className="text-4xl italic font-black text-white/20">⚖️</span>
+            </div>
+            <div className="text-left">
+              <div className="text-slate-500 font-black text-[10px] uppercase tracking-[0.4em] mb-1">Administrative Node</div>
+              <h1 className="text-3xl font-black tracking-tighter uppercase italic leading-none">Command Center</h1>
+            </div>
+          </Link>
+          <div className="flex justify-center gap-6 text-xs font-black uppercase tracking-[0.2em] text-slate-500 italic mb-10">
+            <span className="flex items-center gap-2 underline decoration-indigo-500 underline-offset-4">Tournament Registry</span>
+            <span className="flex items-center gap-2">Operations Center</span>
+          </div>
         </div>
 
-        <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 md:p-10 shadow-2xl">
-          <form onSubmit={handleLogin} className="space-y-8">
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs font-bold text-center animate-shake">
-                {error}
+        <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 rounded-[56px] p-8 md:p-14 shadow-[0_48px_100px_-24px_rgba(0,0,0,0.8)] relative overflow-hidden group">
+          {/* Subtle Inner Glow */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+          <div className="relative z-10">
+            <div className="mb-12 text-center">
+              <p className="text-slate-400 font-medium text-lg leading-relaxed">
+                Admin Login – Manage tournament settings, match schedules, and team approvals.
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-10">
+              {error && (
+                <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-[28px] text-red-400 text-sm font-black text-center animate-shake flex items-center justify-center gap-3">
+                  <span>⚓</span> {error}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-4">Identity Code</label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toUpperCase())}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-[28px] px-8 py-5 text-xl font-black tracking-[0.2em] focus:ring-2 focus:ring-indigo-600 outline-none transition-all placeholder:text-slate-800 focus:bg-white/[0.05]"
+                  placeholder="ADMIN"
+                />
               </div>
-            )}
 
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Authority User</label>
-              <input
-                type="text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value.toUpperCase())}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl font-black tracking-[0.1em] focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-800"
-                placeholder="ADMIN"
-              />
-            </div>
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] ml-4">Access Sequence</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-[28px] px-8 py-5 text-xl font-black focus:ring-2 focus:ring-indigo-600 outline-none transition-all placeholder:text-slate-800 focus:bg-white/[0.05]"
+                  placeholder="••••••••"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Access Key</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl font-black focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              disabled={loading}
-              className="w-full py-6 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-[24px] font-black text-xl hover:scale-[1.02] shadow-xl shadow-indigo-600/20 transition-all active:scale-95 disabled:opacity-30"
-            >
-              {loading ? 'Authenticating...' : 'Enter Dashboard ⚡'}
-            </button>
-          </form>
+              <button
+                disabled={loading}
+                className="group relative w-full py-6 bg-white text-black rounded-[32px] font-black text-xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-30 disabled:hover:scale-100"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-indigo-800 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <span className="relative z-10 group-hover:text-white transition-colors duration-500">
+                  {loading ? 'Validating...' : 'Unlock Systems ⚡'}
+                </span>
+              </button>
+            </form>
+          </div>
         </div>
 
-        <div className="mt-12 text-center flex flex-col gap-4">
-          <Link href="/auth/login" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-colors">← Standard Athlete Access</Link>
-          <p className="text-slate-700 text-[10px] font-bold uppercase tracking-widest">KMCESportsPortol Advanced Sports Governance v4.0</p>
+        <div className="mt-14 text-center">
+          <Link href="/auth/login" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-500 transition-all hover:gap-4">
+            <span>←</span> Back to Athlete Portal
+          </Link>
+          <div className="mt-8 text-[9px] font-black text-slate-800 uppercase tracking-[0.5em]">Sports Governance Infrastructure v4.0.2</div>
         </div>
       </div>
     </div>

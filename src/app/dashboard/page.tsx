@@ -15,9 +15,31 @@ export default function Dashboard() {
   const [team, setTeam] = useState<Team | null>(null)
   const [teamPlayers, setTeamPlayers] = useState<any[]>([])
   const [status, setStatus] = useState<RegistrationStatus>('not_registered')
+  const [matches, setMatches] = useState<any[]>([])
 
   useEffect(() => {
     checkUser()
+
+    // Real-time matches
+    const channel = supabase
+      .channel('dashboard-matches')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
+        // Simple re-fetch of matches
+        supabase
+          .from('matches')
+          .select(`
+            *,
+            team_a:teams!team_a_id(name),
+            team_b:teams!team_b_id(name)
+          `)
+          .order('match_date', { ascending: true })
+          .then(({ data }) => { if (data) setMatches(data) })
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const checkUser = async () => {
@@ -91,6 +113,18 @@ export default function Dashboard() {
           }
         }
       }
+
+      // Fetch matches
+      const { data: matchesData } = await supabase
+        .from('matches')
+        .select(`
+          *,
+          team_a:teams!team_a_id(name),
+          team_b:teams!team_b_id(name)
+        `)
+        .order('match_date', { ascending: true })
+
+      if (matchesData) setMatches(matchesData)
     } catch (error) {
       console.error(error)
     } finally {
@@ -99,15 +133,15 @@ export default function Dashboard() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-500"></div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white selection:bg-cricket-500/30 pb-20">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 pb-20">
       {/* Top Header */}
-      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0f172a]/80">
+      <nav className="border-b border-border backdrop-blur-md sticky top-0 z-50 bg-background/80">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">🏏</span>
@@ -135,6 +169,14 @@ export default function Dashboard() {
           </div>
 
           <div className="flex gap-3">
+            {team?.captain_id === student?.hall_ticket && (
+              <Link
+                href="/team/create"
+                className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+              >
+                <span>📝</span> Edit Squad
+              </Link>
+            )}
             <StatusBadge status={status} />
           </div>
         </div>
@@ -226,24 +268,59 @@ export default function Dashboard() {
             <div className="space-y-8">
               <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[32px] p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                <h4 className="font-black text-2xl mb-4 leading-tight">Next Championship Phase</h4>
+                <h4 className="font-black text-2xl mb-4 leading-tight">Match Schedule</h4>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
-                    <div className="text-2xl">⏳</div>
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-widest text-white/60">Schedule</div>
-                      <div className="font-bold">Waiting for Draws</div>
+                  {matches.length > 0 ? (
+                    matches.map((m, idx) => (
+                      <div key={idx} className="flex items-center gap-4 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
+                        <div className="text-xl">🏏</div>
+                        <div className="flex-1">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                            {new Date(m.match_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {m.match_time.slice(0, 5)}
+                          </div>
+                          <div className="font-bold text-sm leading-tight text-white uppercase italic">
+                            {m.team_a?.name} vs {m.team_b?.name}
+                          </div>
+                          <div className="text-[10px] text-white/40 mt-1 uppercase font-bold tracking-tighter">📍 {m.venue}</div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center gap-4 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10">
+                      <div className="text-2xl">⏳</div>
+                      <div>
+                        <div className="text-xs font-black uppercase tracking-widest text-white/60">Status</div>
+                        <div className="font-bold">Waiting for Draws</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-[32px] p-8">
                 <h4 className="font-black text-xs uppercase tracking-widest text-cricket-500 mb-6">Quick Links</h4>
                 <div className="space-y-3">
-                  <Link href="/rules" className="block w-full text-left p-4 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all border border-transparent hover:border-white/10">📜 Tournament Rules</Link>
-                  <Link href="/schedule" className="block w-full text-left p-4 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all border border-transparent hover:border-white/10">📅 View Full Schedule</Link>
-                  <Link href="/grievance" className="block w-full text-left p-4 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all border border-transparent hover:border-white/10">💬 Support & Help</Link>
+                  <Link
+                    href="/#cricket-info"
+                    className="flex items-center gap-4 w-full p-4 bg-white/5 hover:bg-cricket-500/10 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group"
+                  >
+                    <span className="text-xl group-hover:scale-125 transition-transform">📜</span>
+                    Tournament Rules
+                  </Link>
+                  <Link
+                    href="/#schedule"
+                    className="flex items-center gap-4 w-full p-4 bg-white/5 hover:bg-cricket-500/10 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group"
+                  >
+                    <span className="text-xl group-hover:scale-125 transition-transform">📅</span>
+                    View Full Schedule
+                  </Link>
+                  <a
+                    href="mailto:support@kmce.local"
+                    className="flex items-center gap-4 w-full p-4 bg-white/5 hover:bg-cricket-500/10 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group"
+                  >
+                    <span className="text-xl group-hover:scale-125 transition-transform">💬</span>
+                    Support & Help
+                  </a>
                 </div>
               </div>
             </div>

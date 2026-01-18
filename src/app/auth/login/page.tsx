@@ -121,40 +121,49 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white flex flex-col md:flex-row shadow-2xl overflow-hidden">
-      {/* Visual Left Side */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-cricket-600 to-indigo-900 relative items-center justify-center p-20 overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-black/20 blur-[100px] rounded-full -ml-48 -mb-48"></div>
-
-        <div className="relative z-10 text-center">
-          <div className="text-8xl mb-8 animate-bounce">🏏</div>
-          <h2 className="text-6xl font-black tracking-tighter uppercase italic leading-none mb-6">Enter the<br /><span className="text-white/40">Arena</span></h2>
-          <p className="text-xl font-medium text-white/70 max-w-sm mx-auto">The path to glory starts with a single step. Verify your credentials and take the field.</p>
-        </div>
-
-        <div className="absolute bottom-10 left-10">
-          <Link href="/" className="font-black text-xl tracking-tighter uppercase italic text-white/50 hover:text-white transition-colors">KMCE<span className="text-white">SportsPortol</span></Link>
-        </div>
+    <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Dynamic Sports Background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cricket-600/20 blur-[120px] rounded-full animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full animate-pulse shadow-2xl"></div>
+        <div className="absolute inset-0 opacity-[0.03] space-pattern"></div>
       </div>
 
-      {/* Login Right Side */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#0f172a]">
-        <div className="max-w-md w-full">
-          <div className="mb-12">
-            <div className="inline-block px-4 py-1.5 bg-cricket-600/20 border border-cricket-600/30 rounded-full text-cricket-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Secure Authentication</div>
-            <h1 className="text-4xl font-black tracking-tight mb-2 uppercase">
-              {step === 'password' ? 'Locked & Loaded' : 'Welcome Back'}
-            </h1>
-            <p className="text-slate-500 font-medium">
-              {step === 'password' ? `Ready to login as ${student?.name}` : 'Login with your credentials to continue your journey.'}
-            </p>
+      <div className="max-w-xl w-full relative z-10 transition-all duration-700 ease-out translate-y-0 opacity-100">
+        <div className="text-center mb-10">
+          <Link href="/" className="inline-flex items-center gap-3 group mb-6">
+            <div className="w-14 h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-cricket-500/20 group-hover:scale-110 transition-transform duration-500">
+              <span className="text-3xl">🏏</span>
+            </div>
+            <span className="font-black text-3xl tracking-tighter uppercase italic text-white leading-none">
+              KMCE<span className="text-cricket-500">Sports</span>
+            </span>
+          </Link>
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">Championship <span className="text-cricket-500">Portal</span></h1>
+            <div className="flex justify-center gap-4 text-xs font-black uppercase tracking-[0.2em] text-slate-500 italic">
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-cricket-500"></span> Captain Login</span>
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Player Dashboard</span>
+            </div>
           </div>
+        </div>
 
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[40px] p-8 md:p-10 shadow-2xl relative overflow-hidden">
+        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[48px] p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+          {/* Subtle Inner Glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+
+          <div className="relative z-10">
+            {step === 'hall_ticket' && (
+              <div className="mb-10 text-center animate-fadeIn">
+                <p className="text-slate-400 font-medium text-lg leading-relaxed">
+                  Captain & Player Login — Manage your team identity and track tournament progress.
+                </p>
+              </div>
+            )}
+
             {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs font-bold text-center animate-shake">
-                {error}
+              <div className="mb-8 p-5 bg-red-500/10 border border-red-500/20 rounded-[24px] text-red-400 text-sm font-black text-center animate-shake flex items-center justify-center gap-2">
+                <span>⚠️</span> {error}
               </div>
             )}
 
