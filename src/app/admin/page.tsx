@@ -99,19 +99,26 @@ export default function AdminPage() {
         }
       })
 
-      const captainIds = teamsData.map(t => t.captain_id).filter(Boolean)
-      const { data: captainsData } = await supabase
+      const captainIds = teamsData?.map(t => t.captain_id).filter(Boolean) || []
+      const { data: captainsData, error: captainsError } = await supabase
         .from('student_data')
-        .select('hall_ticket, name, phone')
+        .select('*') // Get everything to avoid column name errors
         .in('hall_ticket', captainIds)
 
-      const teamIds = teamsData.map(t => t.id)
-      const { data: teamPlayersData } = await supabase
+      if (captainsError) console.warn('Error fetching captains:', captainsError)
+
+      const teamIds = teamsData?.map(t => t.id) || []
+      const { data: teamPlayersData, error: tpError } = await supabase
         .from('team_players')
         .select('team_id, hall_ticket')
         .in('team_id', teamIds)
 
-      const mergedTeams: TeamWithDetails[] = teamsData.map(team => {
+      if (tpError) console.warn('Error fetching team players:', tpError)
+
+      console.log('Raw Teams from DB:', teamsData)
+      console.log('Processed Captains:', captainsData)
+
+      const mergedTeams: TeamWithDetails[] = (teamsData || []).map(team => {
         const payment = latestPayments.get(team.id)
         const captain = captainsData?.find(c => c.hall_ticket === team.captain_id)
         const playerCount = teamPlayersData?.filter(p => p.team_id === team.id).length || 0
@@ -134,23 +141,21 @@ export default function AdminPage() {
 
   const handleAction = async (teamId: string, action: 'approve_payment' | 'reject_payment' | 'approve_team' | 'reject_team') => {
     try {
-      if (action === 'approve_payment') {
-        const { error } = await supabase.from('payments').update({ status: 'approved' }).eq('team_id', teamId)
-        if (error) throw error
-        const { error: teamError } = await supabase.from('teams').update({ approved: true }).eq('id', teamId)
-        if (teamError) throw teamError
-      } else if (action === 'reject_payment') {
-        const { error } = await supabase.from('payments').update({ status: 'rejected' }).eq('team_id', teamId)
-        if (error) throw error
-      } else if (action === 'approve_team') {
-        const { error } = await supabase.from('teams').update({ approved: true }).eq('id', teamId)
-        if (error) throw error
-      } else if (action === 'reject_team') {
-        const { error } = await supabase.from('teams').update({ approved: false }).eq('id', teamId)
-        if (error) throw error
+      const response = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId, action })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to process action')
       }
+
       await fetchTeams()
     } catch (error: any) {
+      console.error('Action error:', error)
       alert(`Action failed: ${error.message}`)
     }
   }
@@ -287,7 +292,9 @@ export default function AdminPage() {
                       </td>
                       <td className="px-8 py-6 text-sm">
                         <div className="font-black text-white hover:text-cricket-400 transition-colors uppercase tracking-tight">{team.captain?.name}</div>
-                        <div className="text-slate-500 font-mono text-xs mt-1">{team.captain?.hall_ticket} • {team.captain?.phone}</div>
+                        <div className="text-slate-500 font-mono text-xs mt-1">
+                          {team.captain?.hall_ticket} • {team.captain?.phone || (team.captain as any)?.phone_number || 'No Contact'}
+                        </div>
                       </td>
                       <td className="px-8 py-6">
                         {team.payment ? (

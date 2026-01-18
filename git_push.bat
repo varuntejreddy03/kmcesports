@@ -12,14 +12,15 @@ echo [1/4] Scanning for new features and fixes...
 git add .
 
 :: Default commit message reflecting recent major updates
-set "DEFAULT_MSG=feat: landing page schedule, mobile UI overhaul and theme sync"
+set "DEFAULT_MSG=feat: dark mode lock, streamline admin approval (remove whatsapp) and ui polish"
 
 :: Ask for custom message
 echo.
 echo Recent Updates: 
-echo - Added dynamic Match Schedule with Real-time sync
-echo - Premium Mobile UI Overhaul (Admin & Dashboard)
-echo - Performance and Layout optimizations
+echo - Fixed to Dark Mode (Premium Aesthetic)
+echo - Streamlined Admin Approval (WhatsApp Removed)
+echo - Resilient Database Schema Matching
+echo - Mobile Management UI Refinements
 echo.
 set /p "commit_msg=Enter your commit message (Leave blank for default): "
 

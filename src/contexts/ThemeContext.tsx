@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
-type Theme = 'light' | 'dark'
+type Theme = 'dark'
 
 interface ThemeContextType {
   theme: Theme
@@ -12,24 +12,19 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark')
+  // Lock to dark mode for premium sports aesthetic
+  const [theme] = useState<Theme>('dark')
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
-    } else {
-      // Default to dark for sports aesthetic
-      document.documentElement.classList.add('dark')
-    }
+    // Force dark class on document element
+    document.documentElement.classList.add('dark')
+    // Remove any legacy theme settings
+    localStorage.removeItem('theme')
   }, [])
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light'
-    setTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+    // No-op to prevent changes if called
+    console.warn('Theme is locked to Dark Mode for this application.')
   }
 
   return (
