@@ -84,12 +84,12 @@ export default function StudentRegisterPage() {
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-black/20 blur-[100px] rounded-full -ml-48 -mb-48"></div>
 
         <div className="relative z-10 text-center max-w-md">
-          <div className="text-8xl mb-8">🎓</div>
+          <div className="text-8xl mb-8">🏏</div>
           <h2 className="text-5xl font-black tracking-tighter uppercase italic leading-tight mb-6">
-            4th Year<br /><span className="text-white/50">Registration</span>
+            Cricket<br /><span className="text-white/50">Tournament</span>
           </h2>
           <p className="text-lg font-medium text-white/70 leading-relaxed">
-            Not in our database? No problem! Register here and join your friends in the tournament.
+            Not in our database? No problem! Register here and join the cricket championship.
           </p>
           <div className="mt-10 flex items-center justify-center gap-4 text-sm">
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
@@ -125,13 +125,13 @@ export default function StudentRegisterPage() {
 
           <div className="mb-8">
             <div className="inline-block px-4 py-1.5 bg-cricket-600/20 border border-cricket-600/30 rounded-full text-cricket-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-              4th Year Only
+              New Player
             </div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2 uppercase">
-              Student Registration
+              Player Registration
             </h1>
             <p className="text-slate-400 font-medium text-sm">
-              Fill in your details to join the tournament
+              Register to join the cricket championship
             </p>
           </div>
 

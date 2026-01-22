@@ -39,7 +39,7 @@ function LoginContent() {
         .single()
 
       if (error || !data) {
-        setError('Hall Ticket not found. 4th year students can register using the link below.')
+        setError('Hall Ticket not found. New students can register using the link below.')
         return
       }
 
@@ -287,7 +287,7 @@ function LoginContent() {
           {step === 'hall_ticket' && (
             <div className="mt-12 text-center space-y-4">
               <p className="text-slate-500 text-xs font-bold">
-                4th Year student not in records? <Link href="/auth/student-register" className="text-cricket-400 hover:text-white transition-colors">Register here</Link>
+                New student? <Link href="/auth/student-register" className="text-cricket-400 hover:text-white transition-colors">Register here</Link>
               </p>
               <div className="h-px w-20 bg-white/10 mx-auto"></div>
               <Link href="/admin/login" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-400 transition-colors block">Admin Governance Access</Link>
