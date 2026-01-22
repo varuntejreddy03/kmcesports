@@ -1,0 +1,51 @@
+department-based eligibility validation system for a college portal.
+
+Each student has a roll number (example: 23P81A6234).
+The 7th and 8th characters of the roll number represent the department code.
+
+DEPARTMENT CODES:
+- 05 → Computer Science and Engineering [CSE]
+- 69 → Computer Science and Engineering (IoT) [CSO]
+- 04 → Electronics and Communication Engineering [ECE]
+- 66 → Artificial Intelligence and Machine Learning [CSM]
+- 62 → Computer Science and Engineering (Cyber Security) [CSC]
+- 67 → Computer Science and Engineering (Data Science) [CSD]
+
+IMPORTANT:
+- These rules apply for ALL years (1st, 2nd, 3rd, 4th year).
+- Login is allowed for all students.
+- Department rules apply ONLY when creating a team or selecting a department.
+
+PRINCIPAL’S DEPARTMENT RULES:
+
+1. CSE DEPARTMENT GROUP:
+   - Allowed branches:
+     - CSE (05)
+     - CSO (69)
+     - ECE (04)
+   - Students from ONLY these branches can be part of the CSE department.
+   - Students from CSM (66), CSC (62), CSD (67) are NOT allowed in CSE department.
+
+2. CSM DEPARTMENT GROUP:
+   - Allowed branches:
+     - CSM (66)
+     - CSC (62)
+     - CSD (67)
+     - ECE (04)
+   - Students from ONLY these branches can be part of the CSM department.
+   - Students from CSE (05), CSO (69) are NOT allowed in CSM department.
+
+TEAM CREATION RULE:
+- When a captain creates a team under a department (CSE or CSM):
+  - Validate the captain’s department code from the roll number.
+  - Allow team creation ONLY if the captain belongs to the allowed branch group.
+  - Allow adding players ONLY if their department code is allowed under the same department group.
+  - Reject any student who does not belong to the allowed branches.
+
+TASK:
+- Extract department code from roll numbers.
+- Identify the selected department group (CSE or CSM).
+- Validate eligibility strictly based on the rules above.
+- Return one of the following responses:
+  - "ELIGIBLE"
+  - "NOT ELIGIBLE – DEPARTMENT RULE VIOLATION"
