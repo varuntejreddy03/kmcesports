@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import Link from 'next/link'
 
 function PaymentContent() {
@@ -18,7 +18,22 @@ function PaymentContent() {
   const [settings, setSettings] = useState<any>(null)
 
   useEffect(() => {
+    const isExpired = checkSessionTimeout()
+    if (isExpired) {
+      router.push('/auth/login?expired=true')
+      return
+    }
+
     fetchSettings()
+
+    const sessionCheckInterval = setInterval(() => {
+      const expired = checkSessionTimeout()
+      if (expired) {
+        router.push('/auth/login?expired=true')
+      }
+    }, 60000)
+
+    return () => clearInterval(sessionCheckInterval)
   }, [])
 
   const fetchSettings = async () => {

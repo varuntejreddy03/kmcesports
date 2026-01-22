@@ -5,11 +5,40 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
+    autoRefreshToken: false,
     persistSession: true,
     detectSessionInUrl: true
   }
 })
+
+const SESSION_DURATION = 30 * 60 * 1000
+
+export const checkSessionTimeout = () => {
+  if (typeof window === 'undefined') return
+
+  const loginTime = localStorage.getItem('session_start_time')
+  if (loginTime) {
+    const elapsed = Date.now() - parseInt(loginTime)
+    if (elapsed > SESSION_DURATION) {
+      localStorage.removeItem('session_start_time')
+      supabase.auth.signOut()
+      return true
+    }
+  }
+  return false
+}
+
+export const setSessionStartTime = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('session_start_time', Date.now().toString())
+  }
+}
+
+export const clearSessionStartTime = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('session_start_time')
+  }
+}
 
 // Database types (will be auto-generated from Supabase CLI)
 // Database types (Manually defined based on user schema)

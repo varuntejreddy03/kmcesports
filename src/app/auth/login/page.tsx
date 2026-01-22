@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { supabase, setSessionStartTime } from '@/lib/supabase'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { StudentData } from '@/types'
 import Link from 'next/link'
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams()
   const [hallTicket, setHallTicket] = useState('')
   const [playerRole, setPlayerRole] = useState('all-rounder')
+  const [sessionExpired, setSessionExpired] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [password, setPassword] = useState('')
   const [step, setStep] = useState<'hall_ticket' | 'verify_details' | 'password'>('hall_ticket')
@@ -17,6 +19,12 @@ export default function LoginPage() {
   const [student, setStudent] = useState<StudentData | null>(null)
 
   const router = useRouter()
+
+  useEffect(() => {
+    if (searchParams.get('expired') === 'true') {
+      setSessionExpired(true)
+    }
+  }, [searchParams])
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +119,7 @@ export default function LoginPage() {
         throw signInError
       }
 
+      setSessionStartTime()
       if (student.hall_ticket === 'ADMIN') router.push('/admin')
       else router.push('/dashboard')
     } catch (err: any) {
@@ -122,7 +131,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Dynamic Sports Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cricket-600/20 blur-[120px] rounded-full animate-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full animate-pulse shadow-2xl"></div>
@@ -149,7 +157,6 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[48px] p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative overflow-hidden group">
-          {/* Subtle Inner Glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
 
           <div className="relative z-10">
@@ -158,6 +165,12 @@ export default function LoginPage() {
                 <p className="text-slate-400 font-medium text-lg leading-relaxed">
                   Captain & Player Login — Manage your team identity and track tournament progress.
                 </p>
+              </div>
+            )}
+
+            {sessionExpired && (
+              <div className="mb-8 p-5 bg-yellow-500/10 border border-yellow-500/20 rounded-[24px] text-yellow-400 text-sm font-black text-center flex items-center justify-center gap-2">
+                <span>⏰</span> Your session expired. Please login again.
               </div>
             )}
 
@@ -283,5 +296,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

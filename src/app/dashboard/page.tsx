@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import { StudentData, Team } from '@/types'
 
 type RegistrationStatus = 'not_registered' | 'payment_pending' | 'approval_pending' | 'approved' | 'rejected'
@@ -20,11 +20,16 @@ export default function Dashboard() {
   useEffect(() => {
     checkUser()
 
-    // Real-time matches
+    const sessionCheckInterval = setInterval(() => {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) {
+        router.push('/auth/login?expired=true')
+      }
+    }, 60000)
+
     const channel = supabase
       .channel('dashboard-matches')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
-        // Simple re-fetch of matches
         supabase
           .from('matches')
           .select(`
@@ -38,14 +43,22 @@ export default function Dashboard() {
       .subscribe()
 
     return () => {
+      clearInterval(sessionCheckInterval)
       supabase.removeChannel(channel)
     }
   }, [])
 
   const checkUser = async () => {
     try {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) {
+        router.push('/auth/login?expired=true')
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
+        clearSessionStartTime()
         router.push('/auth/login')
         return
       }

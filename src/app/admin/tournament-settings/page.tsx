@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import Link from 'next/link'
 
 interface TournamentSettings {
@@ -49,12 +49,24 @@ export default function TournamentSettingsPage() {
 
   useEffect(() => {
     checkAdminAndLoadSettings()
+
+    const sessionCheckInterval = setInterval(() => {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) {
+        router.push('/auth/login?expired=true')
+      }
+    }, 60000)
+
+    return () => clearInterval(sessionCheckInterval)
   }, [])
 
   const checkAdminAndLoadSettings = async () => {
     try {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) { router.push('/auth/login?expired=true'); return }
+
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/admin/login'); return }
+      if (!user) { clearSessionStartTime(); router.push('/admin/login'); return }
 
       const hallTicket = user.user_metadata?.hall_ticket
       if (hallTicket !== 'ADMIN') { router.push('/dashboard'); return }

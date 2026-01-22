@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, setSessionStartTime } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -63,6 +63,7 @@ export default function AdminLoginPage() {
         }
       }
 
+      setSessionStartTime()
       window.location.href = '/admin'
     } catch (err: any) {
       setError(err.message || 'Login failed')

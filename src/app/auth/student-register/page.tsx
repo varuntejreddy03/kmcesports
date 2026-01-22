@@ -37,7 +37,7 @@ export default function StudentRegisterPage() {
       }
 
       if (formData.phone.length < 10) {
-        throw new Error('Please enter a valid phone number')
+        throw new Error('Please enter a valid 10-digit phone number')
       }
 
       const { data: existing } = await supabase
@@ -78,141 +78,197 @@ export default function StudentRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cricket-600/20 blur-[120px] rounded-full animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full animate-pulse shadow-2xl"></div>
-        <div className="absolute inset-0 opacity-[0.03] space-pattern"></div>
-      </div>
+    <div className="min-h-screen bg-[#0f172a] text-white flex flex-col md:flex-row overflow-hidden">
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-cricket-600 to-indigo-700 relative items-center justify-center p-12 overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[100px] rounded-full -mr-48 -mt-48"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-black/20 blur-[100px] rounded-full -ml-48 -mb-48"></div>
 
-      <div className="max-w-xl w-full relative z-10">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-3 group mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-cricket-500/20 group-hover:scale-110 transition-transform duration-500">
-              <span className="text-3xl">🏏</span>
+        <div className="relative z-10 text-center max-w-md">
+          <div className="text-8xl mb-8">🎓</div>
+          <h2 className="text-5xl font-black tracking-tighter uppercase italic leading-tight mb-6">
+            4th Year<br /><span className="text-white/50">Registration</span>
+          </h2>
+          <p className="text-lg font-medium text-white/70 leading-relaxed">
+            Not in our database? No problem! Register here and join your friends in the tournament.
+          </p>
+          <div className="mt-10 flex items-center justify-center gap-4 text-sm">
+            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              Quick Registration
             </div>
-            <span className="font-black text-3xl tracking-tighter uppercase italic text-white leading-none">
-              KMCE<span className="text-cricket-500">Sports</span>
-            </span>
-          </Link>
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">New Student <span className="text-cricket-500">Registration</span></h1>
-            <p className="text-slate-500 text-sm font-bold">4th Year students can register here to join the tournament</p>
+            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
+              <span className="w-2 h-2 bg-cricket-400 rounded-full animate-pulse"></span>
+              Instant Access
+            </div>
           </div>
         </div>
 
-        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[48px] p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+        <div className="absolute bottom-8 left-8">
+          <Link href="/" className="font-black text-xl tracking-tighter uppercase italic text-white/50 hover:text-white transition-colors">
+            KMCE<span className="text-white">Sports</span>
+          </Link>
+        </div>
+      </div>
 
-          <div className="relative z-10">
-            {success ? (
-              <div className="text-center py-8 animate-fadeIn">
-                <div className="text-6xl mb-6">🎉</div>
-                <h2 className="text-2xl font-black uppercase mb-4">Registration Successful!</h2>
-                <p className="text-slate-400 mb-6">Redirecting you to login...</p>
-                <div className="w-16 h-1 bg-cricket-500 mx-auto rounded-full animate-pulse"></div>
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-[#0f172a]">
+        <div className="max-w-md w-full">
+          <div className="md:hidden text-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-3 group mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-2xl">🏏</span>
               </div>
-            ) : (
-              <>
-                {error && (
-                  <div className="mb-8 p-5 bg-red-500/10 border border-red-500/20 rounded-[24px] text-red-400 text-sm font-black text-center flex items-center justify-center gap-2">
-                    <span>⚠️</span> {error}
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Hall Ticket ID *</label>
-                    <input
-                      type="text"
-                      name="hallTicket"
-                      required
-                      autoFocus
-                      value={formData.hallTicket}
-                      onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl font-black tracking-[0.05em] focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-700"
-                      placeholder="21XXXXXX"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Full Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-700"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Year</label>
-                      <select
-                        name="year"
-                        value={formData.year}
-                        onChange={handleChange}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
-                      >
-                        <option value="1st" className="bg-slate-900">1st Year</option>
-                        <option value="2nd" className="bg-slate-900">2nd Year</option>
-                        <option value="3rd" className="bg-slate-900">3rd Year</option>
-                        <option value="4th" className="bg-slate-900">4th Year</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Phone *</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        required
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-700"
-                        placeholder="9876543210"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Playing Role</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['batsman', 'bowler', 'all-rounder', 'wicket-keeper'].map((role) => (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, playerRole: role }))}
-                          className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${formData.playerRole === role ? 'bg-cricket-600 border-cricket-400 text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}
-                        >
-                          {role.replace('-', ' ')}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-[24px] font-black text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? 'Registering...' : 'Register as Student 🎓'}
-                  </button>
-                </form>
-              </>
-            )}
+              <span className="font-black text-2xl tracking-tighter uppercase italic">
+                KMCE<span className="text-cricket-500">Sports</span>
+              </span>
+            </Link>
           </div>
 
-          {!success && (
-            <div className="mt-8 text-center">
-              <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">
-                Already registered? <Link href="/auth/login" className="text-cricket-400 hover:text-white transition-colors">Sign in here</Link>
-              </p>
+          <div className="mb-8">
+            <div className="inline-block px-4 py-1.5 bg-cricket-600/20 border border-cricket-600/30 rounded-full text-cricket-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+              4th Year Only
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2 uppercase">
+              Student Registration
+            </h1>
+            <p className="text-slate-400 font-medium text-sm">
+              Fill in your details to join the tournament
+            </p>
+          </div>
+
+          {success ? (
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-10 text-center">
+              <div className="text-6xl mb-6">🎉</div>
+              <h2 className="text-2xl font-black uppercase mb-3 text-white">Registration Successful!</h2>
+              <p className="text-slate-400 mb-6">Redirecting you to login...</p>
+              <div className="w-20 h-1 bg-gradient-to-r from-cricket-500 to-indigo-500 mx-auto rounded-full"></div>
+            </div>
+          ) : (
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 md:p-8 shadow-2xl">
+              {error && (
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold text-center flex items-center justify-center gap-2">
+                  <span>⚠️</span> {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Hall Ticket ID</label>
+                  <input
+                    type="text"
+                    name="hallTicket"
+                    required
+                    autoFocus
+                    value={formData.hallTicket}
+                    onChange={handleChange}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 text-lg font-bold tracking-wide focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                    placeholder="21XXXXXX"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                    placeholder="Your full name"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Year</label>
+                    <select
+                      name="year"
+                      value={formData.year}
+                      onChange={handleChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="4th" className="bg-slate-900">4th Year</option>
+                      <option value="3rd" className="bg-slate-900">3rd Year</option>
+                      <option value="2nd" className="bg-slate-900">2nd Year</option>
+                      <option value="1st" className="bg-slate-900">1st Year</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Phone</label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      required
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                      placeholder="9876543210"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Playing Role</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'batsman', label: 'Batsman', icon: '🏏' },
+                      { id: 'bowler', label: 'Bowler', icon: '🎯' },
+                      { id: 'all-rounder', label: 'All-Rounder', icon: '⭐' },
+                      { id: 'wicket-keeper', label: 'Keeper', icon: '🧤' }
+                    ].map((role) => (
+                      <button
+                        key={role.id}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, playerRole: role.id }))}
+                        className={`py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wide border transition-all flex items-center justify-center gap-2 ${
+                          formData.playerRole === role.id 
+                            ? 'bg-gradient-to-r from-cricket-600 to-indigo-600 border-cricket-400 text-white shadow-lg shadow-cricket-600/30' 
+                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <span>{role.icon}</span>
+                        {role.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-5 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-2xl font-black text-lg hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-2"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Registering...
+                    </span>
+                  ) : (
+                    'Complete Registration'
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-white/10 text-center">
+                <p className="text-slate-500 text-sm">
+                  Already have an account?{' '}
+                  <Link href="/auth/login" className="text-cricket-400 hover:text-white font-bold transition-colors">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
             </div>
           )}
+
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-slate-600 text-xs font-bold hover:text-slate-400 transition-colors">
+              ← Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     </div>

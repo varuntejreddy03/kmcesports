@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import { TeamWithDetails } from '@/types'
 import Link from 'next/link'
 
@@ -28,7 +28,13 @@ export default function AdminPage() {
   useEffect(() => {
     checkAdmin()
 
-    // Realtime matches
+    const sessionCheckInterval = setInterval(() => {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) {
+        router.push('/auth/login?expired=true')
+      }
+    }, 60000)
+
     const channel = supabase
       .channel('admin-matches')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
@@ -37,14 +43,22 @@ export default function AdminPage() {
       .subscribe()
 
     return () => {
+      clearInterval(sessionCheckInterval)
       supabase.removeChannel(channel)
     }
   }, [])
 
   const checkAdmin = async () => {
     try {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) {
+        router.push('/auth/login?expired=true')
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
+        clearSessionStartTime()
         router.push('/admin/login')
         return
       }

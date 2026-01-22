@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import { StudentData } from '@/types'
 import Link from 'next/link'
 
@@ -25,12 +25,24 @@ export default function CreateTeamPage() {
 
   useEffect(() => {
     init()
+
+    const sessionCheckInterval = setInterval(() => {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) {
+        router.push('/auth/login?expired=true')
+      }
+    }, 60000)
+
+    return () => clearInterval(sessionCheckInterval)
   }, [])
 
   const init = async () => {
     try {
+      const isExpired = checkSessionTimeout()
+      if (isExpired) { router.push('/auth/login?expired=true'); return }
+
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/auth/login'); return }
+      if (!user) { clearSessionStartTime(); router.push('/auth/login'); return }
 
       const hallTicket = user.user_metadata?.hall_ticket
       if (!hallTicket) { setError('Session error. Please login again.'); setLoading(false); return }

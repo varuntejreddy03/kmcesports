@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { checkSessionTimeout } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -14,6 +15,23 @@ function PaymentContent() {
   const [paymentSubmitted, setPaymentSubmitted] = useState(false)
   const [utrNumber, setUtrNumber] = useState('')
   const [screenshot, setScreenshot] = useState<File | null>(null)
+
+  useEffect(() => {
+    const isExpired = checkSessionTimeout()
+    if (isExpired) {
+      router.push('/auth/login?expired=true')
+      return
+    }
+
+    const sessionCheckInterval = setInterval(() => {
+      const expired = checkSessionTimeout()
+      if (expired) {
+        router.push('/auth/login?expired=true')
+      }
+    }, 60000)
+
+    return () => clearInterval(sessionCheckInterval)
+  }, [router])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
