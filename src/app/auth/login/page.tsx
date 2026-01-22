@@ -138,13 +138,18 @@ function LoginContent() {
       </div>
 
       <div className="max-w-xl w-full relative z-10 transition-all duration-700 ease-out translate-y-0 opacity-100">
+        <div className="mb-6">
+          <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors w-fit">
+            <span>←</span> Back to Home
+          </Link>
+        </div>
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-3 group mb-6">
             <div className="w-14 h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-cricket-500/20 group-hover:scale-110 transition-transform duration-500">
               <span className="text-3xl">🏏</span>
             </div>
-            <span className="font-black text-3xl tracking-tighter uppercase italic text-white leading-none">
-              KMCE<span className="text-cricket-500">Sports</span>
+            <span className="font-black text-3xl tracking-tight text-white leading-none">
+              KMCE<span className="text-cricket-500">Cricket</span>
             </span>
           </Link>
           <div className="space-y-2">

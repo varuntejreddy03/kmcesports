@@ -104,8 +104,8 @@ export default function StudentRegisterPage() {
         </div>
 
         <div className="absolute bottom-8 left-8">
-          <Link href="/" className="font-black text-xl tracking-tighter uppercase italic text-white/50 hover:text-white transition-colors">
-            KMCE<span className="text-white">Sports</span>
+          <Link href="/" className="font-black text-xl tracking-tight text-white/50 hover:text-white transition-colors">
+            KMCE<span className="text-white">Cricket</span>
           </Link>
         </div>
       </div>
@@ -117,8 +117,8 @@ export default function StudentRegisterPage() {
               <div className="w-12 h-12 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-2xl">🏏</span>
               </div>
-              <span className="font-black text-2xl tracking-tighter uppercase italic">
-                KMCE<span className="text-cricket-500">Sports</span>
+              <span className="font-black text-2xl tracking-tight">
+                KMCE<span className="text-cricket-500">Cricket</span>
               </span>
             </Link>
           </div>

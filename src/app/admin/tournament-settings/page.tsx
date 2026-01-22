@@ -141,7 +141,7 @@ export default function TournamentSettingsPage() {
         <div className="mb-12">
           <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-2">Global Settings</div>
           <h1 className="text-5xl font-black tracking-tight uppercase italic leading-none">Tournament <span className="text-cricket-500">Forge</span></h1>
-          <p className="text-slate-500 font-medium mt-4">Shape the rules, logistics, and visual data of the KMCESportsPortol.</p>
+          <p className="text-slate-500 font-medium mt-4">Configure tournament rules, fees, and schedule for the cricket championship.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

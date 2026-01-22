@@ -232,28 +232,33 @@ export default function AdminPage() {
   })
 
   if (!isAdmin && loading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="min-h-screen bg-[#0a0f1a] flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-500"></div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-cricket-500/30 transition-colors duration-300 pb-20">
+    <div className="min-h-screen bg-[#0a0f1a] text-white selection:bg-cricket-500/30 pb-20">
       {/* Admin Navbar */}
-      <nav className="border-b border-border backdrop-blur-md sticky top-0 z-50 bg-background/80">
+      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0a0f1a]/80">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⚖️</span>
-            <span className="font-black text-xl tracking-tighter uppercase italic">KMCE<span className="text-cricket-500">SportsPortol</span></span>
-            <span className="ml-2 px-2 py-0.5 bg-white/10 rounded text-[10px] font-black uppercase tracking-widest text-slate-400 border border-white/10">Admin</span>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+              <span>←</span> Home
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🏏</span>
+              <span className="font-black text-xl tracking-tight">KMCE<span className="text-cricket-500">Cricket</span></span>
+              <span className="ml-2 px-2 py-0.5 bg-cricket-500/20 rounded text-[10px] font-black uppercase tracking-widest text-cricket-400 border border-cricket-500/30">Admin</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/tournament-settings" className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/10">⚙️ Settings</Link>
+            <Link href="/admin/tournament-settings" className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10">⚙️ Settings</Link>
             <button
-              onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
-              className="text-xs font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
+              onClick={async () => { clearSessionStartTime(); await supabase.auth.signOut(); router.push('/') }}
+              className="px-4 py-2 text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all"
             >
-              Sign Out
+              Logout
             </button>
           </div>
         </div>

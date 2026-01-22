@@ -81,6 +81,11 @@ export default function AdminLoginPage() {
       </div>
 
       <div className="max-w-xl w-full relative z-10 transition-all duration-700">
+        <div className="mb-6">
+          <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors w-fit">
+            <span>←</span> Back to Home
+          </Link>
+        </div>
         <div className="text-center mb-10">
           <Link href="/" className="inline-flex items-center gap-3 group mb-8">
             <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded-3xl flex items-center justify-center shadow-2xl border border-white/5">
@@ -156,7 +161,7 @@ export default function AdminLoginPage() {
           <Link href="/auth/login" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-500 transition-all hover:gap-4">
             <span>←</span> Back to Athlete Portal
           </Link>
-          <div className="mt-8 text-[9px] font-black text-slate-800 uppercase tracking-[0.5em]">Sports Governance Infrastructure v4.0.2</div>
+          <div className="mt-8 text-[9px] font-black text-slate-800 uppercase tracking-[0.5em]">Cricket Administration System</div>
         </div>
       </div>
     </div>

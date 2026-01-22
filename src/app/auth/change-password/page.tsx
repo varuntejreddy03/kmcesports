@@ -44,6 +44,11 @@ export default function ChangePasswordPage() {
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full -ml-48 -mb-48"></div>
 
       <div className="max-w-md w-full relative z-10">
+        <div className="mb-6">
+          <Link href="/dashboard" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors w-fit">
+            <span>←</span> Back to Dashboard
+          </Link>
+        </div>
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-[28px] flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl shadow-cricket-600/20">🔑</div>
           <h1 className="text-4xl font-black tracking-tight mb-2 uppercase italic leading-none">Security <span className="text-cricket-500">Update</span></h1>

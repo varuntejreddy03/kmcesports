@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
-import { supabase } from '@/lib/supabase'
+import { supabase, clearSessionStartTime } from '@/lib/supabase'
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -21,6 +21,7 @@ export default function Navbar() {
   }, [])
 
   const handleLogout = async () => {
+    clearSessionStartTime()
     await supabase.auth.signOut()
     router.push('/')
   }

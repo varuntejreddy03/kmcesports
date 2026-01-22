@@ -32,13 +32,18 @@ export default function RegisterPage() {
         </div>
 
         <div className="absolute bottom-10 left-10">
-          <Link href="/" className="font-black text-xl tracking-tighter uppercase italic text-white/50 hover:text-white transition-colors">KMCE<span className="text-white">SportsPortol</span></Link>
+          <Link href="/" className="font-black text-xl tracking-tight text-white/50 hover:text-white transition-colors">KMCE<span className="text-white">Cricket</span></Link>
         </div>
       </div>
 
       {/* Register Right Side */}
       <div className="flex-1 flex items-center justify-center p-8 bg-[#0f172a]">
         <div className="max-w-md w-full">
+          <div className="mb-6">
+            <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors w-fit">
+              <span>←</span> Back to Home
+            </Link>
+          </div>
           <div className="mb-12">
             <div className="inline-block px-4 py-1.5 bg-cricket-600/20 border border-cricket-600/30 rounded-full text-cricket-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">Official Enrollment</div>
             <h1 className="text-4xl font-black tracking-tight mb-2 uppercase">Create Profile</h1>

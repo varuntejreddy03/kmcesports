@@ -152,17 +152,22 @@ export default function Dashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 pb-20">
+    <div className="min-h-screen bg-[#0a0f1a] text-white pb-20">
       {/* Top Header */}
-      <nav className="border-b border-border backdrop-blur-md sticky top-0 z-50 bg-background/80">
+      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0a0f1a]/80">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🏏</span>
-            <span className="font-black text-xl tracking-tighter uppercase italic">KMCE<span className="text-cricket-500">SportsPortol</span></span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+              <span>←</span> Home
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🏏</span>
+              <span className="font-black text-xl tracking-tight">KMCE<span className="text-cricket-500">Cricket</span></span>
+            </div>
+          </div>
           <button
-            onClick={async () => { await supabase.auth.signOut(); router.push('/auth/login') }}
-            className="text-sm font-bold text-red-400 hover:text-red-300 transition-colors"
+            onClick={async () => { clearSessionStartTime(); await supabase.auth.signOut(); router.push('/auth/login') }}
+            className="px-4 py-2 text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all"
           >
             Logout
           </button>
@@ -240,7 +245,7 @@ export default function Dashboard() {
                   <h3 className="text-4xl font-black tracking-tighter uppercase italic">{team?.name}</h3>
                   <div className="flex items-center gap-2 text-slate-400 mt-2 font-bold text-sm">
                     <span className="w-2 h-2 rounded-full bg-cricket-500 animate-pulse"></span>
-                    Competing in {team?.sport}
+                    Cricket Championship
                   </div>
                 </div>
 

@@ -86,8 +86,15 @@ function PaymentContent() {
     <div className="min-h-screen bg-[#0f172a] text-white selection:bg-cricket-500/30">
       <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0f172a]/80">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/dashboard" className="text-slate-400 font-bold flex items-center gap-2"><span>←</span> Cancel</Link>
-          <div className="font-black text-xl tracking-tighter uppercase italic">Secure<span className="text-cricket-500">Checkout</span></div>
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
+              <span>←</span> Dashboard
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🏏</span>
+              <span className="font-black text-xl tracking-tight">KMCE<span className="text-cricket-500">Cricket</span></span>
+            </div>
+          </div>
         </div>
       </nav>
 
