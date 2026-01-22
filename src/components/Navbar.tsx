@@ -33,11 +33,11 @@ export default function Navbar() {
             <div className="w-10 h-10 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-cricket-500/20 group-hover:scale-110 transition-transform">
               <span className="text-xl">🏏</span>
             </div>
-            <span className="font-black text-xl tracking-tighter uppercase italic text-white">KMCE<span className="text-cricket-500">SportsPortol</span></span>
+            <span className="font-black text-xl tracking-tight text-white">KMCE<span className="text-cricket-500">Cricket</span></span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-1 bg-white/5 border border-white/10 p-1 rounded-2xl backdrop-blur-md">
-            <NavLink href="/#schedule" active={false}>Schedule Fixtures</NavLink>
+            <NavLink href="/#schedule" active={false}>Matches</NavLink>
             {user ? (
               <>
                 <NavLink href="/dashboard" active={pathname === '/dashboard'}>Dashboard</NavLink>
@@ -68,7 +68,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <div className={`md:hidden transition-all duration-500 overflow-hidden ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="px-6 pt-10 pb-16 space-y-4 bg-[#0f172a]/95 backdrop-blur-3xl border-t border-white/5 shadow-2xl">
-          <MobileNavLink href="/#schedule" onClick={() => setIsMenuOpen(false)}>Schedule Fixtures</MobileNavLink>
+          <MobileNavLink href="/#schedule" onClick={() => setIsMenuOpen(false)}>Matches</MobileNavLink>
           {user ? (
             <>
               <MobileNavLink href="/dashboard" onClick={() => setIsMenuOpen(false)}>Dashboard</MobileNavLink>

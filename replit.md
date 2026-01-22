@@ -39,10 +39,12 @@ The app uses the following Supabase tables:
 - `tournament_settings` - Tournament configuration
 
 ## Recent Changes
-- January 22, 2026: Added 30-minute session timeout with automatic logout on all protected pages (dashboard, admin, team/create, payment, team/payment, tournament-settings)
-- January 22, 2026: Fixed login page to use Suspense wrapper for useSearchParams, shows session expired message
-- January 22, 2026: Redesigned student registration page with split-layout design
-- January 22, 2026: Added 4th year student self-registration page at /auth/student-register
+- January 22, 2026: Complete UI redesign - cricket-only portal (removed other sports references)
+- January 22, 2026: Updated branding to "KMCECricket" throughout the portal
+- January 22, 2026: Redesigned homepage with modern hero section, stats, about, and schedule sections
+- January 22, 2026: Changed "4th Year student" to "New student" for registration link
+- January 22, 2026: Added department eligibility validation for team creation
+- January 22, 2026: Added 30-minute session timeout with automatic logout on all protected pages
 - January 22, 2026: Configured for Replit environment (port 5000, host 0.0.0.0)
 
 ## Session Management

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import Navbar from '@/components/Navbar'
 
 export default function Home() {
   const router = useRouter()
@@ -37,21 +36,20 @@ export default function Home() {
         team_b:teams!team_b_id(name)
       `)
       .order('match_date', { ascending: true })
+      .limit(6)
 
     if (data) setMatches(data)
   }
 
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('tournament_settings')
         .select('*')
         .eq('sport', 'cricket')
         .maybeSingle()
 
-      if (data) {
-        setSettings(data)
-      }
+      if (data) setSettings(data)
     } catch (err) {
       console.error('Error fetching settings:', err)
     } finally {
@@ -59,181 +57,204 @@ export default function Home() {
     }
   }
 
-  const sports = [
-    {
-      id: 'cricket',
-      name: 'Cricket',
-      icon: '🏏',
-      status: 'open',
-      description: 'The Gentleman\'s Game',
-      color: 'bg-cricket-100 text-cricket-700'
-    },
-    {
-      id: 'football',
-      name: 'Football',
-      icon: '⚽',
-      status: 'coming_soon',
-      description: 'The Beautiful Game',
-      color: 'bg-green-100 text-green-700'
-    },
-    {
-      id: 'volleyball',
-      name: 'Volleyball',
-      icon: '🏐',
-      status: 'coming_soon',
-      description: 'Power & Precision',
-      color: 'bg-orange-100 text-orange-700'
-    },
-    {
-      id: 'badminton',
-      name: 'Badminton',
-      icon: '🏸',
-      status: 'coming_soon',
-      description: 'Speed & Agility',
-      color: 'bg-blue-100 text-blue-700'
+  const handleRegisterClick = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/auth/login')
+      return
     }
-  ]
+
+    const hallTicket = user.user_metadata?.hall_ticket
+    if (!hallTicket) return
+
+    if (hallTicket === 'ADMIN') {
+      router.push('/admin')
+      return
+    }
+
+    const { data: membership } = await supabase
+      .from('team_players')
+      .select('is_captain')
+      .eq('hall_ticket', hallTicket)
+      .maybeSingle()
+
+    if (membership && !membership.is_captain) {
+      router.push('/dashboard')
+      return
+    }
+
+    router.push('/team/create')
+  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-cricket-500/30 transition-colors duration-300">
-      <Navbar />
+    <div className="min-h-screen bg-[#0a0f1a] text-white selection:bg-cricket-500/30">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0f1a]/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-cricket-500/20 group-hover:scale-110 transition-transform">
+              <span className="text-xl">🏏</span>
+            </div>
+            <span className="font-black text-xl tracking-tight">
+              KMCE<span className="text-cricket-500">Cricket</span>
+            </span>
+          </Link>
+          
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#about" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">About</a>
+            <a href="#schedule" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">Schedule</a>
+            <Link href="/auth/login" className="px-5 py-2.5 bg-cricket-600 hover:bg-cricket-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-cricket-600/20">
+              Login
+            </Link>
+          </div>
+        </div>
+      </nav>
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden pt-32 pb-32">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-cricket-600/20 blur-[120px] rounded-full -z-10"></div>
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+        {/* Background Effects */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-cricket-600/20 blur-[150px] rounded-full"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-600/15 blur-[120px] rounded-full"></div>
+        </div>
+        
+        {/* Cricket Ball Decorations */}
+        <div className="absolute top-20 right-10 text-6xl opacity-10 animate-bounce">🏏</div>
+        <div className="absolute bottom-20 left-10 text-8xl opacity-5">🏏</div>
 
-        <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest text-cricket-400 mb-6 transition-all hover:bg-white/10">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cricket-600/10 border border-cricket-500/20 text-cricket-400 text-xs font-black uppercase tracking-widest mb-8">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cricket-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-cricket-500"></span>
             </span>
-            Season 2026 is Live
+            Inter-Department Championship 2026
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight leading-none bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
-            Dominate the <span className="text-cricket-500">Pitch</span>,<br />Lead Your <span className="text-cricket-500">Legacy</span>.
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 tracking-tight leading-[0.9]">
+            <span className="bg-gradient-to-b from-white via-white to-white/40 bg-clip-text text-transparent">
+              Cricket
+            </span>
+            <br />
+            <span className="text-cricket-500">Championship</span>
           </h1>
 
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
-            The official inter-departmental sports tournament.
-            Register your team, climb the ranks, and become the undisputed champion.
+          <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+            Build your dream team, compete against the best, and become the undisputed champion of KMCE.
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
             <button
-              onClick={async () => {
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) {
-                  router.push('/auth/login')
-                  return
-                }
-
-                const hallTicket = user.user_metadata?.hall_ticket
-                if (!hallTicket) return
-
-                if (hallTicket === 'ADMIN') {
-                  alert('Administrators manage settings, only captains can register teams.')
-                  return
-                }
-
-                const { data: membership } = await supabase
-                  .from('team_players')
-                  .select('is_captain')
-                  .eq('hall_ticket', hallTicket)
-                  .maybeSingle()
-
-                if (membership && !membership.is_captain) {
-                  alert('As a player, you have view-only access. Only captains can manage teams.')
-                  return
-                }
-
-                router.push('/team/create')
-              }}
-              className="px-10 py-4 bg-cricket-600 text-white rounded-2xl font-black text-lg hover:bg-cricket-700 transition-all shadow-xl shadow-cricket-600/30 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              onClick={handleRegisterClick}
+              className="px-10 py-5 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-2xl font-black text-lg hover:scale-105 transition-all shadow-2xl shadow-cricket-600/30 active:scale-95 flex items-center justify-center gap-3"
             >
-              Start Registration <span>🚀</span>
+              <span>Register Your Team</span>
+              <span className="text-2xl">🏏</span>
             </button>
-            <a
-              href="#cricket-info"
-              className="px-10 py-4 bg-muted/50 border border-border text-foreground rounded-2xl font-bold text-lg hover:bg-muted transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+            <Link
+              href="/auth/login"
+              className="px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2"
             >
-              Tournament Info <span>ℹ️</span>
-            </a>
+              <span>Player Login</span>
+              <span>→</span>
+            </Link>
           </div>
 
-          <div className="mt-6">
-            <Link
-              href="/auth/student-register"
-              className="text-sm text-slate-400 hover:text-cricket-400 transition-colors font-bold"
-            >
-              4th Year student? <span className="underline">Register here first</span>
-            </Link>
+          <Link
+            href="/auth/student-register"
+            className="text-sm text-slate-500 hover:text-cricket-400 transition-colors font-bold"
+          >
+            New student? <span className="underline">Register here first</span>
+          </Link>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/20 rounded-full flex items-start justify-center p-2">
+            <div className="w-1.5 h-3 bg-cricket-500 rounded-full animate-pulse"></div>
           </div>
         </div>
       </div>
 
-      {/* Cricket Tournament Info Section */}
-      <div id="cricket-info" className="py-24 bg-muted/20 relative border-y border-border transition-colors">
-        <div className="max-w-7xl mx-auto px-4">
+      {/* Stats Section */}
+      <div className="py-20 bg-gradient-to-b from-[#0a0f1a] to-[#0f172a]">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { value: settings?.registration_fee || '2500', label: 'Registration Fee', prefix: '₹' },
+              { value: `${settings?.min_players || '11'}-${settings?.max_players || '15'}`, label: 'Players Per Team', prefix: '' },
+              { value: settings?.start_date ? new Date(settings.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBA', label: 'Tournament Starts', prefix: '' },
+              { value: 'T20', label: 'Format', prefix: '' },
+            ].map((stat, idx) => (
+              <div key={idx} className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center hover:bg-white/[0.08] transition-all">
+                <div className="text-3xl md:text-4xl font-black text-white mb-2">
+                  {stat.prefix}{stat.value}
+                </div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* About Section */}
+      <div id="about" className="py-24 bg-[#0f172a]">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 bg-cricket-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-cricket-600/40">🏏</div>
-                <h2 className="text-4xl font-black tracking-tight uppercase italic">Tournament <span className="text-cricket-500">Details</span></h2>
-              </div>
-
-              <p className="text-lg text-muted-foreground mb-10 leading-relaxed italic border-l-4 border-cricket-500 pl-6 bg-muted/30 py-6 rounded-r-3xl transition-colors">
-                "{settings?.rules || 'Experience the thrill of the ultimate cricket battle. Standard T20 rules apply. Professional umpires, high-quality gear, and an electric atmosphere.'}"
+              <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-4">About The Tournament</div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
+                The Ultimate <span className="text-cricket-500">Cricket</span> Showdown
+              </h2>
+              <p className="text-lg text-slate-400 mb-8 leading-relaxed">
+                {settings?.rules || 'Experience the thrill of inter-departmental cricket at its finest. Standard T20 rules apply with professional umpiring and top-quality equipment. Form your squad, showcase your skills, and compete for glory!'}
               </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="p-6 bg-muted/50 rounded-3xl border border-border hover:border-cricket-500/50 transition-all group">
-                  <div className="text-cricket-500 mb-2 font-black text-xs uppercase tracking-widest">Registration Fee</div>
-                  <div className="text-3xl font-black text-foreground">₹ {settings?.registration_fee || '2500'}</div>
-                  <div className="text-muted-foreground text-sm mt-1 uppercase font-bold tracking-tighter">Per Team Admission</div>
-                </div>
-                <div className="p-6 bg-white/5 rounded-3xl border border-white/10 hover:border-cricket-500/50 transition-colors group">
-                  <div className="text-cricket-500 mb-2 font-black text-xs uppercase tracking-widest">Squad size</div>
-                  <div className="text-3xl font-black text-white">{settings?.min_players || '11'} - {settings?.max_players || '15'}</div>
-                  <div className="text-slate-500 text-sm mt-1 uppercase font-bold tracking-tighter">Players including subs</div>
-                </div>
-                <div className="p-6 bg-white/5 rounded-3xl border border-white/10 hover:border-cricket-500/50 transition-colors group">
-                  <div className="text-cricket-500 mb-2 font-black text-xs uppercase tracking-widest">Tournament Venue</div>
-                  <div className="text-2xl font-black text-white">{settings?.venue || 'Main Stadium Ground'}</div>
-                  <div className="text-slate-500 text-sm mt-1 uppercase font-bold tracking-tighter">Ready for action</div>
-                </div>
-                <div className="p-6 bg-white/5 rounded-3xl border border-white/10 hover:border-cricket-500/50 transition-colors group">
-                  <div className="text-cricket-500 mb-2 font-black text-xs uppercase tracking-widest">Starts On</div>
-                  <div className="text-3xl font-black text-white">
-                    {settings?.start_date ? new Date(settings.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBA'}
+              
+              <div className="space-y-4">
+                {[
+                  { icon: '🎯', title: 'T20 Format', desc: 'Fast-paced 20-over matches' },
+                  { icon: '🏆', title: 'Department Battle', desc: 'CSE vs CSM showdown' },
+                  { icon: '⭐', title: 'Pro Standards', desc: 'Professional umpires & gear' },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <div className="w-12 h-12 bg-cricket-600/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-black text-white mb-1">{item.title}</h3>
+                      <p className="text-sm text-slate-500">{item.desc}</p>
+                    </div>
                   </div>
-                  <div className="text-slate-500 text-sm mt-1 uppercase font-bold tracking-tighter">Mark your calendars</div>
-                </div>
+                ))}
               </div>
             </div>
 
             <div className="relative">
-              <div className="bg-gradient-to-br from-cricket-600 to-indigo-700 rounded-[48px] p-8 md:p-14 shadow-2xl relative overflow-hidden group border border-white/10">
-                <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+              <div className="bg-gradient-to-br from-cricket-600 to-indigo-700 rounded-[40px] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/20 rounded-full blur-2xl"></div>
+                
                 <div className="relative z-10 text-center">
-                  <div className="inline-block px-4 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4">Official Notice</div>
-                  <h3 className="text-4xl font-black mb-6 uppercase italic text-white italic">Registration <br /><span className="text-white/60">is LIVE!</span></h3>
-                  <div className="bg-muted/40 p-8 rounded-[32px] backdrop-blur-sm border border-border mb-10 shadow-inner transition-colors">
-                    <p className="text-muted-foreground mb-2 font-black text-xs uppercase tracking-widest">Deadline Approaching</p>
-                    <div className="text-5xl font-black tracking-tighter text-foreground">
-                      {settings?.end_date ? new Date(settings.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Soon'}
+                  <div className="text-6xl mb-6">🏏</div>
+                  <div className="inline-block px-4 py-1.5 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                    Registration Open
+                  </div>
+                  <h3 className="text-3xl font-black mb-6 uppercase">
+                    Join the<br /><span className="text-white/60">Championship</span>
+                  </h3>
+                  
+                  <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 mb-8 border border-white/10">
+                    <div className="text-xs font-bold text-white/60 uppercase tracking-widest mb-2">Deadline</div>
+                    <div className="text-4xl font-black">
+                      {settings?.end_date ? new Date(settings.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Coming Soon'}
                     </div>
                   </div>
+                  
                   <button
-                    onClick={async () => {
-                      const { data: { user } } = await supabase.auth.getUser()
-                      if (!user) { router.push('/auth/login'); return }
-                      router.push('/team/create')
-                    }}
-                    className="block w-full py-6 bg-foreground text-background rounded-3xl font-black text-xl hover:opacity-90 transition-all shadow-2xl active:scale-95 text-center uppercase tracking-tighter"
+                    onClick={handleRegisterClick}
+                    className="w-full py-5 bg-white text-[#0f172a] rounded-2xl font-black text-lg hover:bg-white/90 transition-all shadow-2xl"
                   >
-                    Register Team Now
+                    Register Now
                   </button>
                 </div>
               </div>
@@ -242,106 +263,96 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Featured Sports Grid */}
-      <div id="sports" className="max-w-7xl mx-auto px-4 py-32">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
-          <div>
-            <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-2">Available Disciplines</div>
-            <h2 className="text-5xl font-black tracking-tight uppercase italic leading-none">Explore <span className="text-cricket-500">Sports</span></h2>
+      {/* Schedule Section */}
+      <div id="schedule" className="py-24 bg-[#0a0f1a]">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-4">Fixtures</div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+              Match <span className="text-cricket-500">Schedule</span>
+            </h2>
           </div>
-          <div className="h-px flex-1 bg-white/5 mx-8 hidden md:block"></div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {sports.map((sport) => (
-            <div
-              key={sport.id}
-              className={`group relative rounded-[40px] p-10 border transition-all duration-500 overflow-hidden ${sport.status === 'open'
-                ? 'bg-muted/50 border-border hover:border-cricket-500/50 hover:bg-muted/70'
-                : 'bg-muted/20 border-border opacity-50 grayscale'
-                }`}
-            >
-              <div className={`w-16 h-16 rounded-[24px] ${sport.color} flex items-center justify-center text-4xl mb-8 shadow-2xl group-hover:rotate-12 transition-all duration-500`}>
-                {sport.icon}
-              </div>
+          {matches.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {matches.map((match) => (
+                <div key={match.id} className="bg-white/5 border border-white/10 p-6 rounded-3xl hover:bg-white/[0.08] transition-all group">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="text-xs font-black text-cricket-400 bg-cricket-500/10 px-3 py-1.5 rounded-full">
+                      {new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </div>
+                    <div className="text-xs font-bold text-slate-500">{match.match_time?.slice(0, 5)} IST</div>
+                  </div>
 
-              <h3 className="text-3xl font-black mb-3 tracking-tighter uppercase italic">{sport.name}</h3>
-              <p className="text-muted-foreground text-sm mb-10 font-bold leading-relaxed">{sport.description}</p>
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <div className="flex-1 text-center">
+                      <div className="text-lg font-black text-white uppercase">{match.team_a?.name || 'TBA'}</div>
+                    </div>
+                    <div className="w-10 h-10 flex items-center justify-center bg-cricket-600/20 rounded-full text-cricket-500 text-xs font-black">
+                      VS
+                    </div>
+                    <div className="flex-1 text-center">
+                      <div className="text-lg font-black text-white uppercase">{match.team_b?.name || 'TBA'}</div>
+                    </div>
+                  </div>
 
-              {sport.status === 'open' ? (
-                <Link
-                  href="/auth/login"
-                  className="inline-flex items-center gap-3 text-cricket-400 font-black text-xs uppercase tracking-[0.2em] group-hover:gap-5 transition-all"
-                >
-                  Join Now <span className="text-xl">→</span>
-                </Link>
-              ) : (
-                <div className="inline-flex items-center gap-2 text-muted-foreground font-black text-[10px] uppercase tracking-widest bg-muted/30 px-4 py-2 rounded-full border border-border">
-                  Coming Soon 🔒
+                  <div className="text-center text-xs font-bold text-slate-500 pt-4 border-t border-white/5">
+                    📍 {match.venue || 'Main Ground'}
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Match Schedule Section */}
-      <div id="schedule" className="max-w-7xl mx-auto px-4 py-32 border-t border-border transition-colors">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
-          <div>
-            <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-2">Tournament Draws</div>
-            <h2 className="text-5xl font-black tracking-tight uppercase italic leading-none">Match <span className="text-cricket-500">Schedule</span></h2>
-          </div>
-          <div className="h-px flex-1 bg-white/5 mx-8 hidden md:block"></div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {matches.map((match) => (
-            <div key={match.id} className="bg-muted/50 border border-border p-8 rounded-[40px] relative overflow-hidden group hover:bg-muted/70 transition-all shadow-sm">
-              <div className="flex justify-between items-start mb-8">
-                <div className="text-[10px] font-black text-cricket-400 uppercase tracking-widest bg-cricket-500/10 px-4 py-2 rounded-full border border-cricket-500/20">{new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2">{match.match_time.slice(0, 5)} IST</div>
-              </div>
-
-              <div className="flex items-center justify-between gap-6 mb-10">
-                <div className="flex-1 text-center">
-                  <div className="text-xs text-muted-foreground font-black uppercase tracking-widest mb-2">Team A</div>
-                  <div className="text-xl font-black uppercase italic text-foreground leading-tight">{match.team_a?.name}</div>
-                </div>
-                <div className="w-12 h-12 flex items-center justify-center bg-muted/40 rounded-full border border-border text-[10px] font-black text-cricket-500 italic">VS</div>
-                <div className="flex-1 text-center">
-                  <div className="text-xs text-muted-foreground font-black uppercase tracking-widest mb-2">Team B</div>
-                  <div className="text-xl font-black uppercase italic text-foreground leading-tight">{match.team_b?.name}</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] pt-6 border-t border-border">
-                <span className="text-cricket-500 text-sm">📍</span> {match.venue}
-              </div>
-            </div>
-          ))}
-
-          {matches.length === 0 && (
-            <div className="col-span-full bg-muted/20 border border-dashed border-border rounded-[56px] py-24 text-center">
-              <div className="text-6xl mb-6 grayscale opacity-20">🏏</div>
-              <h3 className="text-2xl font-black text-muted-foreground uppercase tracking-[0.3em]">Schedule Pending</h3>
-              <p className="text-muted-foreground/60 text-sm font-bold mt-4 max-w-sm mx-auto">The tournament brackets are currently being drawn. Check back soon for the official fixtures.</p>
+          ) : (
+            <div className="bg-white/5 border border-dashed border-white/10 rounded-[40px] py-20 text-center">
+              <div className="text-6xl mb-6 opacity-20">🏏</div>
+              <h3 className="text-2xl font-black text-slate-400 uppercase tracking-widest mb-2">Schedule Coming Soon</h3>
+              <p className="text-slate-600 text-sm max-w-md mx-auto">
+                Tournament fixtures will be announced once team registrations close. Stay tuned!
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-20 bg-muted/10 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center justify-center gap-3 mb-10 group">
-            <div className="w-12 h-12 bg-muted/30 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🏏</div>
-            <span className="font-black text-2xl tracking-tighter uppercase italic text-foreground">KMCE<span className="text-cricket-500">Sports</span></span>
-          </div>
-          <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.5em] mb-4">
-            Official Athletic Governance Node • Season 2026
+      {/* CTA Section */}
+      <div className="py-24 bg-gradient-to-b from-[#0a0f1a] to-[#0f172a]">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <div className="text-6xl mb-6">🏆</div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
+            Ready to <span className="text-cricket-500">Compete?</span>
+          </h2>
+          <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+            Gather your team, register now, and show everyone what you're made of. The championship awaits!
           </p>
-          <div className="h-px w-20 bg-border mx-auto"></div>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <button
+              onClick={handleRegisterClick}
+              className="px-10 py-5 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-2xl font-black text-lg hover:scale-105 transition-all shadow-2xl shadow-cricket-600/30"
+            >
+              Register Your Team 🏏
+            </button>
+            <Link
+              href="/auth/student-register"
+              className="px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-lg hover:bg-white/10 transition-all"
+            >
+              New Student? Register First
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-white/5 py-12 bg-[#0a0f1a]">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl flex items-center justify-center">
+              <span className="text-xl">🏏</span>
+            </div>
+            <span className="font-black text-xl">KMCE<span className="text-cricket-500">Cricket</span></span>
+          </div>
+          <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">
+            Inter-Department Cricket Championship 2026
+          </p>
         </div>
       </footer>
     </div>
