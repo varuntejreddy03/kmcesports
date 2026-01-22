@@ -46,6 +46,13 @@ To enable login/password tracking, add these columns to your student_data table 
 - `password_changed_at` (timestamptz) - When password was changed
 
 ## Recent Changes
+- January 22, 2026: Added admin ability to delete teams completely
+- January 22, 2026: Added admin ability to request repayment (reset payment status)
+- January 22, 2026: Added team member phone numbers in admin panel
+- January 22, 2026: Prevented player removal from existing teams (only allowed during creation)
+- January 22, 2026: Added coordinator contact numbers to admin login page
+- January 22, 2026: Forced password change for users logging in with default password
+- January 22, 2026: Added login tracking (last_login, login_count, password_changed)
 - January 22, 2026: Added back/home buttons to all pages for consistent navigation
 - January 22, 2026: Unified dark theme (#0a0f1a) and navbar styling across all pages
 - January 22, 2026: Fixed session timeout clearing on logout in Navbar component
@@ -56,6 +63,16 @@ To enable login/password tracking, add these columns to your student_data table 
 - January 22, 2026: Added department eligibility validation for team creation
 - January 22, 2026: Added 30-minute session timeout with automatic logout on all protected pages
 - January 22, 2026: Configured for Replit environment (port 5000, host 0.0.0.0)
+
+## Admin Features
+- View all teams with captain details and player counts
+- Approve/reject team registrations
+- Approve/reject payments
+- Request repayment (clears rejected payment for resubmission)
+- Delete teams completely (removes team, players, and payments)
+- View team member phone numbers
+- Schedule matches between approved teams
+- Cricket coordinators: Suresh (6303860267), Sreeker (9063128733)
 
 ## Session Management
 - Sessions timeout after 30 minutes of inactivity
