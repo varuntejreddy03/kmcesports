@@ -157,7 +157,25 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <div className="mt-14 text-center">
+        {/* Cricket Coordinators Contact */}
+        <div className="mt-10 bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[32px] p-6">
+          <div className="text-center mb-4">
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Cricket Coordinators</div>
+            <div className="text-[9px] text-slate-600 mt-1">3rd Year Students - For Enquiries</div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/5 border border-white/5 rounded-2xl p-4 text-center">
+              <div className="text-sm font-black text-white uppercase tracking-tight">Suresh</div>
+              <a href="tel:6303860267" className="text-cricket-500 font-mono text-sm font-bold hover:text-cricket-400 transition-colors">6303860267</a>
+            </div>
+            <div className="bg-white/5 border border-white/5 rounded-2xl p-4 text-center">
+              <div className="text-sm font-black text-white uppercase tracking-tight">Sreeker</div>
+              <a href="tel:9063128733" className="text-cricket-500 font-mono text-sm font-bold hover:text-cricket-400 transition-colors">9063128733</a>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-10 text-center">
           <Link href="/auth/login" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-500 transition-all hover:gap-4">
             <span>←</span> Back to Athlete Portal
           </Link>

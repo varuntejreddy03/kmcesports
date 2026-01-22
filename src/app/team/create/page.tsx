@@ -322,7 +322,9 @@ export default function CreateTeamPage() {
                           <div className="text-[10px] text-slate-500 font-bold">{p.hall_ticket} • {playerDept?.shortName} • {p.player_role}</div>
                         </div>
                       </div>
-                      <button onClick={() => setSelectedPlayers(prev => prev.filter(p2 => p2.hall_ticket !== p.hall_ticket))} className="text-red-500 hover:text-red-400 text-sm font-bold px-4 py-2 hover:bg-red-500/10 rounded-xl transition-all">Remove</button>
+                      {!isEditing && (
+                        <button onClick={() => setSelectedPlayers(prev => prev.filter(p2 => p2.hall_ticket !== p.hall_ticket))} className="text-red-500 hover:text-red-400 text-sm font-bold px-4 py-2 hover:bg-red-500/10 rounded-xl transition-all">Remove</button>
+                      )}
                     </div>
                   )
                 })}
