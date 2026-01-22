@@ -161,6 +161,15 @@ export default function Home() {
               Tournament Info <span>ℹ️</span>
             </a>
           </div>
+
+          <div className="mt-6">
+            <Link
+              href="/auth/student-register"
+              className="text-sm text-slate-400 hover:text-cricket-400 transition-colors font-bold"
+            >
+              4th Year student? <span className="underline">Register here first</span>
+            </Link>
+          </div>
         </div>
       </div>
 
