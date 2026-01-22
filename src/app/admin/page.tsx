@@ -382,6 +382,7 @@ export default function AdminPage() {
                                   <tr className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
                                     <th className="px-6 py-4">Athlete Name</th>
                                     <th className="px-6 py-4">ID</th>
+                                    <th className="px-6 py-4">Phone</th>
                                     <th className="px-6 py-4">Year</th>
                                     <th className="px-6 py-4">Role</th>
                                     <th className="px-8 py-4 text-right">Status</th>
@@ -392,6 +393,11 @@ export default function AdminPage() {
                                     <tr key={idx} className="text-xs hover:bg-white/[0.02]">
                                       <td className="px-6 py-4 font-black uppercase tracking-tight">{p.student?.name}</td>
                                       <td className="px-6 py-4 text-slate-500 font-mono">{p.hall_ticket}</td>
+                                      <td className="px-6 py-4 text-cricket-500 font-mono">
+                                        <a href={`tel:${p.student?.phone || p.student?.phone_number}`} className="hover:text-cricket-400 transition-colors">
+                                          {p.student?.phone || p.student?.phone_number || 'N/A'}
+                                        </a>
+                                      </td>
                                       <td className="px-6 py-4 text-slate-400 font-bold">{p.student?.year} Year</td>
                                       <td className="px-6 py-4 text-cricket-500/70 font-black uppercase tracking-widest text-[10px]">{p.player_role}</td>
                                       <td className="px-8 py-4 text-right">
@@ -471,6 +477,9 @@ export default function AdminPage() {
                       <div>
                         <div className="text-xs font-black uppercase italic">{p.student?.name}</div>
                         <div className="text-[9px] font-bold text-slate-500 uppercase">{p.player_role}</div>
+                        <a href={`tel:${p.student?.phone || p.student?.phone_number}`} className="text-[10px] font-mono text-cricket-500 hover:text-cricket-400">
+                          {p.student?.phone || p.student?.phone_number || 'N/A'}
+                        </a>
                       </div>
                       {p.is_captain && <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest">LEADER</span>}
                     </div>
