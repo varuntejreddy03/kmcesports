@@ -38,6 +38,13 @@ The app uses the following Supabase tables:
 - `payments` - Payment records for team registrations
 - `tournament_settings` - Tournament configuration
 
+### Optional Login Tracking Columns (student_data)
+To enable login/password tracking, add these columns to your student_data table in Supabase:
+- `last_login` (timestamptz) - Last login timestamp
+- `login_count` (integer, default 0) - Number of logins
+- `password_changed` (boolean, default false) - Whether default password was changed
+- `password_changed_at` (timestamptz) - When password was changed
+
 ## Recent Changes
 - January 22, 2026: Added back/home buttons to all pages for consistent navigation
 - January 22, 2026: Unified dark theme (#0a0f1a) and navbar styling across all pages

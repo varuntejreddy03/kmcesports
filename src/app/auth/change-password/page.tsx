@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
+import { supabase, setSessionStartTime } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -10,7 +10,18 @@ export default function ChangePasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hallTicket, setHallTicket] = useState<string | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setHallTicket(user.user_metadata?.hall_ticket || null)
+      }
+    }
+    getUser()
+  }, [])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -19,16 +30,34 @@ export default function ChangePasswordPage() {
       return
     }
 
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { error: authError } = await supabase.auth.updateUser({
         password: newPassword
       })
 
-      if (error) throw error
+      if (authError) throw authError
 
+      // Update password_changed flag in database (silently handle if columns don't exist)
+      if (hallTicket) {
+        try {
+          await supabase.from('student_data').update({
+            password_changed: true,
+            password_changed_at: new Date().toISOString()
+          }).eq('hall_ticket', hallTicket)
+        } catch (e) {
+          console.log('Password tracking skipped:', e)
+        }
+      }
+
+      setSessionStartTime()
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.message)

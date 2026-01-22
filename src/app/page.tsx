@@ -344,6 +344,42 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Contact Coordinators Section */}
+      <div className="py-16 bg-gradient-to-b from-[#0f172a] to-[#0a0f1a]">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-10">
+            <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-4">Need Help?</div>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight">
+              Cricket <span className="text-cricket-500">Coordinators</span>
+            </h2>
+            <p className="text-slate-400 mt-3">For enquiries, contact our 3rd year coordinators</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <a href="tel:6303860267" className="bg-white/5 border border-white/10 p-6 rounded-3xl hover:bg-white/[0.08] transition-all group flex items-center gap-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-cricket-500/20 group-hover:scale-110 transition-transform">
+                📞
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Coordinator</div>
+                <div className="text-xl font-black text-white">Suresh</div>
+                <div className="text-cricket-400 font-bold">6303860267</div>
+              </div>
+            </a>
+            <a href="tel:9063128733" className="bg-white/5 border border-white/10 p-6 rounded-3xl hover:bg-white/[0.08] transition-all group flex items-center gap-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-cricket-500/20 group-hover:scale-110 transition-transform">
+                📞
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Coordinator</div>
+                <div className="text-xl font-black text-white">Sreeker</div>
+                <div className="text-cricket-400 font-bold">9063128733</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 bg-[#0a0f1a]">
         <div className="max-w-6xl mx-auto px-4 text-center">
@@ -353,9 +389,12 @@ export default function Home() {
             </div>
             <span className="font-black text-xl">KMCE<span className="text-cricket-500">Cricket</span></span>
           </div>
-          <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">
+          <p className="text-slate-600 text-xs font-bold uppercase tracking-widest mb-4">
             Inter-Department Cricket Championship 2026
           </p>
+          <div className="text-slate-700 text-xs">
+            For enquiries: <span className="text-slate-500">Suresh (6303860267)</span> • <span className="text-slate-500">Sreeker (9063128733)</span>
+          </div>
         </div>
       </footer>
     </div>

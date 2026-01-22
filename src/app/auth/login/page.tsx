@@ -119,6 +119,16 @@ function LoginContent() {
         throw signInError
       }
 
+      // Store login info in database (silently handle if columns don't exist)
+      try {
+        await supabase.from('student_data').update({
+          last_login: new Date().toISOString(),
+          login_count: (student.login_count || 0) + 1
+        }).eq('hall_ticket', student.hall_ticket)
+      } catch (e) {
+        console.log('Login tracking skipped:', e)
+      }
+
       setSessionStartTime()
       if (student.hall_ticket === 'ADMIN') router.push('/admin')
       else router.push('/dashboard')

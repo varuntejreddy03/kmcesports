@@ -8,6 +8,10 @@ export interface StudentData {
   role: UserRole
   player_role?: string
   created_at: string
+  last_login?: string
+  login_count?: number
+  password_changed?: boolean
+  password_changed_at?: string
 }
 
 export interface Team {
