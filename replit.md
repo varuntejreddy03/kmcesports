@@ -39,4 +39,5 @@ The app uses the following Supabase tables:
 - `tournament_settings` - Tournament configuration
 
 ## Recent Changes
+- January 22, 2026: Added 4th year student self-registration page at /auth/student-register
 - January 22, 2026: Configured for Replit environment (port 5000, host 0.0.0.0)
