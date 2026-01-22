@@ -130,6 +130,13 @@ function LoginContent() {
       }
 
       setSessionStartTime()
+      
+      // If using default password and password not yet changed, redirect to change password
+      if (password === 'Kmce123$' && !student.password_changed && student.hall_ticket !== 'ADMIN') {
+        router.push('/auth/change-password')
+        return
+      }
+
       if (student.hall_ticket === 'ADMIN') router.push('/admin')
       else router.push('/dashboard')
     } catch (err: any) {
