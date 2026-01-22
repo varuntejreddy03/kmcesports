@@ -31,7 +31,7 @@ export default function LoginPage() {
         .single()
 
       if (error || !data) {
-        setError('Hall Ticket not found in our athletic records.')
+        setError('Hall Ticket not found. If you are a 4th year student, please register first.')
         return
       }
 
@@ -272,8 +272,12 @@ export default function LoginPage() {
           </div>
 
           {step === 'hall_ticket' && (
-            <div className="mt-12 text-center">
-              <Link href="/admin/login" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-400 transition-colors">Admin Governance Access</Link>
+            <div className="mt-12 text-center space-y-4">
+              <p className="text-slate-500 text-xs font-bold">
+                Not in our records? <Link href="/auth/student-register" className="text-cricket-400 hover:text-white transition-colors">Register as new student</Link>
+              </p>
+              <div className="h-px w-20 bg-white/10 mx-auto"></div>
+              <Link href="/admin/login" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-400 transition-colors block">Admin Governance Access</Link>
             </div>
           )}
         </div>
