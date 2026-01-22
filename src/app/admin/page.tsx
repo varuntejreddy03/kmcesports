@@ -153,7 +153,7 @@ export default function AdminPage() {
     }
   }
 
-  const handleAction = async (teamId: string, action: 'approve_payment' | 'reject_payment' | 'approve_team' | 'reject_team') => {
+  const handleAction = async (teamId: string, action: 'approve_payment' | 'reject_payment' | 'approve_team' | 'reject_team' | 'delete_team' | 'request_repayment') => {
     try {
       const response = await fetch('/api/admin/approve', {
         method: 'POST',
