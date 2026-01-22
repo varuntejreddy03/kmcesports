@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime, getDepartmentGroup, getDepartmentInfo, isEligibleForGroup, extractDeptCode, DepartmentGroup, DEPARTMENT_CODES } from '@/lib/supabase'
 import { StudentData } from '@/types'
 import Link from 'next/link'
 
@@ -22,6 +22,10 @@ export default function CreateTeamPage() {
   const [selectedRole, setSelectedRole] = useState('all-rounder')
   const [isEditing, setIsEditing] = useState(false)
   const [existingTeamId, setExistingTeamId] = useState<string | null>(null)
+  const [captainDeptGroup, setCaptainDeptGroup] = useState<DepartmentGroup>(null)
+  const [captainDeptInfo, setCaptainDeptInfo] = useState<{ code: string; name: string; shortName: string } | null>(null)
+  const [showDeptSelectionModal, setShowDeptSelectionModal] = useState(false)
+  const [isECECaptain, setIsECECaptain] = useState(false)
 
   useEffect(() => {
     init()
@@ -50,6 +54,27 @@ export default function CreateTeamPage() {
       const { data: currentStudent } = await supabase.from('student_data').select('*').eq('hall_ticket', hallTicket).maybeSingle()
       if (!currentStudent) { setError('Profile error. Contact Admin.'); setLoading(false); return }
       setCaptain(currentStudent)
+
+      // Determine captain's department group
+      const deptGroupResult = getDepartmentGroup(currentStudent.hall_ticket)
+      const deptInfo = getDepartmentInfo(currentStudent.hall_ticket)
+      setCaptainDeptInfo(deptInfo)
+
+      // Block if captain is not in a valid department group
+      if (!deptGroupResult) {
+        setError('NOT ELIGIBLE – DEPARTMENT RULE VIOLATION')
+        setLoading(false)
+        return
+      }
+
+      // If ECE captain (eligible for both groups), show selection modal
+      if (deptGroupResult === 'BOTH') {
+        setIsECECaptain(true)
+        setShowDeptSelectionModal(true)
+        // Don't set captainDeptGroup yet - wait for selection
+      } else {
+        setCaptainDeptGroup(deptGroupResult)
+      }
 
       const { data: teamData } = await supabase.from('teams').select('*').eq('captain_id', currentStudent.hall_ticket).maybeSingle()
 
@@ -120,18 +145,38 @@ export default function CreateTeamPage() {
     }
   }
 
-  const availableStudents = allStudents.filter(s =>
-    s.hall_ticket !== captain?.hall_ticket &&
-    !takenHallTickets.has(s.hall_ticket) &&
-    !selectedPlayers.some(p => p.hall_ticket === s.hall_ticket) &&
-    (s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.hall_ticket.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const availableStudents = allStudents.filter(s => {
+    // Basic filters
+    if (s.hall_ticket === captain?.hall_ticket) return false
+    if (takenHallTickets.has(s.hall_ticket)) return false
+    if (selectedPlayers.some(p => p.hall_ticket === s.hall_ticket)) return false
+    
+    // Department eligibility filter - only show students eligible for captain's group
+    if (captainDeptGroup && !isEligibleForGroup(s.hall_ticket, captainDeptGroup)) return false
+    
+    // Search filter
+    if (searchTerm && 
+        !s.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !s.hall_ticket.toLowerCase().includes(searchTerm.toLowerCase())) return false
+    
+    return true
+  })
 
   const handleCreateTeam = async () => {
     if (!captain) return
+    if (!captainDeptGroup) { 
+      setError('NOT ELIGIBLE – DEPARTMENT RULE VIOLATION'); 
+      return 
+    }
     if (selectedPlayers.length < 10) { setError('At least 11 players required (10 + Captain)'); return }
     if (selectedPlayers.length > 14) { setError('Maximum 15 players allowed'); return }
+
+    // Validate all selected players are eligible for the captain's department group
+    const ineligiblePlayers = selectedPlayers.filter(p => !isEligibleForGroup(p.hall_ticket, captainDeptGroup))
+    if (ineligiblePlayers.length > 0) {
+      setError('NOT ELIGIBLE – DEPARTMENT RULE VIOLATION')
+      return
+    }
 
     setSubmitting(true)
     setError(null)
@@ -233,10 +278,22 @@ export default function CreateTeamPage() {
                 <div className="bg-white/5 border border-white/5 p-6 rounded-3xl">
                   <div className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Team Lead</div>
                   <div className="flex items-center justify-between">
-                    <div className="text-xl font-black">{captain?.name}</div>
+                    <div>
+                      <div className="text-xl font-black">{captain?.name}</div>
+                      {captainDeptInfo && (
+                        <div className="text-xs text-slate-400 mt-1">{captainDeptInfo.shortName} • {captain?.hall_ticket}</div>
+                      )}
+                    </div>
                     <span className="px-3 py-1 bg-cricket-500 text-black text-[10px] font-black rounded-lg">CAPTAIN</span>
                   </div>
                 </div>
+                {captainDeptGroup && (
+                  <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-4 rounded-2xl mt-4">
+                    <div className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-1">Team Department</div>
+                    <div className="text-lg font-black text-white">{captainDeptGroup} Department</div>
+                    <div className="text-[10px] text-slate-400 mt-1">Only {captainDeptGroup === 'CSE' ? 'CSE, CSO, ECE' : 'CSM, CSC, CSD, ECE'} students can join this team</div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -254,18 +311,21 @@ export default function CreateTeamPage() {
               </div>
 
               <div className="space-y-3">
-                {selectedPlayers.map((p, idx) => (
-                  <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-black text-slate-400">{idx + 2}</div>
-                      <div>
-                        <div className="font-black uppercase italic tracking-tight">{p.name}</div>
-                        <div className="text-[10px] text-slate-500 font-bold">{p.hall_ticket} • {p.player_role}</div>
+                {selectedPlayers.map((p, idx) => {
+                  const playerDept = getDepartmentInfo(p.hall_ticket)
+                  return (
+                    <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-black text-slate-400">{idx + 2}</div>
+                        <div>
+                          <div className="font-black uppercase italic tracking-tight">{p.name}</div>
+                          <div className="text-[10px] text-slate-500 font-bold">{p.hall_ticket} • {playerDept?.shortName} • {p.player_role}</div>
+                        </div>
                       </div>
+                      <button onClick={() => setSelectedPlayers(prev => prev.filter(p2 => p2.hall_ticket !== p.hall_ticket))} className="text-red-500 hover:text-red-400 text-sm font-bold px-4 py-2 hover:bg-red-500/10 rounded-xl transition-all">Remove</button>
                     </div>
-                    <button onClick={() => setSelectedPlayers(prev => prev.filter(p2 => p2.hall_ticket !== p.hall_ticket))} className="text-red-500 hover:text-red-400 text-sm font-bold px-4 py-2 hover:bg-red-500/10 rounded-xl transition-all">Remove</button>
-                  </div>
-                ))}
+                  )
+                })}
                 {selectedPlayers.length === 0 && (
                   <div className="text-center py-12 text-slate-600 font-bold border-2 border-dashed border-white/5 rounded-3xl">No recruits added yet. Browse the student list.</div>
                 )}
@@ -288,19 +348,25 @@ export default function CreateTeamPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-                {availableStudents.map((p, idx) => (
-                  <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl hover:bg-white/[0.08] transition-all group">
-                    <div className="font-bold mb-1 group-hover:text-cricket-400 transition-colors uppercase italic">{p.name}</div>
-                    <div className="text-[10px] text-slate-500 font-bold mb-4">{p.hall_ticket}</div>
-                    <button
-                      disabled={selectedPlayers.length >= 14}
-                      onClick={() => handleAddPlayerClick(p)}
-                      className="w-full py-2 bg-white/10 hover:bg-cricket-600 hover:text-white text-slate-400 rounded-xl text-xs font-black transition-all"
-                    >
-                      Recruit +
-                    </button>
-                  </div>
-                ))}
+                {availableStudents.map((p, idx) => {
+                  const playerDept = getDepartmentInfo(p.hall_ticket)
+                  return (
+                    <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl hover:bg-white/[0.08] transition-all group">
+                      <div className="font-bold mb-1 group-hover:text-cricket-400 transition-colors uppercase italic">{p.name}</div>
+                      <div className="text-[10px] text-slate-500 font-bold mb-1">{p.hall_ticket}</div>
+                      {playerDept && (
+                        <div className="text-[10px] text-indigo-400 font-bold mb-3">{playerDept.shortName}</div>
+                      )}
+                      <button
+                        disabled={selectedPlayers.length >= 14}
+                        onClick={() => handleAddPlayerClick(p)}
+                        className="w-full py-2 bg-white/10 hover:bg-cricket-600 hover:text-white text-slate-400 rounded-xl text-xs font-black transition-all"
+                      >
+                        Recruit +
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -343,6 +409,40 @@ export default function CreateTeamPage() {
             <div className="flex gap-4">
               <button onClick={() => setShowRoleModal(false)} className="flex-1 py-4 text-slate-500 font-black text-xs uppercase tracking-widest">Cancel</button>
               <button onClick={confirmAddPlayer} className="flex-1 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Department Selection Modal for ECE Captains */}
+      {showDeptSelectionModal && isECECaptain && (
+        <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+          <div className="bg-[#1e293b] border border-white/10 rounded-[40px] p-8 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-black mb-2 text-center uppercase tracking-tighter">Select Department</h3>
+            <p className="text-slate-400 text-center text-sm mb-2 font-medium">As an ECE student, you can create a team in either department.</p>
+            <p className="text-indigo-400 text-center text-xs mb-8 font-bold">Choose the department for your team:</p>
+
+            <div className="space-y-4 mb-8">
+              <button
+                onClick={() => {
+                  setCaptainDeptGroup('CSE')
+                  setShowDeptSelectionModal(false)
+                }}
+                className="w-full py-5 px-6 rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-indigo-600/20 hover:border-indigo-500/50 transition-all"
+              >
+                <div className="text-lg text-white mb-1">CSE Department</div>
+                <div className="text-[10px] text-slate-400">Includes: CSE, CSO, ECE students</div>
+              </button>
+              <button
+                onClick={() => {
+                  setCaptainDeptGroup('CSM')
+                  setShowDeptSelectionModal(false)
+                }}
+                className="w-full py-5 px-6 rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-purple-600/20 hover:border-purple-500/50 transition-all"
+              >
+                <div className="text-lg text-white mb-1">CSM Department</div>
+                <div className="text-[10px] text-slate-400">Includes: CSM, CSC, CSD, ECE students</div>
+              </button>
             </div>
           </div>
         </div>

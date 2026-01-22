@@ -40,6 +40,81 @@ export const clearSessionStartTime = () => {
   }
 }
 
+// Department validation for team creation
+export const DEPARTMENT_CODES: Record<string, { name: string; shortName: string }> = {
+  '05': { name: 'Computer Science and Engineering', shortName: 'CSE' },
+  '69': { name: 'Computer Science and Engineering (IoT)', shortName: 'CSO' },
+  '04': { name: 'Electronics and Communication Engineering', shortName: 'ECE' },
+  '66': { name: 'Artificial Intelligence and Machine Learning', shortName: 'CSM' },
+  '62': { name: 'Computer Science and Engineering (Cyber Security)', shortName: 'CSC' },
+  '67': { name: 'Computer Science and Engineering (Data Science)', shortName: 'CSD' },
+}
+
+// Department groups
+export const CSE_GROUP_CODES = ['05', '69', '04'] // CSE, CSO, ECE
+export const CSM_GROUP_CODES = ['66', '62', '67', '04'] // CSM, CSC, CSD, ECE
+
+export type DepartmentGroup = 'CSE' | 'CSM' | null
+
+// Extract department code from roll number (characters at position 7 and 8, i.e., index 6 and 7)
+export const extractDeptCode = (rollNumber: string): string | null => {
+  if (!rollNumber || rollNumber.length < 8) return null
+  return rollNumber.substring(6, 8)
+}
+
+// Get department info from roll number
+export const getDepartmentInfo = (rollNumber: string): { code: string; name: string; shortName: string } | null => {
+  const code = extractDeptCode(rollNumber)
+  if (!code || !DEPARTMENT_CODES[code]) return null
+  return { code, ...DEPARTMENT_CODES[code] }
+}
+
+// Determine which department group a student belongs to based on roll number
+// Returns 'BOTH' for ECE (04) since they can be in either group
+export const getDepartmentGroup = (rollNumber: string): DepartmentGroup | 'BOTH' => {
+  const code = extractDeptCode(rollNumber)
+  if (!code) return null
+  
+  // ECE (04) is in both groups - let them choose
+  if (code === '04') {
+    return 'BOTH'
+  }
+  
+  // Check CSE group (CSE, CSO)
+  if (CSE_GROUP_CODES.includes(code)) {
+    return 'CSE'
+  }
+  
+  // Check CSM group (CSM, CSC, CSD)
+  if (CSM_GROUP_CODES.includes(code)) {
+    return 'CSM'
+  }
+  
+  return null
+}
+
+// Check if a student is eligible for a specific department group
+export const isEligibleForGroup = (rollNumber: string, group: DepartmentGroup): boolean => {
+  if (!group) return false
+  const code = extractDeptCode(rollNumber)
+  if (!code) return false
+  
+  if (group === 'CSE') {
+    return CSE_GROUP_CODES.includes(code)
+  }
+  if (group === 'CSM') {
+    return CSM_GROUP_CODES.includes(code)
+  }
+  return false
+}
+
+// Get all eligible department codes for a group
+export const getEligibleCodesForGroup = (group: DepartmentGroup): string[] => {
+  if (group === 'CSE') return CSE_GROUP_CODES
+  if (group === 'CSM') return CSM_GROUP_CODES
+  return []
+}
+
 // Database types (will be auto-generated from Supabase CLI)
 // Database types (Manually defined based on user schema)
 export type Database = {

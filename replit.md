@@ -50,3 +50,21 @@ The app uses the following Supabase tables:
 - Session start time stored in localStorage (session_start_time)
 - All protected pages check session every 60 seconds
 - On expiration, users are redirected to /auth/login?expired=true
+
+## Department Eligibility System
+Team creation uses department-based eligibility validation:
+
+**Department Codes** (extracted from roll number positions 7-8):
+- 05 → CSE, 69 → CSO, 04 → ECE
+- 66 → CSM, 62 → CSC, 67 → CSD
+
+**Department Groups**:
+- CSE Group: CSE (05), CSO (69), ECE (04)
+- CSM Group: CSM (66), CSC (62), CSD (67), ECE (04)
+
+**Rules**:
+- Login allowed for all students (no department validation)
+- Team department auto-assigned based on captain's roll number
+- ECE captains can choose between CSE or CSM department
+- Player list filtered to only show eligible students for captain's group
+- Validation error: "NOT ELIGIBLE – DEPARTMENT RULE VIOLATION"
