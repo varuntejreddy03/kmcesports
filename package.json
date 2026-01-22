@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0 -p 5000",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "kill-port": "npx kill-port 3000"
+    "start": "next start -H 0.0.0.0 -p 5000",
+    "lint": "next lint"
   },
   "dependencies": {
+    "3": "^2.1.0",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/supabase-js": "^2.90.1",
     "next": "^14.2.0",
