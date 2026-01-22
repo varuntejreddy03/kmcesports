@@ -35,6 +35,18 @@ export async function POST(request: NextRequest) {
       // though messaging is disabled, keeping flag management is fine
       const { error: tError } = await supabase.from('teams').update({ approved: false, whatsapp_sent: false }).eq('id', teamId)
       updateError = tError
+    } else if (action === 'delete_team') {
+      // Delete team completely - first delete related records, then the team
+      await supabase.from('team_players').delete().eq('team_id', teamId)
+      await supabase.from('payments').delete().eq('team_id', teamId)
+      const { error: tError } = await supabase.from('teams').delete().eq('id', teamId)
+      updateError = tError
+    } else if (action === 'request_repayment') {
+      // Delete the payment record so team can submit a new one
+      const { error: pError } = await supabase.from('payments').delete().eq('team_id', teamId)
+      // Also set team as not approved
+      const { error: tError } = await supabase.from('teams').update({ approved: false }).eq('id', teamId)
+      updateError = pError || tError
     }
 
     if (updateError) {

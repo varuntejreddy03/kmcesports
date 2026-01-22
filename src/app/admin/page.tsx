@@ -350,18 +350,32 @@ export default function AdminPage() {
                             {expandedTeamId === team.id ? 'Collapse ▴' : 'Inspect Squad ▾'}
                           </button>
 
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap justify-end">
                             {team.payment && team.payment.status === 'pending' && (
                               <>
                                 <button onClick={() => handleAction(team.id, 'approve_payment')} className="w-8 h-8 rounded-xl bg-green-500/20 text-green-400 border border-green-500/30 flex items-center justify-center hover:bg-green-500 hover:text-black transition-all">✓</button>
                                 <button onClick={() => handleAction(team.id, 'reject_payment')} className="w-8 h-8 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-50 hover:text-black transition-all">✗</button>
                               </>
                             )}
+                            {team.payment && team.payment.status === 'rejected' && (
+                              <button
+                                onClick={() => { if(confirm('Request repayment? This will allow the team to submit a new payment.')) handleAction(team.id, 'request_repayment') }}
+                                className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-black transition-all"
+                              >
+                                Repay
+                              </button>
+                            )}
                             <button
                               onClick={() => handleAction(team.id, team.approved ? 'reject_team' : 'approve_team')}
                               className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${team.approved ? 'bg-white/5 text-slate-500 hover:bg-red-500 hover:text-white' : 'bg-white text-black hover:bg-cricket-500 shadow-lg'}`}
                             >
                               {team.approved ? 'Revoke' : 'Register 🚀'}
+                            </button>
+                            <button
+                              onClick={() => { if(confirm('DELETE this team completely? This cannot be undone!')) handleAction(team.id, 'delete_team') }}
+                              className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white transition-all"
+                            >
+                              Delete
                             </button>
                           </div>
                         </div>
@@ -467,6 +481,10 @@ export default function AdminPage() {
                 {team.payment && team.payment.status === 'pending' && (
                   <button onClick={() => handleAction(team.id, 'approve_payment')} className="py-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">VERIFY FEE</button>
                 )}
+                {team.payment && team.payment.status === 'rejected' && (
+                  <button onClick={() => { if(confirm('Request repayment?')) handleAction(team.id, 'request_repayment') }} className="py-3 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all">REPAY</button>
+                )}
+                <button onClick={() => { if(confirm('DELETE this team completely?')) handleAction(team.id, 'delete_team') }} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all col-span-2">DELETE TEAM</button>
               </div>
 
               {expandedTeamId === team.id && (
