@@ -39,6 +39,9 @@ The app uses the following Supabase tables:
 - `tournament_settings` - Tournament configuration
 
 ## Recent Changes
+- January 22, 2026: Added back/home buttons to all pages for consistent navigation
+- January 22, 2026: Unified dark theme (#0a0f1a) and navbar styling across all pages
+- January 22, 2026: Fixed session timeout clearing on logout in Navbar component
 - January 22, 2026: Complete UI redesign - cricket-only portal (removed other sports references)
 - January 22, 2026: Updated branding to "KMCECricket" throughout the portal
 - January 22, 2026: Redesigned homepage with modern hero section, stats, about, and schedule sections
