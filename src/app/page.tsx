@@ -202,30 +202,33 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-4">About The Tournament</div>
+              <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-4">Tournament Info</div>
               <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-6">
-                The Ultimate <span className="text-cricket-500">Cricket</span> Showdown
+                Register Your <span className="text-cricket-500">Team</span>
               </h2>
               <p className="text-lg text-slate-400 mb-8 leading-relaxed">
-                {settings?.rules || 'Experience the thrill of inter-departmental cricket at its finest. Standard T20 rules apply with professional umpiring and top-quality equipment. Form your squad, showcase your skills, and compete for glory!'}
+                {settings?.rules || 'Form your squad from your department and compete for glory in the inter-departmental cricket championship. Build your dream team and claim victory!'}
               </p>
               
-              <div className="space-y-4">
-                {[
-                  { icon: '🎯', title: 'T20 Format', desc: 'Fast-paced 20-over matches' },
-                  { icon: '🏆', title: 'Department Battle', desc: 'CSE vs CSM showdown' },
-                  { icon: '⭐', title: 'Pro Standards', desc: 'Professional umpires & gear' },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
-                    <div className="w-12 h-12 bg-cricket-600/20 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-black text-white mb-1">{item.title}</h3>
-                      <p className="text-sm text-slate-500">{item.desc}</p>
-                    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="text-cricket-500 text-xs font-black uppercase tracking-widest mb-2">Registration Fee</div>
+                  <div className="text-2xl font-black text-white">₹{settings?.registration_fee || '2500'}</div>
+                </div>
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="text-cricket-500 text-xs font-black uppercase tracking-widest mb-2">Squad Size</div>
+                  <div className="text-2xl font-black text-white">{settings?.min_players || '11'}-{settings?.max_players || '15'}</div>
+                </div>
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="text-cricket-500 text-xs font-black uppercase tracking-widest mb-2">Venue</div>
+                  <div className="text-lg font-black text-white">{settings?.venue || 'Main Ground'}</div>
+                </div>
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="text-cricket-500 text-xs font-black uppercase tracking-widest mb-2">Starts</div>
+                  <div className="text-lg font-black text-white">
+                    {settings?.start_date ? new Date(settings.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBA'}
                   </div>
-                ))}
+                </div>
               </div>
             </div>
 
