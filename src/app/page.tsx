@@ -100,8 +100,8 @@ export default function Home() {
             </span>
           </Link>
           
-          <div className="flex items-center gap-4 md:gap-8">
-            <a href="#rules" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Rules</a>
+          <div className="flex items-center gap-2 md:gap-8">
+            <a href="#rules" className="px-3 py-1.5 md:px-4 md:py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg text-xs md:text-sm font-bold hover:bg-yellow-500 hover:text-black transition-all">Rules</a>
             <a href="#about" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">About</a>
             <a href="#schedule" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Schedule</a>
             <Link href="/auth/login" className="px-4 md:px-5 py-2 md:py-2.5 bg-cricket-600 hover:bg-cricket-500 text-white rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-all shadow-lg shadow-cricket-600/20 min-h-[44px] flex items-center">
@@ -161,6 +161,14 @@ export default function Home() {
             </Link>
           </div>
 
+          <a
+            href="#rules"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all mb-4"
+          >
+            <span>📋</span>
+            <span>View Tournament Rules</span>
+          </a>
+
           <Link
             href="/auth/student-register"
             className="text-xs md:text-sm text-slate-500 hover:text-cricket-400 transition-colors font-bold"
@@ -200,21 +208,25 @@ export default function Home() {
 
       {/* Tournament Rules Section */}
       {settings?.rules_text && (
-        <div id="rules" className="py-16 md:py-24 bg-[#0f172a]">
+        <div id="rules" className="py-16 md:py-24 bg-gradient-to-b from-[#0f172a] to-[#1a1f35]">
           <div className="max-w-4xl mx-auto px-3 md:px-4">
             <div className="text-center mb-8 md:mb-12">
-              <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-3 md:mb-4">Guidelines</div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full text-yellow-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-4">
+                <span>⚠️</span>
+                <span>Important - Please Read</span>
+              </div>
               <h2 className="text-3xl md:text-5xl font-black tracking-tight">
-                Tournament <span className="text-cricket-500">Rules</span>
+                Tournament <span className="text-yellow-400">Rules</span>
               </h2>
             </div>
             
-            <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] p-6 md:p-10 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 md:w-40 h-32 md:h-40 bg-cricket-500/10 blur-3xl rounded-full"></div>
+            <div className="bg-yellow-500/5 border-2 border-yellow-500/30 rounded-2xl md:rounded-[40px] p-6 md:p-10 relative overflow-hidden shadow-2xl shadow-yellow-500/10">
+              <div className="absolute top-0 right-0 w-32 md:w-40 h-32 md:h-40 bg-yellow-500/10 blur-3xl rounded-full"></div>
+              <div className="absolute bottom-0 left-0 w-24 md:w-32 h-24 md:h-32 bg-cricket-500/10 blur-3xl rounded-full"></div>
               <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6 md:mb-8 pb-4 border-b border-white/10">
-                  <span className="text-2xl md:text-3xl">📜</span>
-                  <span className="text-lg md:text-xl font-black uppercase tracking-widest text-cricket-400">Official Rules</span>
+                <div className="flex items-center gap-3 mb-6 md:mb-8 pb-4 border-b border-yellow-500/20">
+                  <span className="text-2xl md:text-3xl">📋</span>
+                  <span className="text-lg md:text-xl font-black uppercase tracking-widest text-yellow-400">Official Rules</span>
                 </div>
                 <div className="whitespace-pre-wrap text-sm md:text-base leading-relaxed text-white">
                   {settings.rules_text}
