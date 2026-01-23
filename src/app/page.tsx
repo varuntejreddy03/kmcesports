@@ -101,6 +101,7 @@ export default function Home() {
           </Link>
           
           <div className="flex items-center gap-4 md:gap-8">
+            <a href="#rules" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Rules</a>
             <a href="#about" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">About</a>
             <a href="#schedule" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Schedule</a>
             <Link href="/auth/login" className="px-4 md:px-5 py-2 md:py-2.5 bg-cricket-600 hover:bg-cricket-500 text-white rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-all shadow-lg shadow-cricket-600/20 min-h-[44px] flex items-center">
@@ -196,6 +197,33 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Tournament Rules Section */}
+      {settings?.rules_text && (
+        <div id="rules" className="py-16 md:py-24 bg-[#0f172a]">
+          <div className="max-w-4xl mx-auto px-3 md:px-4">
+            <div className="text-center mb-8 md:mb-12">
+              <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-3 md:mb-4">Guidelines</div>
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+                Tournament <span className="text-cricket-500">Rules</span>
+              </h2>
+            </div>
+            
+            <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] p-6 md:p-10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 md:w-40 h-32 md:h-40 bg-cricket-500/10 blur-3xl rounded-full"></div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6 md:mb-8 pb-4 border-b border-white/10">
+                  <span className="text-2xl md:text-3xl">📜</span>
+                  <span className="text-lg md:text-xl font-black uppercase tracking-widest text-cricket-400">Official Rules</span>
+                </div>
+                <div className="whitespace-pre-wrap text-sm md:text-base leading-relaxed text-white">
+                  {settings.rules_text}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* About Section */}
       <div id="about" className="py-16 md:py-24 bg-[#0f172a]">
