@@ -128,9 +128,6 @@ export default function ChangePasswordPage() {
           </form>
         </div>
 
-        <div className="mt-6 md:mt-8 text-center">
-          <Link href="/dashboard" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-colors min-h-[44px] inline-flex items-center">Skip for now</Link>
-        </div>
       </div>
     </div>
   )
