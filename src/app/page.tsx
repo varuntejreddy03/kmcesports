@@ -112,21 +112,21 @@ export default function Home() {
       </nav>
 
       {/* Scrolling Announcement Ticker */}
-      <div className="bg-yellow-500 py-2 overflow-hidden mt-14 md:mt-16">
+      <div className="fixed top-14 md:top-16 left-0 right-0 z-40 bg-yellow-500 py-2 md:py-2.5 overflow-hidden">
         <div className="animate-marquee whitespace-nowrap flex">
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>🏏 Participation restricted to CSE, CSM, and ECE departments only</span>
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>✅ Same department players allowed irrespective of year</span>
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>📋 Read the rules before registering</span>
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>💰 Registration Fee: ₹3000</span>
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>🏏 Participation restricted to CSE, CSM, and ECE departments only</span>
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>✅ Same department players allowed irrespective of year</span>
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>📋 Read the rules before registering</span>
-          <span className="mx-8 font-black text-sm uppercase tracking-widest" style={{color: '#000'}}>💰 Registration Fee: ₹3000</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🏏 CSE, CSM, ECE only</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🏏 CSE, CSM, ECE only</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
         </div>
       </div>
 
       {/* Hero Section */}
-      <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 md:pt-28">
         {/* Background Effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-cricket-600/20 blur-[100px] md:blur-[150px] rounded-full"></div>
