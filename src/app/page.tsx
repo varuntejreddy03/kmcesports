@@ -161,20 +161,22 @@ export default function Home() {
             </Link>
           </div>
 
-          <a
-            href="#rules"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all mb-4"
-          >
-            <span>📋</span>
-            <span>View Tournament Rules</span>
-          </a>
+          <div className="flex flex-col items-center gap-4">
+            <a
+              href="#rules"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all"
+            >
+              <span>📋</span>
+              <span>View Tournament Rules</span>
+            </a>
 
-          <Link
-            href="/auth/student-register"
-            className="text-xs md:text-sm text-slate-500 hover:text-cricket-400 transition-colors font-bold"
-          >
-            New student? <span className="underline">Register here first</span>
-          </Link>
+            <Link
+              href="/auth/student-register"
+              className="text-xs md:text-sm text-slate-500 hover:text-cricket-400 transition-colors font-bold"
+            >
+              New student? <span className="underline">Register here first</span>
+            </Link>
+          </div>
         </div>
 
         {/* Scroll Indicator */}
