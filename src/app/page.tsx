@@ -185,7 +185,7 @@ export default function Home() {
               { value: settings?.registration_fee || '2500', label: 'Registration Fee', prefix: '₹' },
               { value: `${settings?.min_players || '11'}-${settings?.max_players || '15'}`, label: 'Players Per Team', prefix: '' },
               { value: settings?.start_date ? new Date(settings.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBA', label: 'Tournament Starts', prefix: '' },
-              { value: 'T20', label: 'Format', prefix: '' },
+              { value: '12 Overs', label: 'Format', prefix: '' },
             ].map((stat, idx) => (
               <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-6 text-center hover:bg-white/[0.08] transition-all">
                 <div className="text-2xl md:text-4xl font-black text-white mb-1 md:mb-2">
