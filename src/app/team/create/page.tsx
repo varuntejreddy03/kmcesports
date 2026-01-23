@@ -26,6 +26,11 @@ export default function CreateTeamPage() {
   const [captainDeptInfo, setCaptainDeptInfo] = useState<{ code: string; name: string; shortName: string } | null>(null)
   const [showDeptSelectionModal, setShowDeptSelectionModal] = useState(false)
   const [isECECaptain, setIsECECaptain] = useState(false)
+  const [showAddPlayerForm, setShowAddPlayerForm] = useState(false)
+  const [newPlayerHallTicket, setNewPlayerHallTicket] = useState('')
+  const [newPlayerName, setNewPlayerName] = useState('')
+  const [addingPlayer, setAddingPlayer] = useState(false)
+  const [addPlayerError, setAddPlayerError] = useState<string | null>(null)
 
   useEffect(() => {
     init()
@@ -142,6 +147,86 @@ export default function CreateTeamPage() {
       setSelectedPlayers(prev => [...prev, { ...playerToAdd, player_role: selectedRole }])
       setShowRoleModal(false)
       setPlayerToAdd(null)
+    }
+  }
+
+  const handleAddNewPlayer = async () => {
+    if (!captain || !captainDeptGroup) return
+    
+    const hallTicket = newPlayerHallTicket.toUpperCase().trim()
+    const playerName = newPlayerName.trim()
+    
+    // Validate hall ticket format (10 characters)
+    if (hallTicket.length !== 10) {
+      setAddPlayerError('Hall ticket must be exactly 10 characters')
+      return
+    }
+    
+    if (!playerName || playerName.length < 2) {
+      setAddPlayerError('Please enter a valid name')
+      return
+    }
+    
+    // Check if same department group as captain
+    if (!isEligibleForGroup(hallTicket, captainDeptGroup)) {
+      setAddPlayerError('Player is not eligible - must be from the same department group')
+      return
+    }
+    
+    setAddingPlayer(true)
+    setAddPlayerError(null)
+    
+    try {
+      // Check if player already exists in database
+      const { data: existingPlayer } = await supabase
+        .from('student_data')
+        .select('*')
+        .eq('hall_ticket', hallTicket)
+        .maybeSingle()
+      
+      if (existingPlayer) {
+        // Player exists - check if already in a team
+        if (takenHallTickets.has(hallTicket)) {
+          setAddPlayerError('This player is already in another team')
+          return
+        }
+        // Add existing player to selection
+        setPlayerToAdd(existingPlayer)
+        setSelectedRole('all-rounder')
+        setShowRoleModal(true)
+        setShowAddPlayerForm(false)
+        setNewPlayerHallTicket('')
+        setNewPlayerName('')
+      } else {
+        // Add new player to database
+        const deptInfo = getDepartmentInfo(hallTicket)
+        const { data: newPlayer, error: insertError } = await supabase
+          .from('student_data')
+          .insert([{
+            hall_ticket: hallTicket,
+            name: playerName,
+            year: captain.year || '3',
+            phone: '',
+            role: 'student'
+          }])
+          .select()
+          .single()
+        
+        if (insertError) throw insertError
+        
+        // Add to allStudents list and open role modal
+        setAllStudents(prev => [...prev, newPlayer])
+        setPlayerToAdd(newPlayer)
+        setSelectedRole('all-rounder')
+        setShowRoleModal(true)
+        setShowAddPlayerForm(false)
+        setNewPlayerHallTicket('')
+        setNewPlayerName('')
+      }
+    } catch (err: any) {
+      setAddPlayerError(err.message || 'Failed to add player')
+    } finally {
+      setAddingPlayer(false)
     }
   }
 
@@ -369,6 +454,64 @@ export default function CreateTeamPage() {
                     </div>
                   )
                 })}
+                
+                {/* No results - show add player option */}
+                {searchTerm.length >= 3 && availableStudents.length === 0 && !showAddPlayerForm && (
+                  <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-2xl">
+                    <div className="text-slate-500 font-bold mb-4">No players found for "{searchTerm}"</div>
+                    <button 
+                      onClick={() => setShowAddPlayerForm(true)}
+                      className="px-6 py-3 bg-cricket-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-cricket-500 transition-all"
+                    >
+                      + Add New Player
+                    </button>
+                  </div>
+                )}
+                
+                {/* Add New Player Form */}
+                {showAddPlayerForm && (
+                  <div className="bg-white/5 border border-cricket-500/30 p-4 rounded-2xl space-y-4">
+                    <div className="text-sm font-black text-cricket-500 uppercase tracking-widest">Add New Player</div>
+                    <div className="text-[10px] text-slate-500">Only players from your department group can be added</div>
+                    
+                    <input
+                      type="text"
+                      placeholder="Hall Ticket (10 chars)"
+                      value={newPlayerHallTicket}
+                      onChange={(e) => setNewPlayerHallTicket(e.target.value.toUpperCase().slice(0, 10))}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600"
+                      maxLength={10}
+                    />
+                    
+                    <input
+                      type="text"
+                      placeholder="Player Full Name"
+                      value={newPlayerName}
+                      onChange={(e) => setNewPlayerName(e.target.value.toUpperCase())}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600"
+                    />
+                    
+                    {addPlayerError && (
+                      <div className="text-red-400 text-xs font-bold">{addPlayerError}</div>
+                    )}
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => { setShowAddPlayerForm(false); setAddPlayerError(null); setNewPlayerHallTicket(''); setNewPlayerName(''); }}
+                        className="flex-1 py-2 text-slate-500 font-bold text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleAddNewPlayer}
+                        disabled={addingPlayer || newPlayerHallTicket.length !== 10 || !newPlayerName}
+                        className="flex-1 py-2 bg-cricket-600 text-white rounded-xl text-xs font-black disabled:opacity-30"
+                      >
+                        {addingPlayer ? 'Adding...' : 'Add Player'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
