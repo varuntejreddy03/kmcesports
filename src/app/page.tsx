@@ -101,6 +101,7 @@ export default function Home() {
           </Link>
           
           <div className="flex items-center gap-2 md:gap-8">
+            <a href="#guide" className="px-3 py-1.5 md:px-4 md:py-2 bg-cricket-500/20 border border-cricket-500/30 text-cricket-400 rounded-lg text-xs md:text-sm font-bold hover:bg-cricket-500 hover:text-white transition-all">Guide</a>
             <a href="#rules" className="px-3 py-1.5 md:px-4 md:py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg text-xs md:text-sm font-bold hover:bg-yellow-500 hover:text-black transition-all">Rules</a>
             <a href="#about" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">About</a>
             <a href="#schedule" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Schedule</a>
@@ -197,6 +198,63 @@ export default function Home() {
         <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 animate-bounce hidden md:block">
           <div className="w-6 h-10 border-2 border-white/20 rounded-full flex items-start justify-center p-2">
             <div className="w-1.5 h-3 bg-cricket-500 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div id="guide" className="py-12 md:py-20 bg-gradient-to-b from-[#0a0f1a] to-[#0f172a]">
+        <div className="max-w-6xl mx-auto px-3 md:px-4">
+          <div className="text-center mb-8 md:mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-cricket-500/20 border border-cricket-500/30 rounded-full text-cricket-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-4">
+              <span>📖</span>
+              <span>Quick Guide</span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+              How It <span className="text-cricket-500">Works</span>
+            </h2>
+            <p className="text-sm md:text-base text-slate-400 mt-3 max-w-xl mx-auto">Follow these simple steps to register your team</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {[
+              { step: 1, icon: '📝', title: 'Register', desc: 'Create your student account with hall ticket number', color: 'from-blue-500 to-cyan-500' },
+              { step: 2, icon: '🔐', title: 'Login', desc: 'Sign in with your credentials', color: 'from-purple-500 to-pink-500' },
+              { step: 3, icon: '👥', title: 'Create Team', desc: 'Form your squad with players from same department', color: 'from-orange-500 to-yellow-500' },
+              { step: 4, icon: '💳', title: 'Pay & Done', desc: 'Complete payment and upload screenshot', color: 'from-green-500 to-emerald-500' },
+            ].map((item, idx) => (
+              <div 
+                key={idx} 
+                className="group relative bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 hover:bg-white/10 hover:border-white/20 hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden"
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+                <div className="absolute -top-10 -right-10 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center text-white text-sm md:text-base font-black shadow-lg`}>
+                      {item.step}
+                    </span>
+                    <span className="text-2xl md:text-3xl group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">{item.icon}</span>
+                  </div>
+                  
+                  <h3 className="text-lg md:text-xl font-black uppercase tracking-wide mb-2 group-hover:text-cricket-400 transition-colors">{item.title}</h3>
+                  <p className="text-xs md:text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                </div>
+                
+                <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Link 
+              href="/auth/student-register"
+              className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-base hover:scale-105 transition-all shadow-xl shadow-cricket-600/20"
+            >
+              <span>Start Registration Now</span>
+              <span>→</span>
+            </Link>
           </div>
         </div>
       </div>
