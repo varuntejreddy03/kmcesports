@@ -40,6 +40,15 @@ export const clearSessionStartTime = () => {
   }
 }
 
+// KMCE College validation - check if hall ticket belongs to KMCE (P81 or P85 at positions 3-5)
+export const VALID_COLLEGE_CODES = ['P81', 'P85']
+
+export const isKMCEStudent = (hallTicket: string): boolean => {
+  if (!hallTicket || hallTicket.length < 6) return false
+  const collegeCode = hallTicket.substring(2, 5).toUpperCase() // Characters at position 3-5 (0-indexed: 2-4)
+  return VALID_COLLEGE_CODES.includes(collegeCode)
+}
+
 // Department validation for team creation
 export const DEPARTMENT_CODES: Record<string, { name: string; shortName: string }> = {
   '05': { name: 'Computer Science and Engineering', shortName: 'CSE' },
