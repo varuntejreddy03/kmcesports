@@ -46,6 +46,8 @@ To enable login/password tracking, add these columns to your student_data table 
 - `password_changed_at` (timestamptz) - When password was changed
 
 ## Recent Changes
+- January 23, 2026: Added email notifications on team creation and payment confirmation
+- January 23, 2026: Email sent to 4 coordinators with full team data, phone numbers, and player details
 - January 23, 2026: Added animated "How It Works" guide section with 4 step cards
 - January 23, 2026: Added Guide button to navigation bar
 - January 23, 2026: Added scrolling announcement ticker with eligibility rules
