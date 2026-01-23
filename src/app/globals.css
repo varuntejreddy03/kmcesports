@@ -37,22 +37,28 @@
   }
 
   * {
-    color: inherit;
-    font-weight: inherit;
+    color: white !important;
+    font-weight: bold !important;
   }
 
-  h1, h2, h3, h4, h5, h6, p, span, label, a, div, li, td, th {
-    color: white;
-    font-weight: bold;
+  h1, h2, h3, h4, h5, h6, p, span, label, a, div, li, td, th, button {
+    color: white !important;
+    font-weight: bold !important;
   }
 
-  input, textarea, select {
-    color: white;
-    font-weight: bold;
+  input, textarea, select, option {
+    color: white !important;
+    font-weight: bold !important;
   }
 
   input::placeholder, textarea::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.6) !important;
+  }
+
+  .text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700,
+  .text-gray-400, .text-gray-500, .text-gray-600, .text-gray-700,
+  .text-muted-foreground {
+    color: white !important;
   }
 }
 
