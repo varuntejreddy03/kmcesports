@@ -12,7 +12,7 @@ function LoginContent() {
   const [playerRole, setPlayerRole] = useState('all-rounder')
   const [sessionExpired, setSessionExpired] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [password, setPassword] = useState('')
+  const [password, setPassword] = useState('Kmce123$')
   const [step, setStep] = useState<'hall_ticket' | 'verify_details' | 'password'>('hall_ticket')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
