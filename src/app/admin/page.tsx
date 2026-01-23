@@ -465,14 +465,26 @@ export default function AdminPage() {
               </div>
 
               {team.payment && (
-                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Payment</div>
-                    <div className="text-[10px] md:text-xs font-mono font-bold text-slate-400 uppercase tracking-tighter truncate">{team.payment.utr_number}</div>
+                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Payment</div>
+                      <div className="text-[10px] md:text-xs font-mono font-bold text-slate-400 uppercase tracking-tighter truncate">{team.payment.utr_number}</div>
+                    </div>
+                    <div className={`px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border flex-shrink-0 ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' : team.payment.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
+                      {team.payment.status}
+                    </div>
                   </div>
-                  <div className={`px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border flex-shrink-0 ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' : team.payment.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
-                    {team.payment.status}
-                  </div>
+                  {team.payment.screenshot_url && (
+                    <a 
+                      href={team.payment.screenshot_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="block w-full py-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-xl text-center text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all"
+                    >
+                      📷 View Payment Proof
+                    </a>
+                  )}
                 </div>
               )}
 

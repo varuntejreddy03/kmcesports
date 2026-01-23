@@ -129,12 +129,21 @@ function PaymentContent() {
                 </div>
 
                 <div className="space-y-3 md:space-y-4 pt-3 md:pt-4 border-t border-white/5">
+                  {/* QR Code Image */}
+                  <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-6 text-center">
+                    <img 
+                      src="/images/upi-qr.jpg" 
+                      alt="UPI QR Code" 
+                      className="w-full max-w-[280px] mx-auto rounded-xl"
+                    />
+                  </div>
+                  
                   <div className="bg-white/5 p-4 md:p-6 rounded-xl md:rounded-2xl text-center border border-white/5">
                     <div className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-2 md:mb-3">UPI Payment Address</div>
-                    <div className="text-base md:text-lg font-black font-mono tracking-tight text-cricket-400 break-all">{settings?.upi_id || 'sportsportal@upi'}</div>
+                    <div className="text-base md:text-lg font-black font-mono tracking-tight text-cricket-400 break-all">saisreekarperala4-1@okaxis</div>
                   </div>
                   <p className="text-xs md:text-sm text-slate-400 font-medium italic leading-relaxed text-center">
-                    "{settings?.payment_instructions || 'Upload screenshot and enter 12-digit UTR number.'}"
+                    "{settings?.payment_instructions || 'Scan QR, pay ₹3000, upload screenshot and enter 12-digit UTR number.'}"
                   </p>
                 </div>
               </div>
