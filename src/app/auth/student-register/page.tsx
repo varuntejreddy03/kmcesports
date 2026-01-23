@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, isKMCEStudent } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -17,13 +17,30 @@ export default function StudentRegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [hallTicketError, setHallTicketError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'hallTicket' ? value.toUpperCase() : value
-    }))
+    
+    if (name === 'hallTicket') {
+      const upperValue = value.toUpperCase().slice(0, 10)
+      setFormData(prev => ({ ...prev, hallTicket: upperValue }))
+      
+      // Instant validation for hall ticket
+      if (upperValue.length === 10) {
+        if (!isKMCEStudent(upperValue)) {
+          setHallTicketError('Invalid Hall Ticket. Only KMCE students (P81/P85) are allowed.')
+        } else {
+          setHallTicketError(null)
+        }
+      } else if (upperValue.length > 0 && upperValue.length < 10) {
+        setHallTicketError(null) // Clear error while typing
+      } else {
+        setHallTicketError(null)
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,6 +51,16 @@ export default function StudentRegisterPage() {
     try {
       if (!formData.hallTicket || !formData.name || !formData.phone) {
         throw new Error('Please fill in all required fields')
+      }
+
+      // Validate hall ticket format
+      if (formData.hallTicket.length !== 10) {
+        throw new Error('Hall Ticket must be exactly 10 characters')
+      }
+
+      // Validate KMCE college code
+      if (!isKMCEStudent(formData.hallTicket)) {
+        throw new Error('Invalid Hall Ticket. Only KMCE students (P81/P85) are allowed.')
       }
 
       if (formData.phone.length < 10) {
@@ -158,11 +185,21 @@ export default function StudentRegisterPage() {
                     name="hallTicket"
                     required
                     autoFocus
+                    maxLength={10}
                     value={formData.hallTicket}
                     onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 text-lg font-bold tracking-wide focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
-                    placeholder="21XXXXXX"
+                    className={`w-full bg-white/5 border rounded-xl px-5 py-3.5 text-lg font-bold tracking-wide focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 ${hallTicketError ? 'border-red-500' : 'border-white/10'}`}
+                    placeholder="23P81AXXXX"
                   />
+                  {hallTicketError && (
+                    <div className="text-red-400 text-xs font-bold mt-1">{hallTicketError}</div>
+                  )}
+                  {!hallTicketError && formData.hallTicket.length === 10 && isKMCEStudent(formData.hallTicket) && (
+                    <div className="text-green-400 text-xs font-bold mt-1 flex items-center gap-1">
+                      <span>✓</span> Valid KMCE Hall Ticket
+                    </div>
+                  )}
+                  <div className="text-[10px] text-slate-600 font-medium">Example: 23P81A6234 or 24P85A0511</div>
                 </div>
 
                 <div className="space-y-1.5">
