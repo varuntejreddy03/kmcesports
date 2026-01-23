@@ -6,9 +6,16 @@ import { supabase, checkSessionTimeout, clearSessionStartTime, getDepartmentGrou
 import { StudentData } from '@/types'
 import Link from 'next/link'
 
+const REGISTRATION_DEADLINE = new Date('2026-01-27T12:30:00')
+
+const isRegistrationClosed = () => {
+  return new Date() > REGISTRATION_DEADLINE
+}
+
 export default function CreateTeamPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [registrationClosed, setRegistrationClosed] = useState(false)
   const [captain, setCaptain] = useState<StudentData | null>(null)
   const [teamName, setTeamName] = useState('')
   const [selectedPlayers, setSelectedPlayers] = useState<StudentData[]>([])
@@ -45,6 +52,12 @@ export default function CreateTeamPage() {
 
   const init = async () => {
     try {
+      if (isRegistrationClosed()) {
+        setRegistrationClosed(true)
+        setLoading(false)
+        return
+      }
+
       const isExpired = checkSessionTimeout()
       if (isExpired) { router.push('/auth/login?expired=true'); return }
 
@@ -332,6 +345,19 @@ export default function CreateTeamPage() {
   if (loading) return (
     <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cricket-500"></div>
+    </div>
+  )
+
+  if (registrationClosed) return (
+    <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">
+      <div className="text-center px-4">
+        <div className="text-6xl mb-4">⏰</div>
+        <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">Registration <span className="text-red-500">Closed</span></h1>
+        <p className="text-slate-400 text-lg mb-6">The deadline was January 27, 2026 at 12:30 PM</p>
+        <Link href="/dashboard" className="inline-flex items-center gap-2 bg-cricket-500 hover:bg-cricket-600 text-white font-bold py-3 px-6 rounded-xl transition-colors min-h-[44px]">
+          ← Back to Dashboard
+        </Link>
+      </div>
     </div>
   )
 

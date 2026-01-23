@@ -6,11 +6,18 @@ import Link from 'next/link'
 import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import { StudentData, Team } from '@/types'
 
+const REGISTRATION_DEADLINE = new Date('2026-01-27T12:30:00')
+
+const isRegistrationClosed = () => {
+  return new Date() > REGISTRATION_DEADLINE
+}
+
 type RegistrationStatus = 'not_registered' | 'payment_pending' | 'approval_pending' | 'approved' | 'rejected'
 
 export default function Dashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [registrationClosed, setRegistrationClosed] = useState(false)
   const [student, setStudent] = useState<StudentData | null>(null)
   const [team, setTeam] = useState<Team | null>(null)
   const [teamPlayers, setTeamPlayers] = useState<any[]>([])
@@ -50,6 +57,8 @@ export default function Dashboard() {
 
   const checkUser = async () => {
     try {
+      setRegistrationClosed(isRegistrationClosed())
+
       const isExpired = checkSessionTimeout()
       if (isExpired) {
         router.push('/auth/login?expired=true')
@@ -206,17 +215,29 @@ export default function Dashboard() {
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-cricket-600 to-indigo-600 rounded-3xl md:rounded-[40px] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
             <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-12 rounded-3xl md:rounded-[40px] text-center">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-white/5 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-white/10">🏆</div>
-              <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">You're not in a team yet!</h2>
-              <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-10 text-sm md:text-lg">
-                Gather your department's finest players and lead them to glory. The championship awaits its next legend.
-              </p>
-              <Link
-                href="/team/create"
-                className="inline-flex items-center gap-2 md:gap-3 px-6 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-xl md:rounded-2xl font-black text-base md:text-xl hover:scale-[1.02] md:hover:scale-[1.05] transition-all shadow-xl shadow-cricket-600/30 min-h-[52px]"
-              >
-                Create Your Squad 🚀
-              </Link>
+              {registrationClosed ? (
+                <>
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-red-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-red-500/20">⏰</div>
+                  <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">Registration <span className="text-red-500">Closed</span></h2>
+                  <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-10 text-sm md:text-lg">
+                    The registration deadline was January 27, 2026 at 12:30 PM. You can no longer create or join a team.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-white/5 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-white/10">🏆</div>
+                  <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">You're not in a team yet!</h2>
+                  <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-10 text-sm md:text-lg">
+                    Gather your department's finest players and lead them to glory. The championship awaits its next legend.
+                  </p>
+                  <Link
+                    href="/team/create"
+                    className="inline-flex items-center gap-2 md:gap-3 px-6 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-xl md:rounded-2xl font-black text-base md:text-xl hover:scale-[1.02] md:hover:scale-[1.05] transition-all shadow-xl shadow-cricket-600/30 min-h-[52px]"
+                  >
+                    Create Your Squad 🚀
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         ) : (

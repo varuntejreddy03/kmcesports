@@ -45,7 +45,14 @@ To enable login/password tracking, add these columns to your student_data table 
 - `password_changed` (boolean, default false) - Whether default password was changed
 - `password_changed_at` (timestamptz) - When password was changed
 
+## Registration Deadline
+**Deadline: January 27, 2026 at 12:30 PM**
+- After this deadline, no new teams can be created
+- Users without teams will see "Registration Closed" message
+- Team creation page blocked with deadline notice
+
 ## Recent Changes
+- January 23, 2026: Added registration deadline (Jan 27, 2026 at 12:30 PM)
 - January 23, 2026: Added email notifications on team creation and payment confirmation
 - January 23, 2026: Email sent to 4 coordinators with full team data, phone numbers, and player details
 - January 23, 2026: Added animated "How It Works" guide section with 4 step cards
