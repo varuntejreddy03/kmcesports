@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendPaymentConfirmationEmail } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,45 @@ export async function POST(request: NextRequest) {
       if (pError) updateError = pError
       const { error: tError } = await supabase.from('teams').update({ approved: true }).eq('id', teamId)
       if (tError) updateError = tError
+
+      try {
+        const { data: team } = await supabase.from('teams').select('*').eq('id', teamId).single()
+        const { data: players } = await supabase.from('team_players').select('*').eq('team_id', teamId)
+        
+        if (team && players) {
+          const hallTickets = players.map(p => p.hall_ticket)
+          const { data: studentsData } = await supabase.from('student_data').select('*').in('hall_ticket', hallTickets)
+          
+          const captain = players.find(p => p.is_captain)
+          const captainStudent = studentsData?.find(s => s.hall_ticket === captain?.hall_ticket)
+
+          const teamData = {
+            teamName: team.name,
+            teamId: team.id,
+            department: team.department || 'Not specified',
+            captain: {
+              name: captainStudent?.student_name || 'Unknown',
+              hallTicket: captain?.hall_ticket || 'Unknown',
+              phone: captainStudent?.phone_number || 'Not provided'
+            },
+            players: players.map(p => {
+              const student = studentsData?.find(s => s.hall_ticket === p.hall_ticket)
+              return {
+                name: student?.student_name || 'Unknown',
+                hallTicket: p.hall_ticket,
+                phone: student?.phone_number || 'Not provided',
+                role: p.player_role || 'all-rounder',
+                isCaptain: p.is_captain
+              }
+            }),
+            paymentStatus: 'approved'
+          }
+
+          await sendPaymentConfirmationEmail(teamData)
+        }
+      } catch (emailErr) {
+        console.error('Failed to send payment confirmation email:', emailErr)
+      }
     } else if (action === 'approve_team') {
       const { error: tError } = await supabase.from('teams').update({ approved: true }).eq('id', teamId)
       if (tError) updateError = tError

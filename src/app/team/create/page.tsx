@@ -308,6 +308,15 @@ export default function CreateTeamPage() {
       if (playersError) throw playersError
 
       if (!isEditing) {
+        try {
+          await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teamId, type: 'team_creation', captainHallTicket: captain.hall_ticket })
+          })
+        } catch (emailErr) {
+          console.error('Failed to send team creation email:', emailErr)
+        }
         router.push(`/payment?teamId=${teamId}`)
       } else {
         setError('Team updated successfully!')
