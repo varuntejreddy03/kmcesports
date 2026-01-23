@@ -4,6 +4,21 @@ import { sendTeamCreationEmail, sendPaymentConfirmationEmail } from '@/lib/email
 
 export const dynamic = 'force-dynamic'
 
+const DEPARTMENT_CODES: Record<string, string> = {
+  '05': 'CSE',
+  '69': 'CSE',
+  '04': 'ECE',
+  '66': 'CSM',
+  '62': 'CSM',
+  '67': 'CSM',
+}
+
+function getDepartmentFromHallTicket(hallTicket: string): string {
+  if (!hallTicket || hallTicket.length < 8) return 'Unknown'
+  const code = hallTicket.substring(6, 8)
+  return DEPARTMENT_CODES[code] || 'Unknown'
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { teamId, type, captainHallTicket } = await request.json()
@@ -61,10 +76,12 @@ export async function POST(request: NextRequest) {
     const captain = players.find(p => p.is_captain)
     const captainStudent = studentsData?.find(s => s.hall_ticket === captain?.hall_ticket)
 
+    const captainDept = getDepartmentFromHallTicket(captain?.hall_ticket || '')
+    
     const teamData = {
       teamName: team.name,
       teamId: team.id,
-      department: team.department || 'Not specified',
+      department: captainDept,
       captain: {
         name: captainStudent?.name || 'Unknown',
         hallTicket: captain?.hall_ticket || 'Unknown',
