@@ -42,16 +42,16 @@ export async function POST(request: NextRequest) {
             teamId: team.id,
             department: team.department || 'Not specified',
             captain: {
-              name: captainStudent?.student_name || 'Unknown',
+              name: captainStudent?.name || 'Unknown',
               hallTicket: captain?.hall_ticket || 'Unknown',
-              phone: captainStudent?.phone_number || 'Not provided'
+              phone: captainStudent?.phone || 'Not provided'
             },
             players: players.map(p => {
               const student = studentsData?.find(s => s.hall_ticket === p.hall_ticket)
               return {
-                name: student?.student_name || 'Unknown',
+                name: student?.name || 'Unknown',
                 hallTicket: p.hall_ticket,
-                phone: student?.phone_number || 'Not provided',
+                phone: student?.phone || 'Not provided',
                 role: p.player_role || 'all-rounder',
                 isCaptain: p.is_captain
               }
