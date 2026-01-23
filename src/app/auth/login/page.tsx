@@ -51,17 +51,22 @@ function LoginContent() {
         return
       }
 
-      const { data: existingTeam } = await supabase
-        .from('team_players')
-        .select('team_id')
-        .eq('hall_ticket', data.hall_ticket)
-        .maybeSingle()
-
-      if (existingTeam) {
-        setPlayerRole(data.player_role || 'all-rounder')
+      if (data.player_role) {
+        setPlayerRole(data.player_role)
         setStep('password')
       } else {
-        setStep('verify_details')
+        const { data: existingTeam } = await supabase
+          .from('team_players')
+          .select('team_id')
+          .eq('hall_ticket', data.hall_ticket)
+          .maybeSingle()
+
+        if (existingTeam) {
+          setPlayerRole('all-rounder')
+          setStep('password')
+        } else {
+          setStep('verify_details')
+        }
       }
     } catch (err: any) {
       setError(err.message)
