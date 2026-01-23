@@ -46,6 +46,13 @@ To enable login/password tracking, add these columns to your student_data table 
 - `password_changed_at` (timestamptz) - When password was changed
 
 ## Recent Changes
+- January 23, 2026: Added animated "How It Works" guide section with 4 step cards
+- January 23, 2026: Added Guide button to navigation bar
+- January 23, 2026: Added scrolling announcement ticker with eligibility rules
+- January 23, 2026: Tournament format changed to 12 overs
+- January 23, 2026: Enhanced rules visibility with yellow theme and prominent buttons
+- January 23, 2026: Added UPI QR code to payment page with screenshot upload
+- January 23, 2026: Improved admin mobile view for payment proof viewing
 - January 23, 2026: Comprehensive mobile optimization across all pages
 - January 23, 2026: Added 44px+ minimum touch targets for all interactive elements
 - January 23, 2026: Responsive typography with mobile-first breakpoints (text-base md:text-lg)
