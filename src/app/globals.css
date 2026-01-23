@@ -31,9 +31,28 @@
   }
 
   body {
-    @apply transition-colors duration-300;
+    @apply transition-colors duration-300 font-bold;
     background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    color: white;
+  }
+
+  * {
+    color: inherit;
+    font-weight: inherit;
+  }
+
+  h1, h2, h3, h4, h5, h6, p, span, label, a, div, li, td, th {
+    color: white;
+    font-weight: bold;
+  }
+
+  input, textarea, select {
+    color: white;
+    font-weight: bold;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: rgba(255, 255, 255, 0.6);
   }
 }
 

@@ -24,8 +24,6 @@ export default function CreateTeamPage() {
   const [existingTeamId, setExistingTeamId] = useState<string | null>(null)
   const [captainDeptGroup, setCaptainDeptGroup] = useState<DepartmentGroup>(null)
   const [captainDeptInfo, setCaptainDeptInfo] = useState<{ code: string; name: string; shortName: string } | null>(null)
-  const [showDeptSelectionModal, setShowDeptSelectionModal] = useState(false)
-  const [isECECaptain, setIsECECaptain] = useState(false)
   const [showAddPlayerForm, setShowAddPlayerForm] = useState(false)
   const [newPlayerHallTicket, setNewPlayerHallTicket] = useState('')
   const [newPlayerName, setNewPlayerName] = useState('')
@@ -72,14 +70,8 @@ export default function CreateTeamPage() {
         return
       }
 
-      // If ECE captain (eligible for both groups), show selection modal
-      if (deptGroupResult === 'BOTH') {
-        setIsECECaptain(true)
-        setShowDeptSelectionModal(true)
-        // Don't set captainDeptGroup yet - wait for selection
-      } else {
-        setCaptainDeptGroup(deptGroupResult)
-      }
+      // Set captain's department group directly
+      setCaptainDeptGroup(deptGroupResult)
 
       const { data: teamData } = await supabase.from('teams').select('*').eq('captain_id', currentStudent.hall_ticket).maybeSingle()
 
@@ -382,7 +374,7 @@ export default function CreateTeamPage() {
                   <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-3 md:p-4 rounded-xl md:rounded-2xl">
                     <div className="text-[10px] md:text-xs font-black uppercase tracking-widest text-indigo-400 mb-0.5 md:mb-1">Team Department</div>
                     <div className="text-sm md:text-lg font-black text-white">{captainDeptGroup} Department</div>
-                    <div className="text-[9px] md:text-[10px] text-slate-400 mt-0.5 md:mt-1">Only {captainDeptGroup === 'CSE' ? 'CSE, CSO, ECE' : 'CSM, CSC, CSD, ECE'} can join</div>
+                    <div className="text-[9px] md:text-[10px] text-slate-400 mt-0.5 md:mt-1">Only {captainDeptGroup === 'CSE' ? 'CSE, CSO' : captainDeptGroup === 'CSM' ? 'CSM, CSC, CSD' : 'ECE'} students can join</div>
                   </div>
                 )}
               </div>
@@ -568,39 +560,6 @@ export default function CreateTeamPage() {
         </div>
       )}
 
-      {/* Department Selection Modal for ECE Captains */}
-      {showDeptSelectionModal && isECECaptain && (
-        <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-md flex items-end md:items-center justify-center z-[100] p-0 md:p-4">
-          <div className="bg-[#1e293b] border border-white/10 rounded-t-3xl md:rounded-[40px] p-6 md:p-8 max-w-md w-full shadow-2xl">
-            <h3 className="text-xl md:text-2xl font-black mb-1 md:mb-2 text-center uppercase tracking-tighter">Select Department</h3>
-            <p className="text-slate-400 text-center text-xs md:text-sm mb-1 md:mb-2 font-medium">As an ECE student, you can create a team in either department.</p>
-            <p className="text-indigo-400 text-center text-[10px] md:text-xs mb-6 md:mb-8 font-bold">Choose the department for your team:</p>
-
-            <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
-              <button
-                onClick={() => {
-                  setCaptainDeptGroup('CSE')
-                  setShowDeptSelectionModal(false)
-                }}
-                className="w-full py-4 md:py-5 px-4 md:px-6 rounded-xl md:rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-indigo-600/20 hover:border-indigo-500/50 transition-all min-h-[64px]"
-              >
-                <div className="text-base md:text-lg text-white mb-0.5 md:mb-1">CSE Department</div>
-                <div className="text-[9px] md:text-[10px] text-slate-400">Includes: CSE, CSO, ECE students</div>
-              </button>
-              <button
-                onClick={() => {
-                  setCaptainDeptGroup('CSM')
-                  setShowDeptSelectionModal(false)
-                }}
-                className="w-full py-4 md:py-5 px-4 md:px-6 rounded-xl md:rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-purple-600/20 hover:border-purple-500/50 transition-all min-h-[64px]"
-              >
-                <div className="text-base md:text-lg text-white mb-0.5 md:mb-1">CSM Department</div>
-                <div className="text-[9px] md:text-[10px] text-slate-400">Includes: CSM, CSC, CSD, ECE students</div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -59,11 +59,12 @@ export const DEPARTMENT_CODES: Record<string, { name: string; shortName: string 
   '67': { name: 'Computer Science and Engineering (Data Science)', shortName: 'CSD' },
 }
 
-// Department groups
-export const CSE_GROUP_CODES = ['05', '69', '04'] // CSE, CSO, ECE
-export const CSM_GROUP_CODES = ['66', '62', '67', '04'] // CSM, CSC, CSD, ECE
+// Department groups - ECE (04) is now a separate group
+export const CSE_GROUP_CODES = ['05', '69'] // CSE, CSO
+export const CSM_GROUP_CODES = ['66', '62', '67'] // CSM, CSC, CSD
+export const ECE_GROUP_CODES = ['04'] // ECE
 
-export type DepartmentGroup = 'CSE' | 'CSM' | null
+export type DepartmentGroup = 'CSE' | 'CSM' | 'ECE' | null
 
 // Extract department code from roll number (characters at position 7 and 8, i.e., index 6 and 7)
 export const extractDeptCode = (rollNumber: string): string | null => {
@@ -79,14 +80,13 @@ export const getDepartmentInfo = (rollNumber: string): { code: string; name: str
 }
 
 // Determine which department group a student belongs to based on roll number
-// Returns 'BOTH' for ECE (04) since they can be in either group
-export const getDepartmentGroup = (rollNumber: string): DepartmentGroup | 'BOTH' => {
+export const getDepartmentGroup = (rollNumber: string): DepartmentGroup => {
   const code = extractDeptCode(rollNumber)
   if (!code) return null
   
-  // ECE (04) is in both groups - let them choose
-  if (code === '04') {
-    return 'BOTH'
+  // ECE is its own group
+  if (ECE_GROUP_CODES.includes(code)) {
+    return 'ECE'
   }
   
   // Check CSE group (CSE, CSO)
@@ -114,6 +114,9 @@ export const isEligibleForGroup = (rollNumber: string, group: DepartmentGroup): 
   if (group === 'CSM') {
     return CSM_GROUP_CODES.includes(code)
   }
+  if (group === 'ECE') {
+    return ECE_GROUP_CODES.includes(code)
+  }
   return false
 }
 
@@ -121,6 +124,7 @@ export const isEligibleForGroup = (rollNumber: string, group: DepartmentGroup): 
 export const getEligibleCodesForGroup = (group: DepartmentGroup): string[] => {
   if (group === 'CSE') return CSE_GROUP_CODES
   if (group === 'CSM') return CSM_GROUP_CODES
+  if (group === 'ECE') return ECE_GROUP_CODES
   return []
 }
 
