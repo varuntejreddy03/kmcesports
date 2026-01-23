@@ -137,49 +137,49 @@ export default function StudentRegisterPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12 bg-[#0f172a]">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-12 bg-[#0f172a]">
         <div className="max-w-md w-full">
-          <div className="md:hidden text-center mb-8">
-            <Link href="/" className="inline-flex items-center gap-3 group mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-2xl">🏏</span>
+          <div className="md:hidden text-center mb-6">
+            <Link href="/" className="inline-flex items-center gap-2 group mb-3 min-h-[44px]">
+              <div className="w-10 h-10 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-xl">🏏</span>
               </div>
-              <span className="font-black text-2xl tracking-tight">
+              <span className="font-black text-xl tracking-tight">
                 KMCE<span className="text-cricket-500">Cricket</span>
               </span>
             </Link>
           </div>
 
-          <div className="mb-8">
-            <div className="inline-block px-4 py-1.5 bg-cricket-600/20 border border-cricket-600/30 rounded-full text-cricket-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+          <div className="mb-6 md:mb-8">
+            <div className="inline-block px-3 md:px-4 py-1 md:py-1.5 bg-cricket-600/20 border border-cricket-600/30 rounded-full text-cricket-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] mb-3 md:mb-4">
               New Player
             </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2 uppercase">
+            <h1 className="text-2xl md:text-4xl font-black tracking-tight mb-1.5 md:mb-2 uppercase">
               Player Registration
             </h1>
-            <p className="text-slate-400 font-medium text-sm">
+            <p className="text-slate-400 font-medium text-xs md:text-sm">
               Register to join the cricket championship
             </p>
           </div>
 
           {success ? (
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-10 text-center">
-              <div className="text-6xl mb-6">🎉</div>
-              <h2 className="text-2xl font-black uppercase mb-3 text-white">Registration Successful!</h2>
-              <p className="text-slate-400 mb-6">Redirecting you to login...</p>
-              <div className="w-20 h-1 bg-gradient-to-r from-cricket-500 to-indigo-500 mx-auto rounded-full"></div>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[32px] p-8 md:p-10 text-center">
+              <div className="text-5xl md:text-6xl mb-4 md:mb-6">🎉</div>
+              <h2 className="text-xl md:text-2xl font-black uppercase mb-2 md:mb-3 text-white">Registration Successful!</h2>
+              <p className="text-slate-400 mb-4 md:mb-6 text-sm">Redirecting you to login...</p>
+              <div className="w-16 md:w-20 h-1 bg-gradient-to-r from-cricket-500 to-indigo-500 mx-auto rounded-full"></div>
             </div>
           ) : (
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 md:p-8 shadow-2xl">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[32px] p-5 md:p-8 shadow-2xl">
               {error && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold text-center flex items-center justify-center gap-2">
+                <div className="mb-5 md:mb-6 p-3 md:p-4 bg-red-500/10 border border-red-500/20 rounded-xl md:rounded-2xl text-red-400 text-xs md:text-sm font-bold text-center flex items-center justify-center gap-2">
                   <span>⚠️</span> {error}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Hall Ticket ID</label>
+                  <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">Hall Ticket ID</label>
                   <input
                     type="text"
                     name="hallTicket"
@@ -188,41 +188,41 @@ export default function StudentRegisterPage() {
                     maxLength={10}
                     value={formData.hallTicket}
                     onChange={handleChange}
-                    className={`w-full bg-white/5 border rounded-xl px-5 py-3.5 text-lg font-bold tracking-wide focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 ${hallTicketError ? 'border-red-500' : 'border-white/10'}`}
+                    className={`w-full bg-white/5 border rounded-lg md:rounded-xl px-4 md:px-5 py-3 md:py-3.5 text-base md:text-lg font-bold tracking-wide focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 min-h-[48px] ${hallTicketError ? 'border-red-500' : 'border-white/10'}`}
                     placeholder="23P81AXXXX"
                   />
                   {hallTicketError && (
-                    <div className="text-red-400 text-xs font-bold mt-1">{hallTicketError}</div>
+                    <div className="text-red-400 text-[10px] md:text-xs font-bold mt-1">{hallTicketError}</div>
                   )}
                   {!hallTicketError && formData.hallTicket.length === 10 && isKMCEStudent(formData.hallTicket) && (
-                    <div className="text-green-400 text-xs font-bold mt-1 flex items-center gap-1">
+                    <div className="text-green-400 text-[10px] md:text-xs font-bold mt-1 flex items-center gap-1">
                       <span>✓</span> Valid KMCE Hall Ticket
                     </div>
                   )}
-                  <div className="text-[10px] text-slate-600 font-medium">Example: 23P81A6234 or 24P85A0511</div>
+                  <div className="text-[9px] md:text-[10px] text-slate-600 font-medium">Example: 23P81A6234</div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Full Name</label>
+                  <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">Full Name</label>
                   <input
                     type="text"
                     name="name"
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-4 md:px-5 py-3 md:py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 min-h-[48px]"
                     placeholder="Your full name"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 md:gap-3">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Year</label>
+                    <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">Year</label>
                     <select
                       name="year"
                       value={formData.year}
                       onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-3 md:px-5 py-3 md:py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all appearance-none cursor-pointer min-h-[48px]"
                     >
                       <option value="4th" className="bg-slate-900">4th Year</option>
                       <option value="3rd" className="bg-slate-900">3rd Year</option>
@@ -232,21 +232,21 @@ export default function StudentRegisterPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Phone</label>
+                    <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">Phone</label>
                     <input
                       type="tel"
                       name="phone"
                       required
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg md:rounded-xl px-4 md:px-5 py-3 md:py-3.5 font-bold focus:ring-2 focus:ring-cricket-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 min-h-[48px]"
                       placeholder="9876543210"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Playing Role</label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest">Playing Role</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { id: 'batsman', label: 'Batsman', icon: '🏏' },
@@ -258,14 +258,14 @@ export default function StudentRegisterPage() {
                         key={role.id}
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, playerRole: role.id }))}
-                        className={`py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wide border transition-all flex items-center justify-center gap-2 ${
+                        className={`py-2.5 md:py-3 px-2 md:px-3 rounded-lg md:rounded-xl text-[9px] md:text-xs font-black uppercase tracking-wide border transition-all flex items-center justify-center gap-1 md:gap-2 min-h-[44px] ${
                           formData.playerRole === role.id 
                             ? 'bg-gradient-to-r from-cricket-600 to-indigo-600 border-cricket-400 text-white shadow-lg shadow-cricket-600/30' 
                             : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
                         }`}
                       >
                         <span>{role.icon}</span>
-                        {role.label}
+                        <span className="truncate">{role.label}</span>
                       </button>
                     ))}
                   </div>
@@ -274,7 +274,7 @@ export default function StudentRegisterPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-5 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-2xl font-black text-lg hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-2"
+                  className="w-full py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-xl md:rounded-2xl font-black text-base md:text-lg hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 mt-2 min-h-[52px]"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -290,8 +290,8 @@ export default function StudentRegisterPage() {
                 </button>
               </form>
 
-              <div className="mt-6 pt-6 border-t border-white/10 text-center">
-                <p className="text-slate-500 text-sm">
+              <div className="mt-5 md:mt-6 pt-5 md:pt-6 border-t border-white/10 text-center">
+                <p className="text-slate-500 text-xs md:text-sm">
                   Already have an account?{' '}
                   <Link href="/auth/login" className="text-cricket-400 hover:text-white font-bold transition-colors">
                     Sign in
@@ -301,8 +301,8 @@ export default function StudentRegisterPage() {
             </div>
           )}
 
-          <div className="mt-6 text-center">
-            <Link href="/" className="text-slate-600 text-xs font-bold hover:text-slate-400 transition-colors">
+          <div className="mt-5 md:mt-6 text-center">
+            <Link href="/" className="text-slate-600 text-xs font-bold hover:text-slate-400 transition-colors min-h-[44px] inline-flex items-center">
               ← Back to Home
             </Link>
           </div>

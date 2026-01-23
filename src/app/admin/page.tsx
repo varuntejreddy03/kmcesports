@@ -238,45 +238,49 @@ export default function AdminPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] text-white selection:bg-cricket-500/30 pb-20">
+    <div className="min-h-screen bg-[#0a0f1a] text-white selection:bg-cricket-500/30 pb-24 md:pb-20">
       {/* Admin Navbar */}
-      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0a0f1a]/80">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors">
-              <span>←</span> Home
+      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0a0f1a]/90">
+        <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-6">
+            <Link href="/" className="text-slate-400 hover:text-white font-bold text-xs md:text-sm flex items-center gap-1.5 transition-colors min-h-[44px]">
+              <span>←</span> <span className="hidden sm:inline">Home</span>
             </Link>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🏏</span>
-              <span className="font-black text-xl tracking-tight">KMCE<span className="text-cricket-500">Cricket</span></span>
-              <span className="ml-2 px-2 py-0.5 bg-cricket-500/20 rounded text-[10px] font-black uppercase tracking-widest text-cricket-400 border border-cricket-500/30">Admin</span>
+            <div className="flex items-center gap-1.5 md:gap-2">
+              <span className="text-lg md:text-2xl">🏏</span>
+              <span className="font-black text-base md:text-xl tracking-tight">KMCE<span className="text-cricket-500">Cricket</span></span>
+              <span className="ml-1 md:ml-2 px-1.5 md:px-2 py-0.5 bg-cricket-500/20 rounded text-[8px] md:text-[10px] font-black uppercase tracking-widest text-cricket-400 border border-cricket-500/30">Admin</span>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/admin/tournament-settings" className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10">⚙️ Settings</Link>
+          <div className="flex items-center gap-2 md:gap-4">
+            <Link href="/admin/tournament-settings" className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center">
+              <span className="md:hidden">⚙️</span>
+              <span className="hidden md:inline">⚙️ Settings</span>
+            </Link>
             <button
               onClick={async () => { clearSessionStartTime(); await supabase.auth.signOut(); router.push('/') }}
-              className="px-4 py-2 text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all"
+              className="px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all min-h-[44px] flex items-center"
             >
-              Logout
+              <span className="hidden sm:inline">Logout</span>
+              <span className="sm:hidden">Exit</span>
             </button>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 mt-12">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+      <main className="max-w-7xl mx-auto px-3 md:px-4 mt-6 md:mt-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-12 gap-4 md:gap-6">
           <div>
-            <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-2">Governance Console</div>
-            <h1 className="text-5xl font-black tracking-tighter uppercase italic leading-none">Management Center</h1>
+            <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2">Governance Console</div>
+            <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase italic leading-none">Management Center</h1>
           </div>
 
-          <div className="flex bg-white/5 border border-white/10 p-1 rounded-2xl overflow-hidden backdrop-blur-xl">
+          <div className="flex bg-white/5 border border-white/10 p-0.5 md:p-1 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-xl w-full md:w-auto">
             {['pending', 'approved', 'all'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f as any)}
-                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === f ? 'bg-cricket-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                className={`flex-1 md:flex-none px-4 md:px-6 py-2.5 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[44px] ${filter === f ? 'bg-cricket-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
               >
                 {f}
               </button>
@@ -434,26 +438,26 @@ export default function AdminPage() {
         </div>
 
         {/* Teams - Mobile Card View */}
-        <div className="lg:hidden space-y-4">
+        <div className="lg:hidden space-y-3 md:space-y-4">
           {filteredTeams.map((team) => (
-            <div key={team.id} className="bg-white/5 border border-white/10 rounded-[32px] p-6 space-y-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="font-black text-xl uppercase italic group-hover:text-cricket-400 transition-colors tracking-tight leading-none mb-1">{team.name || 'UNNAMED SQUAD'}</div>
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">{team.playerCount || 0} ATHLETES • {team.sport}</div>
+            <div key={team.id} className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] p-4 md:p-6 space-y-4 md:space-y-6">
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-black text-base md:text-xl uppercase italic group-hover:text-cricket-400 transition-colors tracking-tight leading-none mb-1 truncate">{team.name || 'UNNAMED SQUAD'}</div>
+                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest italic">{team.playerCount || 0} ATHLETES • {team.sport}</div>
                 </div>
-                <div onClick={() => toggleTeamDetails(team.id)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-lg active:scale-95 transition-all text-white">
-                  {expandedTeamId === team.id ? '🔼' : '🔽'}
+                <div onClick={() => toggleTeamDetails(team.id)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-base active:scale-95 transition-all text-white flex-shrink-0 min-h-[44px] min-w-[44px]">
+                  {expandedTeamId === team.id ? '▲' : '▼'}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Leader</div>
-                  <div className="text-xs font-black uppercase italic truncate">{team.captain?.name}</div>
+              <div className="grid grid-cols-2 gap-2 md:gap-4">
+                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5">
+                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Leader</div>
+                  <div className="text-[11px] md:text-xs font-black uppercase italic truncate">{team.captain?.name}</div>
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Decision</div>
+                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5">
+                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Decision</div>
                   <div className={`text-[10px] font-black uppercase tracking-widest ${team.approved ? 'text-green-400' : 'text-yellow-500'}`}>
                     {team.approved ? 'Approved' : 'Pending'}
                   </div>
@@ -461,12 +465,12 @@ export default function AdminPage() {
               </div>
 
               {team.payment && (
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Payment Audit</div>
-                    <div className="text-xs font-mono font-bold text-slate-400 uppercase tracking-tighter truncate">{team.payment.utr_number}</div>
+                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Payment</div>
+                    <div className="text-[10px] md:text-xs font-mono font-bold text-slate-400 uppercase tracking-tighter truncate">{team.payment.utr_number}</div>
                   </div>
-                  <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
+                  <div className={`px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border flex-shrink-0 ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' : team.payment.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
                     {team.payment.status}
                   </div>
                 </div>
@@ -509,124 +513,124 @@ export default function AdminPage() {
         </div>
 
         {/* Match Scheduling Section */}
-        <div className="mt-20">
-          <div className="flex justify-between items-end mb-8">
+        <div className="mt-12 md:mt-20">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 md:mb-8">
             <div>
-              <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-2">Tournament Ops</div>
-              <h1 className="text-4xl font-black tracking-tighter uppercase italic leading-none">Match Schedule</h1>
+              <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2">Tournament Ops</div>
+              <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic leading-none">Match Schedule</h1>
             </div>
             <button
               onClick={() => setShowScheduleForm(!showScheduleForm)}
-              className="px-8 py-3 bg-cricket-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-cricket-600/30 hover:scale-105 transition-all"
+              className="w-full sm:w-auto px-6 md:px-8 py-3 bg-cricket-600 text-white rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest shadow-lg shadow-cricket-600/30 hover:scale-105 transition-all min-h-[44px]"
             >
-              {showScheduleForm ? 'Close Manager' : 'Schedule New Match 📅'}
+              {showScheduleForm ? 'Close' : 'Schedule Match 📅'}
             </button>
           </div>
 
           {showScheduleForm && (
-            <div className="bg-white/5 border border-white/10 p-8 rounded-[40px] mb-12 animate-fadeIn">
-              <form onSubmit={handleScheduleMatch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Team A (Home)</label>
+            <div className="bg-white/5 border border-white/10 p-4 md:p-8 rounded-2xl md:rounded-[40px] mb-8 md:mb-12 animate-fadeIn">
+              <form onSubmit={handleScheduleMatch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Team A (Home)</label>
                   <select
                     required
                     value={newMatch.team_a_id}
                     onChange={(e) => setNewMatch({ ...newMatch, team_a_id: e.target.value })}
-                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[44px]"
                   >
                     <option value="">Select Team</option>
                     {teams.filter(t => t.approved).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Team B (Away)</label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Team B (Away)</label>
                   <select
                     required
                     value={newMatch.team_b_id}
                     onChange={(e) => setNewMatch({ ...newMatch, team_b_id: e.target.value })}
-                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[44px]"
                   >
                     <option value="">Select Team</option>
                     {teams.filter(t => t.approved).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Venue</label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Venue</label>
                   <input
                     required
                     type="text"
                     value={newMatch.venue}
                     onChange={(e) => setNewMatch({ ...newMatch, venue: e.target.value })}
-                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[44px]"
                     placeholder="e.g. Main Stadium Ground"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</label>
                   <input
                     required
                     type="date"
                     value={newMatch.match_date}
                     onChange={(e) => setNewMatch({ ...newMatch, match_date: e.target.value })}
-                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[44px]"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</label>
                   <input
                     required
                     type="time"
                     value={newMatch.match_time}
                     onChange={(e) => setNewMatch({ ...newMatch, match_time: e.target.value })}
-                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[44px]"
                   />
                 </div>
-                <div className="flex items-end">
-                  <button type="submit" className="w-full py-3 bg-white text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-cricket-500 transition-all shadow-lg active:scale-95">Confirm Schedule 🚀</button>
+                <div className="flex items-end sm:col-span-2 lg:col-span-1">
+                  <button type="submit" className="w-full py-3 bg-white text-black rounded-xl font-black text-xs uppercase tracking-widest hover:bg-cricket-500 transition-all shadow-lg active:scale-95 min-h-[44px]">Schedule 🚀</button>
                 </div>
               </form>
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mt-8 md:mt-12">
             {matches.map((match) => (
-              <div key={match.id} className="bg-white/5 border border-white/10 p-8 rounded-[40px] relative overflow-hidden group hover:bg-white/[0.08] transition-all">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="text-[10px] font-black text-cricket-400 uppercase tracking-widest bg-cricket-500/10 px-4 py-2 rounded-full border border-cricket-500/20">
+              <div key={match.id} className="bg-white/5 border border-white/10 p-5 md:p-8 rounded-2xl md:rounded-[40px] relative overflow-hidden group hover:bg-white/[0.08] transition-all">
+                <div className="flex justify-between items-start mb-5 md:mb-8">
+                  <div className="text-[9px] md:text-[10px] font-black text-cricket-400 uppercase tracking-widest bg-cricket-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-cricket-500/20">
                     {new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                   </div>
                   <button
                     onClick={() => deleteMatch(match.id)}
-                    className="w-8 h-8 bg-red-500/10 text-red-400 rounded-xl flex items-center justify-center text-xs hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                    className="w-11 h-11 md:w-11 md:h-11 bg-red-500/10 text-red-400 rounded-xl flex items-center justify-center text-xs hover:bg-red-500 hover:text-white transition-all shadow-lg min-h-[44px] min-w-[44px]"
                   >
                     ✕
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between gap-6 mb-10">
-                  <div className="flex-1 text-center">
-                    <div className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-1">Home</div>
-                    <div className="text-xl font-black uppercase italic text-white leading-tight">{match.team_a?.name}</div>
+                <div className="flex items-center justify-between gap-3 md:gap-6 mb-6 md:mb-10">
+                  <div className="flex-1 text-center min-w-0">
+                    <div className="text-[9px] md:text-[10px] text-white/40 font-black uppercase tracking-widest mb-0.5 md:mb-1">Home</div>
+                    <div className="text-sm md:text-xl font-black uppercase italic text-white leading-tight truncate">{match.team_a?.name}</div>
                   </div>
-                  <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 text-[9px] font-black text-cricket-500 italic">VS</div>
-                  <div className="flex-1 text-center">
-                    <div className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-1">Away</div>
-                    <div className="text-xl font-black uppercase italic text-white leading-tight">{match.team_b?.name}</div>
+                  <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 text-[8px] md:text-[9px] font-black text-cricket-500 italic flex-shrink-0">VS</div>
+                  <div className="flex-1 text-center min-w-0">
+                    <div className="text-[9px] md:text-[10px] text-white/40 font-black uppercase tracking-widest mb-0.5 md:mb-1">Away</div>
+                    <div className="text-sm md:text-xl font-black uppercase italic text-white leading-tight truncate">{match.team_b?.name}</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">🕒 {match.match_time.slice(0, 5)}</div>
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">📍 {match.venue}</div>
+                <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-white/5 gap-2">
+                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">🕒 {match.match_time.slice(0, 5)}</div>
+                  <div className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">📍 {match.venue}</div>
                 </div>
               </div>
             ))}
           </div>
 
           {matches.length === 0 && (
-            <div className="bg-white/5 border border-white/10 rounded-[32px] p-12 text-center">
+            <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] p-8 md:p-12 text-center">
               <div className="text-2xl opacity-30 mb-2">📅</div>
-              <div className="text-xs font-black text-slate-600 uppercase tracking-widest">No matches scheduled yet</div>
+              <div className="text-[10px] md:text-xs font-black text-slate-600 uppercase tracking-widest">No matches scheduled yet</div>
             </div>
           )}
         </div>

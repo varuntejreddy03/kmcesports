@@ -335,125 +335,128 @@ export default function CreateTeamPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white selection:bg-cricket-500/30 pb-20">
-      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0f172a]/80">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/dashboard" className="text-cricket-400 font-bold flex items-center gap-2"><span>←</span> Dashboard</Link>
-          <div className="font-black text-xl tracking-tighter uppercase italic">{isEditing ? 'Edit' : 'Create'}<span className="text-cricket-500">Team</span></div>
+    <div className="min-h-screen bg-[#0f172a] text-white selection:bg-cricket-500/30 pb-24 md:pb-20">
+      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0f172a]/90">
+        <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
+          <Link href="/dashboard" className="text-cricket-400 font-bold flex items-center gap-1.5 min-h-[44px] text-sm"><span>←</span> <span className="hidden sm:inline">Dashboard</span><span className="sm:hidden">Back</span></Link>
+          <div className="font-black text-base md:text-xl tracking-tighter uppercase italic">{isEditing ? 'Edit' : 'Create'}<span className="text-cricket-500">Team</span></div>
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-4 mt-12">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-black mb-2 tracking-tight">Recruit Your <span className="text-cricket-500">Legends</span></h1>
-          <p className="text-slate-400 font-medium">Build a squad of 11-15 players to compete in the championship.</p>
+      <main className="max-w-6xl mx-auto px-3 md:px-4 mt-6 md:mt-12">
+        <div className="mb-6 md:mb-12">
+          <h1 className="text-2xl md:text-5xl font-black mb-1 md:mb-2 tracking-tight">Recruit Your <span className="text-cricket-500">Legends</span></h1>
+          <p className="text-slate-400 font-medium text-sm md:text-base">Build a squad of 11-15 players to compete.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           {/* Main Form Area */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-[40px] relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-cricket-500/10 blur-3xl rounded-full"></div>
-              <h3 className="text-2xl font-black mb-6 border-b border-white/5 pb-4 uppercase tracking-widest text-cricket-400">Team Identity</h3>
-              <div className="space-y-6">
+          <div className="lg:col-span-2 space-y-6 md:space-y-8">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 md:p-8 rounded-2xl md:rounded-[40px] relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 md:w-32 h-24 md:h-32 bg-cricket-500/10 blur-3xl rounded-full"></div>
+              <h3 className="text-base md:text-2xl font-black mb-4 md:mb-6 border-b border-white/5 pb-3 md:pb-4 uppercase tracking-widest text-cricket-400">Team Identity</h3>
+              <div className="space-y-4 md:space-y-6">
                 <div>
-                  <label className="block text-sm font-bold text-slate-400 mb-2">Team Name</label>
+                  <label className="block text-xs md:text-sm font-bold text-slate-400 mb-1.5 md:mb-2">Team Name</label>
                   <input
                     type="text"
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl font-black focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-700"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-4 md:px-6 py-3 md:py-4 text-base md:text-xl font-black focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-700"
                     placeholder="e.g. THUNDERING TITANS"
                   />
                 </div>
-                <div className="bg-white/5 border border-white/5 p-6 rounded-3xl">
-                  <div className="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Team Lead</div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-xl font-black">{captain?.name}</div>
+                <div className="bg-white/5 border border-white/5 p-4 md:p-6 rounded-xl md:rounded-3xl">
+                  <div className="text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-500 mb-1.5 md:mb-2">Team Lead</div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-base md:text-xl font-black truncate">{captain?.name}</div>
                       {captainDeptInfo && (
-                        <div className="text-xs text-slate-400 mt-1">{captainDeptInfo.shortName} • {captain?.hall_ticket}</div>
+                        <div className="text-[10px] md:text-xs text-slate-400 mt-0.5 md:mt-1 truncate">{captainDeptInfo.shortName} • {captain?.hall_ticket}</div>
                       )}
                     </div>
-                    <span className="px-3 py-1 bg-cricket-500 text-black text-[10px] font-black rounded-lg">CAPTAIN</span>
+                    <span className="px-2 md:px-3 py-1 bg-cricket-500 text-black text-[9px] md:text-[10px] font-black rounded-md md:rounded-lg flex-shrink-0">CAPTAIN</span>
                   </div>
                 </div>
                 {captainDeptGroup && (
-                  <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-4 rounded-2xl mt-4">
-                    <div className="text-xs font-black uppercase tracking-widest text-indigo-400 mb-1">Team Department</div>
-                    <div className="text-lg font-black text-white">{captainDeptGroup} Department</div>
-                    <div className="text-[10px] text-slate-400 mt-1">Only {captainDeptGroup === 'CSE' ? 'CSE, CSO, ECE' : 'CSM, CSC, CSD, ECE'} students can join this team</div>
+                  <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-3 md:p-4 rounded-xl md:rounded-2xl">
+                    <div className="text-[10px] md:text-xs font-black uppercase tracking-widest text-indigo-400 mb-0.5 md:mb-1">Team Department</div>
+                    <div className="text-sm md:text-lg font-black text-white">{captainDeptGroup} Department</div>
+                    <div className="text-[9px] md:text-[10px] text-slate-400 mt-0.5 md:mt-1">Only {captainDeptGroup === 'CSE' ? 'CSE, CSO, ECE' : 'CSM, CSC, CSD, ECE'} can join</div>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-[40px] p-8">
-              <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-                <h3 className="text-2xl font-black uppercase tracking-widest text-cricket-400">Current Squad</h3>
+            <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] p-4 md:p-8">
+              <div className="flex justify-between items-center mb-4 md:mb-8 border-b border-white/5 pb-3 md:pb-4">
+                <h3 className="text-base md:text-2xl font-black uppercase tracking-widest text-cricket-400">Squad</h3>
                 <div className="flex flex-col items-end">
-                  <span className={`text-xl font-black ${selectedPlayers.length + 1 >= 11 ? 'text-green-400' : 'text-orange-500'}`}>
-                    {selectedPlayers.length + 1}/15 Players
+                  <span className={`text-lg md:text-xl font-black ${selectedPlayers.length + 1 >= 11 ? 'text-green-400' : 'text-orange-500'}`}>
+                    {selectedPlayers.length + 1}/15
                   </span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                    {15 - (selectedPlayers.length + 1)} slots remaining
+                  <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    {15 - (selectedPlayers.length + 1)} slots left
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {selectedPlayers.map((p, idx) => {
                   const playerDept = getDepartmentInfo(p.hall_ticket)
                   return (
-                    <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between group">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-black text-slate-400">{idx + 2}</div>
-                        <div>
-                          <div className="font-black uppercase italic tracking-tight">{p.name}</div>
-                          <div className="text-[10px] text-slate-500 font-bold">{p.hall_ticket} • {playerDept?.shortName} • {p.player_role}</div>
+                    <div key={idx} className="bg-white/5 border border-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl flex items-center justify-between group gap-2">
+                      <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
+                        <div className="w-8 h-8 md:w-10 md:h-10 bg-white/10 rounded-lg md:rounded-xl flex items-center justify-center font-black text-slate-400 text-sm md:text-base flex-shrink-0">{idx + 2}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-black uppercase italic tracking-tight text-sm md:text-base truncate">{p.name}</div>
+                          <div className="text-[9px] md:text-[10px] text-slate-500 font-bold truncate">{p.hall_ticket} • {playerDept?.shortName} • {p.player_role}</div>
                         </div>
                       </div>
                       {!isEditing && (
-                        <button onClick={() => setSelectedPlayers(prev => prev.filter(p2 => p2.hall_ticket !== p.hall_ticket))} className="text-red-500 hover:text-red-400 text-sm font-bold px-4 py-2 hover:bg-red-500/10 rounded-xl transition-all">Remove</button>
+                        <button onClick={() => setSelectedPlayers(prev => prev.filter(p2 => p2.hall_ticket !== p.hall_ticket))} className="text-red-500 hover:text-red-400 text-xs md:text-sm font-bold px-2 md:px-4 py-2 hover:bg-red-500/10 rounded-lg md:rounded-xl transition-all flex-shrink-0 min-h-[44px]">
+                          <span className="hidden sm:inline">Remove</span>
+                          <span className="sm:hidden">✕</span>
+                        </button>
                       )}
                     </div>
                   )
                 })}
                 {selectedPlayers.length === 0 && (
-                  <div className="text-center py-12 text-slate-600 font-bold border-2 border-dashed border-white/5 rounded-3xl">No recruits added yet. Browse the student list.</div>
+                  <div className="text-center py-8 md:py-12 text-slate-600 font-bold border-2 border-dashed border-white/5 rounded-xl md:rounded-3xl text-sm md:text-base">No recruits added yet</div>
                 )}
               </div>
             </div>
           </div>
 
           {/* Recruitment Sidebar */}
-          <div className="space-y-6">
-            <div className="bg-white/5 border border-white/10 rounded-[40px] p-6 h-[700px] flex flex-col">
-              <h3 className="text-xl font-black mb-6 uppercase tracking-widest">Recruitment Pool</h3>
-              <div className="mb-6">
+          <div className="space-y-4 md:space-y-6">
+            <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[40px] p-4 md:p-6 h-[500px] md:h-[700px] flex flex-col">
+              <h3 className="text-base md:text-xl font-black mb-4 md:mb-6 uppercase tracking-widest">Recruit</h3>
+              <div className="mb-4 md:mb-6">
                 <input
                   type="text"
                   placeholder="Search by ID or Name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600 min-h-[44px]"
                 />
               </div>
 
-              <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-2 md:space-y-3 custom-scrollbar">
                 {availableStudents.map((p, idx) => {
                   const playerDept = getDepartmentInfo(p.hall_ticket)
                   return (
-                    <div key={idx} className="bg-white/5 border border-white/5 p-4 rounded-2xl hover:bg-white/[0.08] transition-all group">
-                      <div className="font-bold mb-1 group-hover:text-cricket-400 transition-colors uppercase italic">{p.name}</div>
-                      <div className="text-[10px] text-slate-500 font-bold mb-1">{p.hall_ticket}</div>
+                    <div key={idx} className="bg-white/5 border border-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl hover:bg-white/[0.08] transition-all group">
+                      <div className="font-bold mb-0.5 md:mb-1 group-hover:text-cricket-400 transition-colors uppercase italic text-sm md:text-base truncate">{p.name}</div>
+                      <div className="text-[9px] md:text-[10px] text-slate-500 font-bold mb-0.5 md:mb-1">{p.hall_ticket}</div>
                       {playerDept && (
-                        <div className="text-[10px] text-indigo-400 font-bold mb-3">{playerDept.shortName}</div>
+                        <div className="text-[9px] md:text-[10px] text-indigo-400 font-bold mb-2 md:mb-3">{playerDept.shortName}</div>
                       )}
                       <button
                         disabled={selectedPlayers.length >= 14}
                         onClick={() => handleAddPlayerClick(p)}
-                        className="w-full py-2 bg-white/10 hover:bg-cricket-600 hover:text-white text-slate-400 rounded-xl text-xs font-black transition-all"
+                        className="w-full py-2.5 md:py-2 bg-white/10 hover:bg-cricket-600 hover:text-white text-slate-400 rounded-lg md:rounded-xl text-xs font-black transition-all min-h-[44px]"
                       >
                         Recruit +
                       </button>
@@ -463,29 +466,29 @@ export default function CreateTeamPage() {
                 
                 {/* No results - show add player option */}
                 {searchTerm.length >= 3 && availableStudents.length === 0 && !showAddPlayerForm && (
-                  <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-2xl">
-                    <div className="text-slate-500 font-bold mb-4">No players found for "{searchTerm}"</div>
+                  <div className="text-center py-6 md:py-8 border-2 border-dashed border-white/10 rounded-xl md:rounded-2xl">
+                    <div className="text-slate-500 font-bold mb-3 md:mb-4 text-sm md:text-base">No players found</div>
                     <button 
                       onClick={() => setShowAddPlayerForm(true)}
-                      className="px-6 py-3 bg-cricket-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-cricket-500 transition-all"
+                      className="px-4 md:px-6 py-3 bg-cricket-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-cricket-500 transition-all min-h-[44px]"
                     >
-                      + Add New Player
+                      + Add New
                     </button>
                   </div>
                 )}
                 
                 {/* Add New Player Form */}
                 {showAddPlayerForm && (
-                  <div className="bg-white/5 border border-cricket-500/30 p-4 rounded-2xl space-y-4">
-                    <div className="text-sm font-black text-cricket-500 uppercase tracking-widest">Add New Player</div>
-                    <div className="text-[10px] text-slate-500">Only players from your department group can be added</div>
+                  <div className="bg-white/5 border border-cricket-500/30 p-3 md:p-4 rounded-xl md:rounded-2xl space-y-3 md:space-y-4">
+                    <div className="text-xs md:text-sm font-black text-cricket-500 uppercase tracking-widest">Add New Player</div>
+                    <div className="text-[9px] md:text-[10px] text-slate-500">Only your department group can be added</div>
                     
                     <input
                       type="text"
                       placeholder="Hall Ticket (10 chars)"
                       value={newPlayerHallTicket}
                       onChange={(e) => setNewPlayerHallTicket(e.target.value.toUpperCase().slice(0, 10))}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600 min-h-[44px]"
                       maxLength={10}
                     />
                     
@@ -494,7 +497,7 @@ export default function CreateTeamPage() {
                       placeholder="Player Full Name"
                       value={newPlayerName}
                       onChange={(e) => setNewPlayerName(e.target.value.toUpperCase())}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600 min-h-[44px]"
                     />
                     
                     {addPlayerError && (
@@ -504,16 +507,16 @@ export default function CreateTeamPage() {
                     <div className="flex gap-2">
                       <button 
                         onClick={() => { setShowAddPlayerForm(false); setAddPlayerError(null); setNewPlayerHallTicket(''); setNewPlayerName(''); }}
-                        className="flex-1 py-2 text-slate-500 font-bold text-xs"
+                        className="flex-1 py-3 text-slate-500 font-bold text-xs min-h-[44px]"
                       >
                         Cancel
                       </button>
                       <button 
                         onClick={handleAddNewPlayer}
                         disabled={addingPlayer || newPlayerHallTicket.length !== 10 || !newPlayerName}
-                        className="flex-1 py-2 bg-cricket-600 text-white rounded-xl text-xs font-black disabled:opacity-30"
+                        className="flex-1 py-3 bg-cricket-600 text-white rounded-xl text-xs font-black disabled:opacity-30 min-h-[44px]"
                       >
-                        {addingPlayer ? 'Adding...' : 'Add Player'}
+                        {addingPlayer ? 'Adding...' : 'Add'}
                       </button>
                     </div>
                   </div>
@@ -524,13 +527,13 @@ export default function CreateTeamPage() {
             <button
               onClick={handleCreateTeam}
               disabled={submitting || selectedPlayers.length < 10 || !teamName}
-              className="w-full py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-3xl font-black text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+              className="w-full py-5 md:py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-2xl md:rounded-3xl font-black text-base md:text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale min-h-[56px]"
             >
               {submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Squad 🚀' : 'Finalize Squad 🚀')}
             </button>
 
             {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold text-center">
+              <div className="p-3 md:p-4 bg-red-500/10 border border-red-500/20 rounded-xl md:rounded-2xl text-red-400 text-xs md:text-sm font-bold text-center">
                 {error}
               </div>
             )}
@@ -540,26 +543,26 @@ export default function CreateTeamPage() {
 
       {/* Role Selection Modal */}
       {showRoleModal && playerToAdd && (
-        <div className="fixed inset-0 bg-[#0f172a]/90 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-[#1e293b] border border-white/10 rounded-[40px] p-8 max-w-sm w-full shadow-2xl scale-in">
-            <h3 className="text-2xl font-black mb-2 text-center uppercase tracking-tighter">Assign Role</h3>
-            <p className="text-slate-400 text-center text-sm mb-8 font-medium italic">"{playerToAdd.name}"</p>
+        <div className="fixed inset-0 bg-[#0f172a]/90 backdrop-blur-md flex items-end md:items-center justify-center z-[100] p-0 md:p-4">
+          <div className="bg-[#1e293b] border border-white/10 rounded-t-3xl md:rounded-[40px] p-6 md:p-8 max-w-sm w-full shadow-2xl scale-in">
+            <h3 className="text-xl md:text-2xl font-black mb-1 md:mb-2 text-center uppercase tracking-tighter">Assign Role</h3>
+            <p className="text-slate-400 text-center text-sm mb-6 md:mb-8 font-medium italic truncate">"{playerToAdd.name}"</p>
 
-            <div className="space-y-3 mb-10">
+            <div className="grid grid-cols-2 gap-2 md:space-y-3 md:grid-cols-1 mb-6 md:mb-10">
               {['batsman', 'bowler', 'all-rounder', 'wicket-keeper'].map((role) => (
                 <button
                   key={role}
                   onClick={() => setSelectedRole(role)}
-                  className={`w-full py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-widest border transition-all ${selectedRole === role ? 'bg-cricket-600 border-cricket-400 text-white shadow-lg shadow-cricket-600/20' : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10 hover:bg-white/10'}`}
+                  className={`py-3 md:py-4 px-3 md:px-6 rounded-xl md:rounded-2xl font-black text-xs md:text-sm uppercase tracking-widest border transition-all min-h-[48px] ${selectedRole === role ? 'bg-cricket-600 border-cricket-400 text-white shadow-lg shadow-cricket-600/20' : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10 hover:bg-white/10'}`}
                 >
                   {role.replace('-', ' ')}
                 </button>
               ))}
             </div>
 
-            <div className="flex gap-4">
-              <button onClick={() => setShowRoleModal(false)} className="flex-1 py-4 text-slate-500 font-black text-xs uppercase tracking-widest">Cancel</button>
-              <button onClick={confirmAddPlayer} className="flex-1 py-4 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Confirm</button>
+            <div className="flex gap-3 md:gap-4">
+              <button onClick={() => setShowRoleModal(false)} className="flex-1 py-4 text-slate-500 font-black text-xs uppercase tracking-widest min-h-[48px]">Cancel</button>
+              <button onClick={confirmAddPlayer} className="flex-1 py-4 bg-white text-black rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl min-h-[48px]">Confirm</button>
             </div>
           </div>
         </div>
@@ -567,32 +570,32 @@ export default function CreateTeamPage() {
 
       {/* Department Selection Modal for ECE Captains */}
       {showDeptSelectionModal && isECECaptain && (
-        <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-[#1e293b] border border-white/10 rounded-[40px] p-8 max-w-md w-full shadow-2xl">
-            <h3 className="text-2xl font-black mb-2 text-center uppercase tracking-tighter">Select Department</h3>
-            <p className="text-slate-400 text-center text-sm mb-2 font-medium">As an ECE student, you can create a team in either department.</p>
-            <p className="text-indigo-400 text-center text-xs mb-8 font-bold">Choose the department for your team:</p>
+        <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-md flex items-end md:items-center justify-center z-[100] p-0 md:p-4">
+          <div className="bg-[#1e293b] border border-white/10 rounded-t-3xl md:rounded-[40px] p-6 md:p-8 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl md:text-2xl font-black mb-1 md:mb-2 text-center uppercase tracking-tighter">Select Department</h3>
+            <p className="text-slate-400 text-center text-xs md:text-sm mb-1 md:mb-2 font-medium">As an ECE student, you can create a team in either department.</p>
+            <p className="text-indigo-400 text-center text-[10px] md:text-xs mb-6 md:mb-8 font-bold">Choose the department for your team:</p>
 
-            <div className="space-y-4 mb-8">
+            <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
               <button
                 onClick={() => {
                   setCaptainDeptGroup('CSE')
                   setShowDeptSelectionModal(false)
                 }}
-                className="w-full py-5 px-6 rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-indigo-600/20 hover:border-indigo-500/50 transition-all"
+                className="w-full py-4 md:py-5 px-4 md:px-6 rounded-xl md:rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-indigo-600/20 hover:border-indigo-500/50 transition-all min-h-[64px]"
               >
-                <div className="text-lg text-white mb-1">CSE Department</div>
-                <div className="text-[10px] text-slate-400">Includes: CSE, CSO, ECE students</div>
+                <div className="text-base md:text-lg text-white mb-0.5 md:mb-1">CSE Department</div>
+                <div className="text-[9px] md:text-[10px] text-slate-400">Includes: CSE, CSO, ECE students</div>
               </button>
               <button
                 onClick={() => {
                   setCaptainDeptGroup('CSM')
                   setShowDeptSelectionModal(false)
                 }}
-                className="w-full py-5 px-6 rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-purple-600/20 hover:border-purple-500/50 transition-all"
+                className="w-full py-4 md:py-5 px-4 md:px-6 rounded-xl md:rounded-2xl font-black text-left border border-white/10 bg-white/5 hover:bg-purple-600/20 hover:border-purple-500/50 transition-all min-h-[64px]"
               >
-                <div className="text-lg text-white mb-1">CSM Department</div>
-                <div className="text-[10px] text-slate-400">Includes: CSM, CSC, CSD, ECE students</div>
+                <div className="text-base md:text-lg text-white mb-0.5 md:mb-1">CSM Department</div>
+                <div className="text-[9px] md:text-[10px] text-slate-400">Includes: CSM, CSC, CSD, ECE students</div>
               </button>
             </div>
           </div>

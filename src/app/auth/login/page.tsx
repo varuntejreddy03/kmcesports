@@ -147,7 +147,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#020617] text-white flex items-center justify-center p-3 md:p-4 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cricket-600/20 blur-[120px] rounded-full animate-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full animate-pulse shadow-2xl"></div>
@@ -155,108 +155,108 @@ function LoginContent() {
       </div>
 
       <div className="max-w-xl w-full relative z-10 transition-all duration-700 ease-out translate-y-0 opacity-100">
-        <div className="mb-6">
-          <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors w-fit">
+        <div className="mb-4 md:mb-6">
+          <Link href="/" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors w-fit min-h-[44px]">
             <span>←</span> Back to Home
           </Link>
         </div>
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-3 group mb-6">
-            <div className="w-14 h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-cricket-500/20 group-hover:scale-110 transition-transform duration-500">
-              <span className="text-3xl">🏏</span>
+        <div className="text-center mb-6 md:mb-10">
+          <Link href="/" className="inline-flex items-center gap-2 md:gap-3 group mb-4 md:mb-6">
+            <div className="w-11 h-11 md:w-14 md:h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl md:rounded-2xl flex items-center justify-center shadow-2xl shadow-cricket-500/20 group-hover:scale-110 transition-transform duration-500">
+              <span className="text-2xl md:text-3xl">🏏</span>
             </div>
-            <span className="font-black text-3xl tracking-tight text-white leading-none">
+            <span className="font-black text-2xl md:text-3xl tracking-tight text-white leading-none">
               KMCE<span className="text-cricket-500">Cricket</span>
             </span>
           </Link>
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">Championship <span className="text-cricket-500">Portal</span></h1>
-            <div className="flex justify-center gap-4 text-xs font-black uppercase tracking-[0.2em] text-slate-500 italic">
+            <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase italic">Championship <span className="text-cricket-500">Portal</span></h1>
+            <div className="flex flex-wrap justify-center gap-3 md:gap-4 text-[10px] md:text-xs font-black uppercase tracking-[0.15em] md:tracking-[0.2em] text-slate-500 italic">
               <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-cricket-500"></span> Captain Login</span>
               <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Player Dashboard</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-[48px] p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl md:rounded-[48px] p-5 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
 
           <div className="relative z-10">
             {step === 'hall_ticket' && (
-              <div className="mb-10 text-center animate-fadeIn">
-                <p className="text-slate-400 font-medium text-lg leading-relaxed">
-                  Captain & Player Login — Manage your team identity and track tournament progress.
+              <div className="mb-6 md:mb-10 text-center animate-fadeIn">
+                <p className="text-slate-400 font-medium text-sm md:text-lg leading-relaxed">
+                  Captain & Player Login — Manage your team and track tournament progress.
                 </p>
               </div>
             )}
 
             {sessionExpired && (
-              <div className="mb-8 p-5 bg-yellow-500/10 border border-yellow-500/20 rounded-[24px] text-yellow-400 text-sm font-black text-center flex items-center justify-center gap-2">
-                <span>⏰</span> Your session expired. Please login again.
+              <div className="mb-6 md:mb-8 p-4 md:p-5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl md:rounded-[24px] text-yellow-400 text-xs md:text-sm font-black text-center flex items-center justify-center gap-2">
+                <span>⏰</span> Session expired. Please login again.
               </div>
             )}
 
             {error && (
-              <div className="mb-8 p-5 bg-red-500/10 border border-red-500/20 rounded-[24px] text-red-400 text-sm font-black text-center animate-shake flex items-center justify-center gap-2">
+              <div className="mb-6 md:mb-8 p-4 md:p-5 bg-red-500/10 border border-red-500/20 rounded-xl md:rounded-[24px] text-red-400 text-xs md:text-sm font-black text-center animate-shake flex items-center justify-center gap-2">
                 <span>⚠️</span> {error}
               </div>
             )}
 
             {step === 'hall_ticket' && (
-              <form onSubmit={handleLookup} className="space-y-8">
-                <div className="space-y-2">
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Hall Ticket ID</label>
+              <form onSubmit={handleLookup} className="space-y-5 md:space-y-8">
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">Hall Ticket ID</label>
                   <input
                     type="text"
                     required
                     autoFocus
                     value={hallTicket}
                     onChange={(e) => setHallTicket(e.target.value.toUpperCase())}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl font-black tracking-[0.05em] focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 py-3.5 md:py-4 text-lg md:text-xl font-black tracking-[0.05em] focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800 min-h-[48px]"
                     placeholder="21XXXXXX"
                   />
                 </div>
                 <button
                   disabled={loading || !hallTicket}
-                  className="w-full py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-[24px] font-black text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-30"
+                  className="w-full py-4 md:py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-xl md:rounded-[24px] font-black text-base md:text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-30 min-h-[52px]"
                 >
-                  {loading ? 'Scanning Records...' : 'Verify Access 🚀'}
+                  {loading ? 'Scanning...' : 'Verify Access 🚀'}
                 </button>
               </form>
             )}
 
             {step === 'verify_details' && student && (
-              <div className="space-y-8 animate-fade-in">
-                <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-4">
+              <div className="space-y-5 md:space-y-8 animate-fade-in">
+                <div className="bg-white/5 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/5 space-y-3 md:space-y-4">
                   <div className="flex justify-between items-center group">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Athlete</span>
-                    <span className="font-black text-lg uppercase italic group-hover:text-cricket-400 transition-colors">{student.name}</span>
+                    <span className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Athlete</span>
+                    <span className="font-black text-sm md:text-lg uppercase italic group-hover:text-cricket-400 transition-colors truncate ml-2">{student.name}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Academic Year</span>
+                    <span className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">Year</span>
                     <span className="font-black text-white/60">{student.year} Year</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Mobile Link</label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">Mobile</label>
                   <input
                     type="text"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 py-3.5 md:py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[48px]"
                     placeholder="Enter mobile number"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">On-Field Role</label>
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">On-Field Role</label>
                   <div className="grid grid-cols-2 gap-2">
                     {['batsman', 'bowler', 'all-rounder', 'wicket-keeper'].map((role) => (
                       <button
                         key={role}
                         onClick={() => setPlayerRole(role)}
-                        className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${playerRole === role ? 'bg-cricket-600 border-cricket-400 text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}
+                        className={`py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest border transition-all min-h-[44px] ${playerRole === role ? 'bg-cricket-600 border-cricket-400 text-white shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}
                       >
                         {role.replace('-', ' ')}
                       </button>
@@ -267,7 +267,7 @@ function LoginContent() {
                 <button
                   onClick={handleConfirmDetails}
                   disabled={loading}
-                  className="w-full py-6 bg-white text-black rounded-[24px] font-black text-xl hover:scale-[1.02] shadow-xl transition-all active:scale-95 disabled:opacity-30"
+                  className="w-full py-4 md:py-6 bg-white text-black rounded-xl md:rounded-[24px] font-black text-base md:text-xl hover:scale-[1.02] shadow-xl transition-all active:scale-95 disabled:opacity-30 min-h-[52px]"
                 >
                   Finish Setup 🏁
                 </button>
@@ -275,44 +275,44 @@ function LoginContent() {
             )}
 
             {step === 'password' && (
-              <form onSubmit={handleLogin} className="space-y-8 animate-fade-in">
-                <div className="space-y-2">
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Secret Sequence</label>
+              <form onSubmit={handleLogin} className="space-y-5 md:space-y-8 animate-fade-in">
+                <div className="space-y-1.5 md:space-y-2">
+                  <label className="block text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">Password</label>
                   <input
                     type="password"
                     required
                     autoFocus
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl font-black focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 py-3.5 md:py-4 text-lg md:text-xl font-black focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[48px]"
                     placeholder="••••••••"
                   />
-                  <p className="text-[10px] text-slate-600 font-bold text-center">Default: Kmce123$</p>
+                  <p className="text-[9px] md:text-[10px] text-slate-600 font-bold text-center">Default: Kmce123$</p>
                 </div>
                 <button
                   disabled={loading}
-                  className="w-full py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-[24px] font-black text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95"
+                  className="w-full py-4 md:py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-xl md:rounded-[24px] font-black text-base md:text-xl hover:scale-[1.02] shadow-xl shadow-cricket-600/30 transition-all active:scale-95 min-h-[52px]"
                 >
                   {loading ? 'Unlocking...' : 'Launch Dashboard 🚀'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setStep('hall_ticket')}
-                  className="w-full py-2 text-slate-600 hover:text-slate-400 text-xs font-black uppercase tracking-widest transition-colors"
+                  className="w-full py-2 text-slate-600 hover:text-slate-400 text-xs font-black uppercase tracking-widest transition-colors min-h-[44px]"
                 >
-                  ← Incorrect User?
+                  ← Wrong User?
                 </button>
               </form>
             )}
           </div>
 
           {step === 'hall_ticket' && (
-            <div className="mt-12 text-center space-y-4">
+            <div className="mt-8 md:mt-12 text-center space-y-3 md:space-y-4">
               <p className="text-slate-500 text-xs font-bold">
                 New student? <Link href="/auth/student-register" className="text-cricket-400 hover:text-white transition-colors">Register here</Link>
               </p>
               <div className="h-px w-20 bg-white/10 mx-auto"></div>
-              <Link href="/admin/login" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-400 transition-colors block">Admin Governance Access</Link>
+              <Link href="/admin/login" className="text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-400 transition-colors block min-h-[44px] flex items-center justify-center">Admin Governance Access</Link>
             </div>
           )}
         </div>
