@@ -157,8 +157,14 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
+        {/* Registration Deadline */}
+        <div className="mt-10 bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[32px] p-6 text-center">
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Registration Deadline</div>
+          <div className="text-2xl md:text-3xl font-black text-white">Jan 27, 12:30 PM</div>
+        </div>
+
         {/* Cricket Coordinators Contact */}
-        <div className="mt-10 bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[32px] p-6">
+        <div className="mt-6 bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[32px] p-6">
           <div className="text-center mb-4">
             <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Cricket Coordinators</div>
             <div className="text-[9px] text-slate-600 mt-1">3rd Year Students - For Enquiries</div>
