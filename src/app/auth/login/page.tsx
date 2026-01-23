@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { supabase, setSessionStartTime } from '@/lib/supabase'
+import { supabase, setSessionStartTime, isKMCEStudent } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { StudentData } from '@/types'
 import Link from 'next/link'

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase, checkSessionTimeout, clearSessionStartTime, getDepartmentGroup, getDepartmentInfo, isEligibleForGroup, extractDeptCode, DepartmentGroup, DEPARTMENT_CODES } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime, getDepartmentGroup, getDepartmentInfo, isEligibleForGroup, extractDeptCode, DepartmentGroup, DEPARTMENT_CODES, isKMCEStudent } from '@/lib/supabase'
 import { StudentData } from '@/types'
 import Link from 'next/link'
 
@@ -159,6 +159,12 @@ export default function CreateTeamPage() {
     // Validate hall ticket format (10 characters)
     if (hallTicket.length !== 10) {
       setAddPlayerError('Hall ticket must be exactly 10 characters')
+      return
+    }
+    
+    // Validate KMCE college code (P81 or P85 at positions 3-5)
+    if (!isKMCEStudent(hallTicket)) {
+      setAddPlayerError('Invalid Hall Ticket. Only KMCE students (P81/P85) are allowed.')
       return
     }
     

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, isKMCEStudent } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -13,6 +13,20 @@ export default function RegisterPage() {
 
   const handleRedirect = (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    
+    // Validate hall ticket format (10 characters)
+    if (hallTicket.length !== 10) {
+      setError('Hall Ticket must be exactly 10 characters')
+      return
+    }
+    
+    // Validate KMCE college code (P81 or P85 at positions 3-5)
+    if (!isKMCEStudent(hallTicket)) {
+      setError('Invalid Hall Ticket. Only KMCE students (P81/P85) are allowed.')
+      return
+    }
+    
     // In our new flow, registration is handled within the Login page via Hall Ticket lookup.
     // We redirect the user to the Login page with their hall ticket pre-filled.
     router.push(`/auth/login?ht=${hallTicket.toUpperCase()}`)
@@ -52,17 +66,25 @@ export default function RegisterPage() {
 
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[40px] p-8 md:p-10 shadow-2xl relative overflow-hidden">
             <form onSubmit={handleRedirect} className="space-y-8">
+              {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-bold text-center">
+                  {error}
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <label className="block text-xs font-black text-slate-500 uppercase tracking-widest">Hall Ticket ID</label>
                 <input
                   type="text"
                   required
                   autoFocus
+                  maxLength={10}
                   value={hallTicket}
                   onChange={(e) => setHallTicket(e.target.value.toUpperCase())}
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-xl font-black tracking-[0.05em] focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800"
-                  placeholder="21XXXXXX"
+                  placeholder="23P81AXXXX"
                 />
+                <div className="text-[10px] text-slate-600 font-medium">Example: 23P81A6234 or 24P85A0511</div>
               </div>
 
               <button
