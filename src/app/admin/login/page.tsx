@@ -18,6 +18,15 @@ export default function AdminLoginPage() {
   const [deadlineTime, setDeadlineTime] = useState('12:30')
   const [savingDeadline, setSavingDeadline] = useState(false)
 
+  // Match generator state
+  const [showMatchGenerator, setShowMatchGenerator] = useState(false)
+  const [approvedTeams, setApprovedTeams] = useState<any[]>([])
+  const [generatedMatches, setGeneratedMatches] = useState<{team_a: any, team_b: any}[]>([])
+  const [byeTeam, setByeTeam] = useState<any | null>(null)
+  const [loadingTeams, setLoadingTeams] = useState(false)
+  const [savingMatches, setSavingMatches] = useState(false)
+  const [matchesSaved, setMatchesSaved] = useState(false)
+
   // Format deadline for display
   const formatDeadlineDisplay = () => {
     const date = new Date(`${deadlineDate}T${deadlineTime}:00`)
@@ -78,6 +87,119 @@ export default function AdminLoginPage() {
     } finally {
       setSavingDeadline(false)
     }
+  }
+
+  // Fetch approved teams
+  const fetchApprovedTeams = async () => {
+    setLoadingTeams(true)
+    try {
+      const { data } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('status', 'approved')
+        .order('name')
+      
+      if (data) {
+        setApprovedTeams(data)
+        if (data.length > 0) {
+          generateRandomMatches(data)
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching teams:', err)
+    } finally {
+      setLoadingTeams(false)
+    }
+  }
+
+  // Shuffle array (Fisher-Yates algorithm)
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+
+  // Generate random matches from teams
+  const generateRandomMatches = (teams: any[]) => {
+    const shuffled = shuffleArray(teams)
+    const matches: {team_a: any, team_b: any}[] = []
+    let bye: any | null = null
+
+    // If odd number of teams, one gets a bye
+    if (shuffled.length % 2 !== 0) {
+      bye = shuffled.pop()!
+      setByeTeam(bye)
+    } else {
+      setByeTeam(null)
+    }
+
+    // Pair remaining teams
+    for (let i = 0; i < shuffled.length; i += 2) {
+      matches.push({
+        team_a: shuffled[i],
+        team_b: shuffled[i + 1]
+      })
+    }
+
+    setGeneratedMatches(matches)
+    setMatchesSaved(false)
+  }
+
+  // Regenerate matches with new random order
+  const regenerateMatches = () => {
+    if (approvedTeams.length > 0) {
+      generateRandomMatches(approvedTeams)
+    }
+  }
+
+  // Save matches to database (requires admin auth)
+  const saveMatchesToDatabase = async () => {
+    setSavingMatches(true)
+    try {
+      // Verify admin is logged in
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || user.user_metadata?.hall_ticket !== 'ADMIN') {
+        alert('Please login as admin first to save the schedule')
+        setSavingMatches(false)
+        return
+      }
+
+      // Delete existing scheduled matches for round 1 only (not completed ones)
+      await supabase
+        .from('matches')
+        .delete()
+        .eq('round', 1)
+        .eq('status', 'scheduled')
+
+      // Insert new matches
+      const matchesToInsert = generatedMatches.map((match, index) => ({
+        team_a_id: match.team_a.id,
+        team_b_id: match.team_b.id,
+        match_date: new Date().toISOString(),
+        round: 1,
+        match_number: index + 1,
+        status: 'scheduled'
+      }))
+
+      const { error } = await supabase.from('matches').insert(matchesToInsert)
+      if (error) throw error
+
+      setMatchesSaved(true)
+    } catch (err) {
+      console.error('Error saving matches:', err)
+      alert('Failed to save matches. Please try again.')
+    } finally {
+      setSavingMatches(false)
+    }
+  }
+
+  // Open match generator
+  const openMatchGenerator = () => {
+    setShowMatchGenerator(true)
+    fetchApprovedTeams()
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -288,6 +410,105 @@ export default function AdminLoginPage() {
             </div>
           </div>
         </div>
+
+        {/* Match Generator Button */}
+        <div className="mt-6">
+          <button
+            onClick={openMatchGenerator}
+            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg"
+          >
+            🎲 Generate Random Schedule
+          </button>
+        </div>
+
+        {/* Match Generator Modal */}
+        {showMatchGenerator && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#0f172a] border border-white/10 rounded-[32px] p-6 md:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-black uppercase tracking-tight">Match Schedule</h2>
+                <button
+                  onClick={() => setShowMatchGenerator(false)}
+                  className="text-slate-500 hover:text-white transition-colors text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              {loadingTeams ? (
+                <div className="text-center py-10">
+                  <div className="text-4xl mb-4 animate-spin">⚽</div>
+                  <p className="text-slate-500 font-bold">Loading teams...</p>
+                </div>
+              ) : approvedTeams.length < 2 ? (
+                <div className="text-center py-10">
+                  <div className="text-4xl mb-4">⚠️</div>
+                  <p className="text-slate-400 font-bold">Need at least 2 approved teams to generate schedule</p>
+                  <p className="text-slate-600 text-sm mt-2">Currently: {approvedTeams.length} approved team(s)</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 text-center">
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                      {approvedTeams.length} Teams → {generatedMatches.length} Matches
+                    </span>
+                  </div>
+
+                  {/* Generated Matches */}
+                  <div className="space-y-3 mb-6">
+                    {generatedMatches.map((match, index) => (
+                      <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <div className="text-[9px] font-black text-cricket-500 uppercase tracking-widest mb-2">
+                          Match {index + 1}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 text-center">
+                            <div className="font-black text-sm">{match.team_a.name}</div>
+                          </div>
+                          <div className="px-4 text-slate-600 font-black text-xs">VS</div>
+                          <div className="flex-1 text-center">
+                            <div className="font-black text-sm">{match.team_b.name}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bye Team */}
+                  {byeTeam && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 mb-6 text-center">
+                      <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
+                        Bye (Advances to Next Round)
+                      </div>
+                      <div className="font-black text-yellow-400">{byeTeam.name}</div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={regenerateMatches}
+                      className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-colors"
+                    >
+                      🔄 Regenerate
+                    </button>
+                    <button
+                      onClick={saveMatchesToDatabase}
+                      disabled={savingMatches || matchesSaved}
+                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
+                        matchesSaved 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-cricket-500 hover:bg-cricket-600 text-white'
+                      }`}
+                    >
+                      {savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save Schedule'}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mt-10 text-center">
           <Link href="/auth/login" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-600 hover:text-cricket-500 transition-all hover:gap-4">
