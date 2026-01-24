@@ -7,16 +7,18 @@ const NOTIFICATION_EMAILS = [
   'banothsuresh2525@gmail.com'
 ]
 
-function createTransporter() {
+async function createTransporter() {
   const user = process.env.EMAIL_USER
   const pass = process.env.EMAIL_APP_PASSWORD?.replace(/\s+/g, '')
+  
+  console.log('Email config - USER:', user, 'PASS length:', pass?.length || 0)
   
   if (!user || !pass) {
     console.error('Email credentials not configured. EMAIL_USER:', !!user, 'EMAIL_APP_PASSWORD:', !!pass)
     return null
   }
 
-  return nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
@@ -28,6 +30,16 @@ function createTransporter() {
       rejectUnauthorized: false
     }
   })
+
+  try {
+    await transporter.verify()
+    console.log('SMTP connection verified successfully')
+  } catch (verifyError: any) {
+    console.error('SMTP verification failed:', verifyError.message)
+    return null
+  }
+
+  return transporter
 }
 
 interface TeamData {
@@ -120,20 +132,21 @@ KMCE Cricket Championship 2026
   `
 
   try {
-    const transporter = createTransporter()
+    const transporter = await createTransporter()
     if (!transporter) {
-      console.error('Email transporter not configured')
+      console.error('Email transporter not configured or verification failed')
       return { success: false, error: 'Email not configured' }
     }
     
-    await transporter.sendMail({
+    console.log('Sending email to:', NOTIFICATION_EMAILS.join(', '))
+    const info = await transporter.sendMail({
       from: `"KMCE Cricket" <${process.env.EMAIL_USER}>`,
       to: NOTIFICATION_EMAILS.join(', '),
       subject: `New Team Created: ${teamData.teamName} (${teamData.department})`,
       text: textContent,
       html: htmlContent
     })
-    console.log('Team creation email sent successfully')
+    console.log('Team creation email sent successfully. Message ID:', info.messageId)
     return { success: true }
   } catch (error: any) {
     console.error('Failed to send team creation email:', error.message || error)
@@ -222,20 +235,21 @@ KMCE Cricket Championship 2026
   `
 
   try {
-    const transporter = createTransporter()
+    const transporter = await createTransporter()
     if (!transporter) {
-      console.error('Email transporter not configured')
+      console.error('Email transporter not configured or verification failed')
       return { success: false, error: 'Email not configured' }
     }
     
-    await transporter.sendMail({
+    console.log('Sending payment email to:', NOTIFICATION_EMAILS.join(', '))
+    const info = await transporter.sendMail({
       from: `"KMCE Cricket" <${process.env.EMAIL_USER}>`,
       to: NOTIFICATION_EMAILS.join(', '),
       subject: `Payment Confirmed: ${teamData.teamName} (${teamData.department}) - Rs.3000 PAID`,
       text: textContent,
       html: htmlContent
     })
-    console.log('Payment confirmation email sent successfully')
+    console.log('Payment confirmation email sent successfully. Message ID:', info.messageId)
     return { success: true }
   } catch (error: any) {
     console.error('Failed to send payment confirmation email:', error.message || error)
