@@ -31,18 +31,6 @@ export default function AdminPage() {
   const [byeTeam, setByeTeam] = useState<any | null>(null)
   const [savingMatches, setSavingMatches] = useState(false)
   const [matchesSaved, setMatchesSaved] = useState(false)
-  const [useDummyTeams, setUseDummyTeams] = useState(false)
-
-  // Dummy teams for testing
-  const dummyTeams = [
-    { id: '1', name: 'CSE Thunder', created_at: '2026-01-20T08:00:00Z' },
-    { id: '2', name: 'ECE Warriors', created_at: '2026-01-20T09:00:00Z' },
-    { id: '3', name: 'CSM Strikers', created_at: '2026-01-20T10:00:00Z' },
-    { id: '4', name: 'CSD Phoenix', created_at: '2026-01-20T11:00:00Z' },
-    { id: '5', name: 'CSO Titans', created_at: '2026-01-20T12:00:00Z' },
-    { id: '6', name: 'CSC Dragons', created_at: '2026-01-20T13:00:00Z' },
-    { id: '7', name: 'Mech Lions', created_at: '2026-01-20T14:00:00Z' },
-  ]
 
   useEffect(() => {
     checkAdmin()
@@ -266,32 +254,16 @@ export default function AdminPage() {
   const openMatchGenerator = () => {
     setShowMatchGenerator(true)
     const approvedTeams = teams.filter(t => t.approved)
-    if (useDummyTeams) {
-      generateRandomMatches(dummyTeams)
-    } else if (approvedTeams.length > 0) {
+    if (approvedTeams.length > 0) {
       generateRandomMatches(approvedTeams)
     }
   }
 
   // Regenerate matches
   const regenerateMatches = () => {
-    const teamsToUse = useDummyTeams ? dummyTeams : teams.filter(t => t.approved)
-    if (teamsToUse.length > 0) {
-      generateRandomMatches(teamsToUse)
-    }
-  }
-
-  // Toggle dummy teams
-  const toggleDummyTeams = () => {
-    const newValue = !useDummyTeams
-    setUseDummyTeams(newValue)
-    if (newValue) {
-      generateRandomMatches(dummyTeams)
-    } else {
-      const approvedTeams = teams.filter(t => t.approved)
-      if (approvedTeams.length > 0) {
-        generateRandomMatches(approvedTeams)
-      }
+    const approvedTeams = teams.filter(t => t.approved)
+    if (approvedTeams.length > 0) {
+      generateRandomMatches(approvedTeams)
     }
   }
 
@@ -351,6 +323,92 @@ export default function AdminPage() {
       } finally {
         setLoadingPlayers(false)
       }
+    }
+  }
+
+  // Generate WhatsApp message with team data and rules
+  const generateWhatsAppMessage = (team: any, players: any[]) => {
+    const playersList = players.map((p, idx) => 
+      `${idx + 1}. ${p.student?.name || 'Unknown'} - ${p.player_role}${p.is_captain ? ' (Captain)' : ''}`
+    ).join('\n')
+
+    const rules = `🏏 *KMCE Cricket Tournament Rules*
+
+1. Teams must participate department-wise only
+2. All teams must wear WHITE uniforms
+3. Each match: 12 overs per side
+4. Umpire decisions are final - only captain can communicate
+5. No arguments, sledging, or disputes
+6. No unparliamentary language/physical abuse - instant disqualification
+7. Proper cricket shoes required
+8. Report 30 mins before match time
+9. Walkover if team fails to report on time
+10. Knockout basis matches
+11. No leg-byes, no LBW
+12. Powerplay: 4 overs
+13. Max 15 members (11 playing + 4 subs)
+14. Bring your own cricket equipment
+15. Impact Player rule applicable
+16. Max 2 players can bowl up to 3 overs each
+17. Organizing Committee decisions are final
+18. Play fairly - maintain sportsmanship!`
+
+    const message = `🎉 *CONGRATULATIONS!*
+
+Your team registration for KMCE Cricket Tournament has been *APPROVED* and payment *CONFIRMED*!
+
+📋 *TEAM DETAILS*
+━━━━━━━━━━━━━━━
+🏏 *Team Name:* ${team.name}
+🏢 *Department:* ${team.department || 'N/A'}
+
+👥 *SQUAD ROSTER*
+━━━━━━━━━━━━━━━
+${playersList}
+
+${rules}
+
+🎯 *All the best for the tournament!*
+Contact coordinators for any queries:
+📞 Suresh: 6303860267
+📞 Sreeker: 9063128733`
+
+    return message
+  }
+
+  // Send WhatsApp message
+  const sendWhatsApp = async (team: any) => {
+    try {
+      const { data: playersData, error } = await supabase.from('team_players').select('*').eq('team_id', team.id)
+      if (error) throw error
+      const hallTickets = playersData.map(p => p.hall_ticket)
+      const { data: studentsData } = await supabase.from('student_data').select('*').in('hall_ticket', hallTickets)
+      const mergedPlayers = playersData.map(player => ({
+        ...player,
+        student: studentsData?.find(s => s.hall_ticket === player.hall_ticket)
+      }))
+
+      const captain = mergedPlayers.find(p => p.is_captain)
+      const captainPhone = captain?.student?.phone || captain?.student?.phone_number
+
+      if (!captainPhone) {
+        alert('Captain phone number not found!')
+        return
+      }
+
+      const message = generateWhatsAppMessage(team, mergedPlayers)
+      
+      await navigator.clipboard.writeText(message)
+      
+      const cleanPhone = captainPhone.replace(/\D/g, '')
+      const phoneWithCountry = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`
+      
+      window.open(`https://wa.me/${phoneWithCountry}`, '_blank')
+      
+      alert('Message copied to clipboard! Paste it in WhatsApp.')
+    } catch (err) {
+      console.error('Error sending WhatsApp:', err)
+      alert('Failed to prepare WhatsApp message')
     }
   }
 
@@ -499,6 +557,14 @@ export default function AdminPage() {
                                 Repay
                               </button>
                             )}
+                            {team.approved && team.payment?.status === 'approved' && (
+                              <button
+                                onClick={() => sendWhatsApp(team)}
+                                className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600 hover:text-white transition-all flex items-center gap-1"
+                              >
+                                📱 WhatsApp
+                              </button>
+                            )}
                             <button
                               onClick={() => handleAction(team.id, team.approved ? 'reject_team' : 'approve_team')}
                               className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${team.approved ? 'bg-white/5 text-slate-500 hover:bg-red-500 hover:text-white' : 'bg-white text-black hover:bg-cricket-500 shadow-lg'}`}
@@ -629,6 +695,11 @@ export default function AdminPage() {
                 )}
                 {team.payment && team.payment.status === 'rejected' && (
                   <button onClick={() => { if(confirm('Request repayment?')) handleAction(team.id, 'request_repayment') }} className="py-3 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all">REPAY</button>
+                )}
+                {team.approved && team.payment?.status === 'approved' && (
+                  <button onClick={() => sendWhatsApp(team)} className="py-3 bg-green-600/20 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all flex items-center justify-center gap-1">
+                    <span>📱</span> WHATSAPP
+                  </button>
                 )}
                 <button onClick={() => { if(confirm('DELETE this team completely?')) handleAction(team.id, 'delete_team') }} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all col-span-2">DELETE TEAM</button>
               </div>
@@ -800,32 +871,14 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* Toggle for testing with dummy teams */}
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <span className={`text-xs font-bold ${useDummyTeams ? 'text-slate-600' : 'text-cricket-500'}`}>Real Teams</span>
-              <button
-                onClick={toggleDummyTeams}
-                className={`w-12 h-6 rounded-full p-1 transition-all ${useDummyTeams ? 'bg-yellow-500' : 'bg-slate-700'}`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full transition-all ${useDummyTeams ? 'translate-x-6' : 'translate-x-0'}`}></div>
-              </button>
-              <span className={`text-xs font-bold ${useDummyTeams ? 'text-yellow-500' : 'text-slate-600'}`}>Test (7 dummy)</span>
-            </div>
-
             {(() => {
-              const teamsToShow = useDummyTeams ? dummyTeams : teams.filter(t => t.approved)
-              if (teamsToShow.length < 2) {
+              const approvedTeams = teams.filter(t => t.approved)
+              if (approvedTeams.length < 2) {
                 return (
                   <div className="text-center py-10">
                     <div className="text-4xl mb-4">⚠️</div>
                     <p className="text-slate-400 font-bold">Need at least 2 approved teams</p>
-                    <p className="text-slate-600 text-sm mt-2">Currently: {teamsToShow.length} team(s)</p>
-                    <button
-                      onClick={toggleDummyTeams}
-                      className="mt-4 px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl text-sm font-bold hover:bg-yellow-500/30 transition-colors"
-                    >
-                      Try with Dummy Teams
-                    </button>
+                    <p className="text-slate-600 text-sm mt-2">Currently: {approvedTeams.length} team(s)</p>
                   </div>
                 )
               }
@@ -833,7 +886,7 @@ export default function AdminPage() {
                 <>
                   <div className="mb-4 text-center">
                     <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                      {teamsToShow.length} Teams → {generatedMatches.length} Matches
+                      {approvedTeams.length} Teams → {generatedMatches.length} Matches
                     </span>
                   </div>
 
@@ -877,16 +930,14 @@ export default function AdminPage() {
                     </button>
                     <button
                       onClick={saveGeneratedMatches}
-                      disabled={savingMatches || matchesSaved || useDummyTeams}
+                      disabled={savingMatches || matchesSaved}
                       className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
-                        useDummyTeams
-                          ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                          : matchesSaved 
-                            ? 'bg-green-600 text-white' 
-                            : 'bg-cricket-500 hover:bg-cricket-600 text-white'
+                        matchesSaved 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-cricket-500 hover:bg-cricket-600 text-white'
                       }`}
                     >
-                      {useDummyTeams ? '🧪 Test Mode' : savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save'}
+                      {savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save'}
                     </button>
                   </div>
                 </>
