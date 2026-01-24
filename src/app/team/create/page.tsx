@@ -36,6 +36,7 @@ export default function CreateTeamPage() {
   const [newPlayerName, setNewPlayerName] = useState('')
   const [addingPlayer, setAddingPlayer] = useState(false)
   const [addPlayerError, setAddPlayerError] = useState<string | null>(null)
+  const [captainRole, setCaptainRole] = useState('all-rounder')
 
   useEffect(() => {
     init()
@@ -70,6 +71,7 @@ export default function CreateTeamPage() {
       const { data: currentStudent } = await supabase.from('student_data').select('*').eq('hall_ticket', hallTicket).maybeSingle()
       if (!currentStudent) { setError('Profile error. Contact Admin.'); setLoading(false); return }
       setCaptain(currentStudent)
+      setCaptainRole(currentStudent.player_role || 'all-rounder')
 
       // Determine captain's department group
       const deptGroupResult = getDepartmentGroup(currentStudent.hall_ticket)
@@ -302,7 +304,7 @@ export default function CreateTeamPage() {
           team_id: teamId,
           hall_ticket: captain.hall_ticket,
           student_id: captain.hall_ticket,
-          player_role: captain.player_role || 'all-rounder',
+          player_role: captainRole,
           is_captain: true
         },
         ...selectedPlayers.map(p => {
@@ -319,6 +321,22 @@ export default function CreateTeamPage() {
 
       const { error: playersError } = await supabase.from('team_players').insert(playersToAdd)
       if (playersError) throw playersError
+
+      // Update player_role in student_data for all players
+      const allPlayerRoles = [
+        { hall_ticket: captain.hall_ticket, player_role: captainRole },
+        ...selectedPlayers.map(p => ({
+          hall_ticket: p.hall_ticket,
+          player_role: p.player_role || 'all-rounder'
+        }))
+      ]
+      
+      for (const player of allPlayerRoles) {
+        await supabase
+          .from('student_data')
+          .update({ player_role: player.player_role })
+          .eq('hall_ticket', player.hall_ticket)
+      }
 
       if (!isEditing) {
         try {
@@ -403,6 +421,25 @@ export default function CreateTeamPage() {
                       )}
                     </div>
                     <span className="px-2 md:px-3 py-1 bg-cricket-500 text-black text-[9px] md:text-[10px] font-black rounded-md md:rounded-lg flex-shrink-0">CAPTAIN</span>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Your Role</div>
+                    <div className="flex gap-2">
+                      {['batsman', 'bowler', 'all-rounder'].map(role => (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => setCaptainRole(role)}
+                          className={`flex-1 py-2 px-2 md:px-3 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all min-h-[44px] ${
+                            captainRole === role 
+                              ? 'bg-cricket-500 text-black' 
+                              : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                          }`}
+                        >
+                          {role === 'all-rounder' ? 'All-Round' : role}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 {captainDeptGroup && (
