@@ -70,6 +70,7 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- January 24, 2026: Added admin ability to edit player roles and remove players from teams
 - January 24, 2026: Added WhatsApp button to send team details and rules to approved+paid teams
 - January 24, 2026: Removed test mode from random match generator (production-ready)
 - January 24, 2026: Added random match generator on admin dashboard

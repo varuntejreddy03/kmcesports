@@ -32,6 +32,11 @@ export default function AdminPage() {
   const [savingMatches, setSavingMatches] = useState(false)
   const [matchesSaved, setMatchesSaved] = useState(false)
 
+  // Player Edit State
+  const [editingPlayer, setEditingPlayer] = useState<string | null>(null)
+  const [editPlayerRole, setEditPlayerRole] = useState('')
+  const [savingPlayer, setSavingPlayer] = useState(false)
+
   useEffect(() => {
     checkAdmin()
 
@@ -326,6 +331,69 @@ export default function AdminPage() {
     }
   }
 
+  // Handle player role edit
+  const handleEditPlayer = (playerId: string, currentRole: string) => {
+    setEditingPlayer(playerId)
+    setEditPlayerRole(currentRole)
+  }
+
+  const handleSavePlayerEdit = async (playerId: string, teamId: string) => {
+    if (!editPlayerRole.trim()) {
+      alert('Please select a role')
+      return
+    }
+    setSavingPlayer(true)
+    try {
+      const { error } = await supabase
+        .from('team_players')
+        .update({ player_role: editPlayerRole })
+        .eq('id', playerId)
+      
+      if (error) throw error
+      
+      // Refresh players
+      setTeamPlayers(prev => prev.map(p => 
+        p.id === playerId ? { ...p, player_role: editPlayerRole } : p
+      ))
+      setEditingPlayer(null)
+      setEditPlayerRole('')
+    } catch (error) {
+      console.error('Error updating player:', error)
+      alert('Failed to update player')
+    } finally {
+      setSavingPlayer(false)
+    }
+  }
+
+  const handleRemovePlayer = async (playerId: string, playerName: string, isCaptain: boolean, teamId: string) => {
+    if (isCaptain) {
+      alert('Cannot remove captain. Transfer captaincy first or delete the entire team.')
+      return
+    }
+    
+    if (!confirm(`Remove ${playerName} from this team?`)) return
+
+    try {
+      const { error } = await supabase
+        .from('team_players')
+        .delete()
+        .eq('id', playerId)
+      
+      if (error) throw error
+      
+      // Refresh players list
+      setTeamPlayers(prev => prev.filter(p => p.id !== playerId))
+      
+      // Update team player count
+      setTeams(prev => prev.map(t => 
+        t.id === teamId ? { ...t, playerCount: (t.playerCount || 1) - 1 } : t
+      ))
+    } catch (error) {
+      console.error('Error removing player:', error)
+      alert('Failed to remove player')
+    }
+  }
+
   // Generate WhatsApp message with team data and rules
   const generateWhatsAppMessage = (team: any, players: any[]) => {
     const playersList = players.map((p, idx) => 
@@ -599,7 +667,8 @@ Contact coordinators for any queries:
                                     <th className="px-6 py-4">Phone</th>
                                     <th className="px-6 py-4">Year</th>
                                     <th className="px-6 py-4">Role</th>
-                                    <th className="px-8 py-4 text-right">Status</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.02]">
@@ -613,9 +682,60 @@ Contact coordinators for any queries:
                                         </a>
                                       </td>
                                       <td className="px-6 py-4 text-slate-400 font-bold">{p.student?.year} Year</td>
-                                      <td className="px-6 py-4 text-cricket-500/70 font-black uppercase tracking-widest text-[10px]">{p.player_role}</td>
-                                      <td className="px-8 py-4 text-right">
+                                      <td className="px-6 py-4">
+                                        {editingPlayer === p.id ? (
+                                          <select
+                                            value={editPlayerRole}
+                                            onChange={(e) => setEditPlayerRole(e.target.value)}
+                                            className="bg-[#1e293b] border border-white/20 rounded-lg px-2 py-1 text-xs"
+                                          >
+                                            <option value="Batsman">Batsman</option>
+                                            <option value="Bowler">Bowler</option>
+                                            <option value="All-Rounder">All-Rounder</option>
+                                            <option value="Wicket Keeper">Wicket Keeper</option>
+                                          </select>
+                                        ) : (
+                                          <span className="text-cricket-500/70 font-black uppercase tracking-widest text-[10px]">{p.player_role}</span>
+                                        )}
+                                      </td>
+                                      <td className="px-6 py-4">
                                         {p.is_captain ? <span className="text-yellow-500 font-black text-[10px] tracking-widest">★ LEADER</span> : <span className="text-slate-700 font-black text-[10px] uppercase tracking-widest">MEMBER</span>}
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                          {editingPlayer === p.id ? (
+                                            <>
+                                              <button
+                                                onClick={() => handleSavePlayerEdit(p.id, team.id)}
+                                                disabled={savingPlayer}
+                                                className="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-green-500 hover:text-white transition-all"
+                                              >
+                                                {savingPlayer ? '...' : 'Save'}
+                                              </button>
+                                              <button
+                                                onClick={() => { setEditingPlayer(null); setEditPlayerRole('') }}
+                                                className="px-3 py-1.5 bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-slate-500 hover:text-white transition-all"
+                                              >
+                                                Cancel
+                                              </button>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <button
+                                                onClick={() => handleEditPlayer(p.id, p.player_role)}
+                                                className="px-3 py-1.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-blue-500 hover:text-white transition-all"
+                                              >
+                                                ✏️ Edit
+                                              </button>
+                                              <button
+                                                onClick={() => handleRemovePlayer(p.id, p.student?.name || 'Unknown', p.is_captain, team.id)}
+                                                className="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all"
+                                              >
+                                                🗑️ Remove
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
                                       </td>
                                     </tr>
                                   ))}
@@ -708,15 +828,64 @@ Contact coordinators for any queries:
                 <div className="animate-fadeIn space-y-3 pt-4 border-t border-white/5">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">Squad Roster Audit</h4>
                   {teamPlayers.map((p, idx) => (
-                    <div key={idx} className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div>
-                        <div className="text-xs font-black uppercase italic">{p.student?.name}</div>
-                        <div className="text-[9px] font-bold text-slate-500 uppercase">{p.player_role}</div>
-                        <a href={`tel:${p.student?.phone || p.student?.phone_number}`} className="text-[10px] font-mono text-cricket-500 hover:text-cricket-400">
-                          {p.student?.phone || p.student?.phone_number || 'N/A'}
-                        </a>
+                    <div key={idx} className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs font-black uppercase italic">{p.student?.name}</div>
+                          {editingPlayer === p.id ? (
+                            <select
+                              value={editPlayerRole}
+                              onChange={(e) => setEditPlayerRole(e.target.value)}
+                              className="mt-1 bg-[#1e293b] border border-white/20 rounded-lg px-2 py-1 text-[10px]"
+                            >
+                              <option value="Batsman">Batsman</option>
+                              <option value="Bowler">Bowler</option>
+                              <option value="All-Rounder">All-Rounder</option>
+                              <option value="Wicket Keeper">Wicket Keeper</option>
+                            </select>
+                          ) : (
+                            <div className="text-[9px] font-bold text-slate-500 uppercase">{p.player_role}</div>
+                          )}
+                          <a href={`tel:${p.student?.phone || p.student?.phone_number}`} className="text-[10px] font-mono text-cricket-500 hover:text-cricket-400">
+                            {p.student?.phone || p.student?.phone_number || 'N/A'}
+                          </a>
+                        </div>
+                        {p.is_captain && <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest">LEADER</span>}
                       </div>
-                      {p.is_captain && <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest">LEADER</span>}
+                      <div className="flex gap-2 pt-2 border-t border-white/5">
+                        {editingPlayer === p.id ? (
+                          <>
+                            <button
+                              onClick={() => handleSavePlayerEdit(p.id, team.id)}
+                              disabled={savingPlayer}
+                              className="flex-1 py-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-green-500 hover:text-white transition-all min-h-[36px]"
+                            >
+                              {savingPlayer ? '...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={() => { setEditingPlayer(null); setEditPlayerRole('') }}
+                              className="flex-1 py-2 bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-slate-500 hover:text-white transition-all min-h-[36px]"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleEditPlayer(p.id, p.player_role)}
+                              className="flex-1 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-blue-500 hover:text-white transition-all min-h-[36px]"
+                            >
+                              ✏️ Edit Role
+                            </button>
+                            <button
+                              onClick={() => handleRemovePlayer(p.id, p.student?.name || 'Unknown', p.is_captain, team.id)}
+                              className="flex-1 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all min-h-[36px]"
+                            >
+                              🗑️ Remove
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
