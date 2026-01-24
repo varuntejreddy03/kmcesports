@@ -25,6 +25,25 @@ export default function AdminPage() {
     venue: 'Main Stadium Ground'
   })
 
+  // Random Match Generator State
+  const [showMatchGenerator, setShowMatchGenerator] = useState(false)
+  const [generatedMatches, setGeneratedMatches] = useState<{team_a: any, team_b: any}[]>([])
+  const [byeTeam, setByeTeam] = useState<any | null>(null)
+  const [savingMatches, setSavingMatches] = useState(false)
+  const [matchesSaved, setMatchesSaved] = useState(false)
+  const [useDummyTeams, setUseDummyTeams] = useState(false)
+
+  // Dummy teams for testing
+  const dummyTeams = [
+    { id: '1', name: 'CSE Thunder', created_at: '2026-01-20T08:00:00Z' },
+    { id: '2', name: 'ECE Warriors', created_at: '2026-01-20T09:00:00Z' },
+    { id: '3', name: 'CSM Strikers', created_at: '2026-01-20T10:00:00Z' },
+    { id: '4', name: 'CSD Phoenix', created_at: '2026-01-20T11:00:00Z' },
+    { id: '5', name: 'CSO Titans', created_at: '2026-01-20T12:00:00Z' },
+    { id: '6', name: 'CSC Dragons', created_at: '2026-01-20T13:00:00Z' },
+    { id: '7', name: 'Mech Lions', created_at: '2026-01-20T14:00:00Z' },
+  ]
+
   useEffect(() => {
     checkAdmin()
 
@@ -197,6 +216,117 @@ export default function AdminPage() {
     if (!confirm('Cancel this match?')) return
     const { error } = await supabase.from('matches').delete().eq('id', id)
     if (!error) fetchMatches()
+  }
+
+  // Shuffle array (Fisher-Yates algorithm)
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+  }
+
+  // Generate random matches from teams
+  const generateRandomMatches = (teamsToUse: any[]) => {
+    // Sort by registration time (created_at) - first registered first
+    const sortedByRegistration = [...teamsToUse].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+    
+    const matchList: {team_a: any, team_b: any}[] = []
+    let bye: any | null = null
+    let teamsToShuffle = [...sortedByRegistration]
+
+    // If odd number of teams, first registered team gets bye
+    if (teamsToShuffle.length % 2 !== 0) {
+      bye = teamsToShuffle.shift()!
+      setByeTeam(bye)
+    } else {
+      setByeTeam(null)
+    }
+
+    // Shuffle remaining teams for random pairing
+    const shuffled = shuffleArray(teamsToShuffle)
+
+    // Pair remaining teams
+    for (let i = 0; i < shuffled.length; i += 2) {
+      matchList.push({
+        team_a: shuffled[i],
+        team_b: shuffled[i + 1]
+      })
+    }
+
+    setGeneratedMatches(matchList)
+    setMatchesSaved(false)
+  }
+
+  // Open match generator
+  const openMatchGenerator = () => {
+    setShowMatchGenerator(true)
+    const approvedTeams = teams.filter(t => t.approved)
+    if (useDummyTeams) {
+      generateRandomMatches(dummyTeams)
+    } else if (approvedTeams.length > 0) {
+      generateRandomMatches(approvedTeams)
+    }
+  }
+
+  // Regenerate matches
+  const regenerateMatches = () => {
+    const teamsToUse = useDummyTeams ? dummyTeams : teams.filter(t => t.approved)
+    if (teamsToUse.length > 0) {
+      generateRandomMatches(teamsToUse)
+    }
+  }
+
+  // Toggle dummy teams
+  const toggleDummyTeams = () => {
+    const newValue = !useDummyTeams
+    setUseDummyTeams(newValue)
+    if (newValue) {
+      generateRandomMatches(dummyTeams)
+    } else {
+      const approvedTeams = teams.filter(t => t.approved)
+      if (approvedTeams.length > 0) {
+        generateRandomMatches(approvedTeams)
+      }
+    }
+  }
+
+  // Save generated matches to database
+  const saveGeneratedMatches = async () => {
+    setSavingMatches(true)
+    try {
+      // Delete existing scheduled matches for round 1 only
+      await supabase
+        .from('matches')
+        .delete()
+        .eq('round', 1)
+        .eq('status', 'scheduled')
+
+      // Insert new matches
+      const matchesToInsert = generatedMatches.map((match, index) => ({
+        team_a_id: match.team_a.id,
+        team_b_id: match.team_b.id,
+        match_date: new Date().toISOString(),
+        round: 1,
+        match_number: index + 1,
+        status: 'scheduled'
+      }))
+
+      const { error } = await supabase.from('matches').insert(matchesToInsert)
+      if (error) throw error
+
+      setMatchesSaved(true)
+      fetchMatches()
+    } catch (err) {
+      console.error('Error saving matches:', err)
+      alert('Failed to save matches. Please try again.')
+    } finally {
+      setSavingMatches(false)
+    }
   }
 
   const toggleTeamDetails = async (teamId: string) => {
@@ -531,12 +661,20 @@ export default function AdminPage() {
               <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2">Tournament Ops</div>
               <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase italic leading-none">Match Schedule</h1>
             </div>
-            <button
-              onClick={() => setShowScheduleForm(!showScheduleForm)}
-              className="w-full sm:w-auto px-6 md:px-8 py-3 bg-cricket-600 text-white rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest shadow-lg shadow-cricket-600/30 hover:scale-105 transition-all min-h-[44px]"
-            >
-              {showScheduleForm ? 'Close' : 'Schedule Match 📅'}
-            </button>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <button
+                onClick={openMatchGenerator}
+                className="flex-1 sm:flex-none px-4 md:px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest shadow-lg hover:scale-105 transition-all min-h-[44px]"
+              >
+                🎲 Random
+              </button>
+              <button
+                onClick={() => setShowScheduleForm(!showScheduleForm)}
+                className="flex-1 sm:flex-none px-4 md:px-6 py-3 bg-cricket-600 text-white rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest shadow-lg shadow-cricket-600/30 hover:scale-105 transition-all min-h-[44px]"
+              >
+                {showScheduleForm ? 'Close' : 'Schedule 📅'}
+              </button>
+            </div>
           </div>
 
           {showScheduleForm && (
@@ -647,6 +785,116 @@ export default function AdminPage() {
           )}
         </div>
       </main>
+
+      {/* Random Match Generator Modal */}
+      {showMatchGenerator && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] border border-white/10 rounded-[32px] p-6 md:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-black uppercase tracking-tight">Random Schedule</h2>
+              <button
+                onClick={() => setShowMatchGenerator(false)}
+                className="text-slate-500 hover:text-white transition-colors text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Toggle for testing with dummy teams */}
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <span className={`text-xs font-bold ${useDummyTeams ? 'text-slate-600' : 'text-cricket-500'}`}>Real Teams</span>
+              <button
+                onClick={toggleDummyTeams}
+                className={`w-12 h-6 rounded-full p-1 transition-all ${useDummyTeams ? 'bg-yellow-500' : 'bg-slate-700'}`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full transition-all ${useDummyTeams ? 'translate-x-6' : 'translate-x-0'}`}></div>
+              </button>
+              <span className={`text-xs font-bold ${useDummyTeams ? 'text-yellow-500' : 'text-slate-600'}`}>Test (7 dummy)</span>
+            </div>
+
+            {(() => {
+              const teamsToShow = useDummyTeams ? dummyTeams : teams.filter(t => t.approved)
+              if (teamsToShow.length < 2) {
+                return (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-4">⚠️</div>
+                    <p className="text-slate-400 font-bold">Need at least 2 approved teams</p>
+                    <p className="text-slate-600 text-sm mt-2">Currently: {teamsToShow.length} team(s)</p>
+                    <button
+                      onClick={toggleDummyTeams}
+                      className="mt-4 px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl text-sm font-bold hover:bg-yellow-500/30 transition-colors"
+                    >
+                      Try with Dummy Teams
+                    </button>
+                  </div>
+                )
+              }
+              return (
+                <>
+                  <div className="mb-4 text-center">
+                    <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                      {teamsToShow.length} Teams → {generatedMatches.length} Matches
+                    </span>
+                  </div>
+
+                  {/* Generated Matches */}
+                  <div className="space-y-3 mb-6">
+                    {generatedMatches.map((match, index) => (
+                      <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <div className="text-[9px] font-black text-cricket-500 uppercase tracking-widest mb-2">
+                          Match {index + 1}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 text-center">
+                            <div className="font-black text-sm">{match.team_a.name}</div>
+                          </div>
+                          <div className="px-4 text-slate-600 font-black text-xs">VS</div>
+                          <div className="flex-1 text-center">
+                            <div className="font-black text-sm">{match.team_b.name}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bye Team */}
+                  {byeTeam && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 mb-6 text-center">
+                      <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
+                        🏆 Bye - First Registered (Advances)
+                      </div>
+                      <div className="font-black text-yellow-400">{byeTeam.name}</div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={regenerateMatches}
+                      className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-colors"
+                    >
+                      🔄 Regenerate
+                    </button>
+                    <button
+                      onClick={saveGeneratedMatches}
+                      disabled={savingMatches || matchesSaved || useDummyTeams}
+                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
+                        useDummyTeams
+                          ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                          : matchesSaved 
+                            ? 'bg-green-600 text-white' 
+                            : 'bg-cricket-500 hover:bg-cricket-600 text-white'
+                      }`}
+                    >
+                      {useDummyTeams ? '🧪 Test Mode' : savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save'}
+                    </button>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
