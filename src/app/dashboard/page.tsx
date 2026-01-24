@@ -6,10 +6,16 @@ import Link from 'next/link'
 import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import { StudentData, Team } from '@/types'
 
-const REGISTRATION_DEADLINE = new Date('2026-01-27T12:30:00')
+const DEFAULT_DEADLINE = new Date('2026-01-27T12:30:00')
 
-const isRegistrationClosed = () => {
-  return new Date() > REGISTRATION_DEADLINE
+const formatDeadlineMessage = (date: Date) => {
+  const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', year: 'numeric' }
+  const dateStr = date.toLocaleDateString('en-US', options)
+  const hours = date.getHours()
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours % 12 || 12
+  return `${dateStr} at ${hour12}:${minutes} ${ampm}`
 }
 
 type RegistrationStatus = 'not_registered' | 'payment_pending' | 'approval_pending' | 'approved' | 'rejected'
@@ -18,6 +24,7 @@ export default function Dashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [registrationClosed, setRegistrationClosed] = useState(false)
+  const [deadlineDate, setDeadlineDate] = useState<Date>(DEFAULT_DEADLINE)
   const [student, setStudent] = useState<StudentData | null>(null)
   const [team, setTeam] = useState<Team | null>(null)
   const [teamPlayers, setTeamPlayers] = useState<any[]>([])
@@ -57,7 +64,18 @@ export default function Dashboard() {
 
   const checkUser = async () => {
     try {
-      setRegistrationClosed(isRegistrationClosed())
+      // Fetch deadline from database
+      const { data: settingsData } = await supabase
+        .from('tournament_settings')
+        .select('registration_deadline')
+        .eq('sport', 'cricket')
+        .maybeSingle()
+      
+      const deadline = settingsData?.registration_deadline 
+        ? new Date(settingsData.registration_deadline)
+        : DEFAULT_DEADLINE
+      setDeadlineDate(deadline)
+      setRegistrationClosed(new Date() > deadline)
 
       const isExpired = checkSessionTimeout()
       if (isExpired) {
@@ -220,7 +238,7 @@ export default function Dashboard() {
                   <div className="w-16 h-16 md:w-20 md:h-20 bg-red-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-red-500/20">⏰</div>
                   <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">Registration <span className="text-red-500">Closed</span></h2>
                   <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-10 text-sm md:text-lg">
-                    The registration deadline was January 27, 2026 at 12:30 PM. You can no longer create or join a team.
+                    The registration deadline was {formatDeadlineMessage(deadlineDate)}. You can no longer create or join a team.
                   </p>
                 </>
               ) : (

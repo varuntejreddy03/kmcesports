@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase, setSessionStartTime } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -11,6 +11,74 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  
+  // Deadline editing state
+  const [isEditingDeadline, setIsEditingDeadline] = useState(false)
+  const [deadlineDate, setDeadlineDate] = useState('2026-01-27')
+  const [deadlineTime, setDeadlineTime] = useState('12:30')
+  const [savingDeadline, setSavingDeadline] = useState(false)
+
+  // Format deadline for display
+  const formatDeadlineDisplay = () => {
+    const date = new Date(`${deadlineDate}T${deadlineTime}:00`)
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+    const dateStr = date.toLocaleDateString('en-US', options)
+    const hours = date.getHours()
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    const hour12 = hours % 12 || 12
+    return `${dateStr}, ${hour12}:${minutes} ${ampm}`
+  }
+
+  // Load deadline from database
+  useEffect(() => {
+    const loadDeadline = async () => {
+      const { data } = await supabase
+        .from('tournament_settings')
+        .select('registration_deadline')
+        .eq('sport', 'cricket')
+        .maybeSingle()
+      
+      if (data?.registration_deadline) {
+        const deadline = new Date(data.registration_deadline)
+        setDeadlineDate(deadline.toISOString().split('T')[0])
+        setDeadlineTime(deadline.toTimeString().slice(0, 5))
+      }
+    }
+    loadDeadline()
+  }, [])
+
+  // Save deadline to database
+  const saveDeadline = async () => {
+    setSavingDeadline(true)
+    try {
+      const deadlineISO = new Date(`${deadlineDate}T${deadlineTime}:00`).toISOString()
+      
+      // Check if record exists
+      const { data: existing } = await supabase
+        .from('tournament_settings')
+        .select('id')
+        .eq('sport', 'cricket')
+        .maybeSingle()
+      
+      if (existing) {
+        await supabase
+          .from('tournament_settings')
+          .update({ registration_deadline: deadlineISO })
+          .eq('sport', 'cricket')
+      } else {
+        await supabase
+          .from('tournament_settings')
+          .insert({ sport: 'cricket', registration_deadline: deadlineISO })
+      }
+      
+      setIsEditingDeadline(false)
+    } catch (err) {
+      console.error('Error saving deadline:', err)
+    } finally {
+      setSavingDeadline(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -160,7 +228,47 @@ export default function AdminLoginPage() {
         {/* Registration Deadline */}
         <div className="mt-10 bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[32px] p-6 text-center">
           <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Registration Deadline</div>
-          <div className="text-2xl md:text-3xl font-black text-white">Jan 27, 12:30 PM</div>
+          {isEditingDeadline ? (
+            <div className="space-y-3">
+              <div className="flex gap-2 justify-center">
+                <input
+                  type="date"
+                  value={deadlineDate}
+                  onChange={(e) => setDeadlineDate(e.target.value)}
+                  className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-cricket-500 outline-none"
+                />
+                <input
+                  type="time"
+                  value={deadlineTime}
+                  onChange={(e) => setDeadlineTime(e.target.value)}
+                  className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-sm font-bold focus:ring-2 focus:ring-cricket-500 outline-none"
+                />
+              </div>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={saveDeadline}
+                  disabled={savingDeadline}
+                  className="bg-cricket-500 hover:bg-cricket-600 text-white font-bold py-2 px-4 rounded-xl text-sm transition-colors"
+                >
+                  {savingDeadline ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => setIsEditingDeadline(false)}
+                  className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-4 rounded-xl text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div 
+              onClick={() => setIsEditingDeadline(true)}
+              className="text-2xl md:text-3xl font-black text-white cursor-pointer hover:text-cricket-400 transition-colors"
+              title="Click to edit"
+            >
+              {formatDeadlineDisplay()}
+            </div>
+          )}
         </div>
 
         {/* Cricket Coordinators Contact */}

@@ -5,6 +5,18 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+const formatDeadlineShort = (dateStr: string | null) => {
+  if (!dateStr) return 'Jan 27, 12:30 PM'
+  const date = new Date(dateStr)
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  const formattedDate = date.toLocaleDateString('en-US', options)
+  const hours = date.getHours()
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours % 12 || 12
+  return `${formattedDate}, ${hour12}:${minutes} ${ampm}`
+}
+
 export default function Home() {
   const router = useRouter()
   const [settings, setSettings] = useState<any>(null)
@@ -363,7 +375,7 @@ export default function Home() {
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 mb-6 md:mb-8 border border-white/10">
                     <div className="text-[10px] md:text-xs font-bold text-white/60 uppercase tracking-widest mb-1 md:mb-2">Deadline</div>
                     <div className="text-2xl md:text-3xl font-black">
-                      Jan 27, 12:30 PM
+                      {formatDeadlineShort(settings?.registration_deadline)}
                     </div>
                   </div>
                   

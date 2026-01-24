@@ -6,16 +6,23 @@ import { supabase, checkSessionTimeout, clearSessionStartTime, getDepartmentGrou
 import { StudentData } from '@/types'
 import Link from 'next/link'
 
-const REGISTRATION_DEADLINE = new Date('2026-01-27T12:30:00')
+const DEFAULT_DEADLINE = new Date('2026-01-27T12:30:00')
 
-const isRegistrationClosed = () => {
-  return new Date() > REGISTRATION_DEADLINE
+const formatDeadlineMessage = (date: Date) => {
+  const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', year: 'numeric' }
+  const dateStr = date.toLocaleDateString('en-US', options)
+  const hours = date.getHours()
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours % 12 || 12
+  return `${dateStr} at ${hour12}:${minutes} ${ampm}`
 }
 
 export default function CreateTeamPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [registrationClosed, setRegistrationClosed] = useState(false)
+  const [deadlineDate, setDeadlineDate] = useState<Date>(DEFAULT_DEADLINE)
   const [captain, setCaptain] = useState<StudentData | null>(null)
   const [teamName, setTeamName] = useState('')
   const [selectedPlayers, setSelectedPlayers] = useState<StudentData[]>([])
@@ -53,7 +60,19 @@ export default function CreateTeamPage() {
 
   const init = async () => {
     try {
-      if (isRegistrationClosed()) {
+      // Fetch deadline from database
+      const { data: settingsData } = await supabase
+        .from('tournament_settings')
+        .select('registration_deadline')
+        .eq('sport', 'cricket')
+        .maybeSingle()
+      
+      const deadline = settingsData?.registration_deadline 
+        ? new Date(settingsData.registration_deadline)
+        : DEFAULT_DEADLINE
+      setDeadlineDate(deadline)
+      
+      if (new Date() > deadline) {
         setRegistrationClosed(true)
         setLoading(false)
         return
@@ -371,7 +390,7 @@ export default function CreateTeamPage() {
       <div className="text-center px-4">
         <div className="text-6xl mb-4">⏰</div>
         <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">Registration <span className="text-red-500">Closed</span></h1>
-        <p className="text-slate-400 text-lg mb-6">The deadline was January 27, 2026 at 12:30 PM</p>
+        <p className="text-slate-400 text-lg mb-6">The deadline was {formatDeadlineMessage(deadlineDate)}</p>
         <Link href="/dashboard" className="inline-flex items-center gap-2 bg-cricket-500 hover:bg-cricket-600 text-white font-bold py-3 px-6 rounded-xl transition-colors min-h-[44px]">
           ← Back to Dashboard
         </Link>
