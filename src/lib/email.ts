@@ -17,15 +17,11 @@ function createTransporter() {
   }
 
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    service: 'gmail',
     auth: {
       user: user,
       pass: pass
-    },
-    pool: true,
-    maxConnections: 5
+    }
   })
 }
 
@@ -130,7 +126,13 @@ KMCE Cricket Championship 2026
       to: NOTIFICATION_EMAILS.join(', '),
       subject: `New Team Created: ${teamData.teamName} (${teamData.department})`,
       text: textContent,
-      html: htmlContent
+      html: htmlContent,
+      priority: 'high',
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'high'
+      }
     }).then(() => {
       console.log('Team creation email sent')
     }).catch((err: any) => {
@@ -236,7 +238,13 @@ KMCE Cricket Championship 2026
       to: NOTIFICATION_EMAILS.join(', '),
       subject: `Payment Confirmed: ${teamData.teamName} (${teamData.department}) - Rs.3000 PAID`,
       text: textContent,
-      html: htmlContent
+      html: htmlContent,
+      priority: 'high',
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'high'
+      }
     }).then(() => {
       console.log('Payment confirmation email sent')
     }).catch((err: any) => {
