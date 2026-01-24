@@ -464,16 +464,26 @@ Contact coordinators for any queries:
         return
       }
 
-      const message = generateWhatsAppMessage(team, mergedPlayers)
+      // Get department from team or captain's hall ticket
+      let department = team.department
+      if (!department && captain?.hall_ticket) {
+        const deptCode = captain.hall_ticket.substring(6, 8)
+        const deptMap: {[key: string]: string} = {
+          '05': 'CSE', '69': 'CSO', '04': 'ECE',
+          '66': 'CSM', '62': 'CSC', '67': 'CSD'
+        }
+        department = deptMap[deptCode] || 'N/A'
+      }
       
-      await navigator.clipboard.writeText(message)
+      const teamWithDept = { ...team, department: department || 'N/A' }
+      const message = generateWhatsAppMessage(teamWithDept, mergedPlayers)
       
       const cleanPhone = captainPhone.replace(/\D/g, '')
       const phoneWithCountry = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`
       
-      window.open(`https://wa.me/${phoneWithCountry}`, '_blank')
-      
-      alert('Message copied to clipboard! Paste it in WhatsApp.')
+      // Encode message for URL - works on iOS
+      const encodedMessage = encodeURIComponent(message)
+      window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMessage}`, '_blank')
     } catch (err) {
       console.error('Error sending WhatsApp:', err)
       alert('Failed to prepare WhatsApp message')
