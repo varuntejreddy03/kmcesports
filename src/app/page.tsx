@@ -173,7 +173,7 @@ export default function Home() {
             Build your dream team, compete against the best, and become the champion of KMCE.
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mb-6 md:mb-8 px-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mb-4 md:mb-6 px-4">
             <button
               onClick={handleRegisterClick}
               className="px-6 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-lg hover:scale-105 transition-all shadow-2xl shadow-cricket-600/30 active:scale-95 flex items-center justify-center gap-2 md:gap-3 min-h-[52px]"
@@ -188,6 +188,13 @@ export default function Home() {
               <span>Player Login</span>
               <span>→</span>
             </Link>
+          </div>
+
+          {/* ID Card Note */}
+          <div className="text-center mb-6 md:mb-8 px-4">
+            <p className="text-yellow-400 text-xs md:text-sm font-bold bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-2 inline-block">
+              🪪 Note: ID card is mandatory for all students and is used for verification purpose.
+            </p>
           </div>
 
           <div className="flex flex-col items-center gap-4">
