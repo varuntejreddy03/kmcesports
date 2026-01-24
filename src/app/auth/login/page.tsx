@@ -51,22 +51,20 @@ function LoginContent() {
         return
       }
 
-      if (data.player_role) {
+      // Check if user has logged in before (login_count > 0 means returning user)
+      const hasLoggedInBefore = (data.login_count || 0) > 0
+
+      if (hasLoggedInBefore) {
+        // Returning user - go directly to password
+        setPlayerRole(data.player_role || 'all-rounder')
+        setStep('password')
+      } else if (data.player_role) {
+        // First login but has role set - go to password
         setPlayerRole(data.player_role)
         setStep('password')
       } else {
-        const { data: existingTeam } = await supabase
-          .from('team_players')
-          .select('team_id')
-          .eq('hall_ticket', data.hall_ticket)
-          .maybeSingle()
-
-        if (existingTeam) {
-          setPlayerRole('all-rounder')
-          setStep('password')
-        } else {
-          setStep('verify_details')
-        }
+        // First login, no role - show role selection
+        setStep('verify_details')
       }
     } catch (err: any) {
       setError(err.message)
@@ -136,8 +134,9 @@ function LoginContent() {
 
       setSessionStartTime()
       
-      // If using default password and password not yet changed, redirect to change password
-      if (password === 'Kmce123$' && !student.password_changed && student.hall_ticket !== 'ADMIN') {
+      // Only force password change on FIRST login with default password
+      const isFirstLogin = (student.login_count || 0) === 0
+      if (isFirstLogin && password === 'Kmce123$' && !student.password_changed && student.hall_ticket !== 'ADMIN') {
         router.push('/auth/change-password')
         return
       }

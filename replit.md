@@ -52,6 +52,7 @@ To enable login/password tracking, add these columns to your student_data table 
 - Team creation page blocked with deadline notice
 
 ## Recent Changes
+- January 24, 2026: Login flow updated - returning users skip role selection and password change
 - January 23, 2026: Added registration deadline (Jan 27, 2026 at 12:30 PM)
 - January 23, 2026: Added email notifications on team creation and payment confirmation
 - January 23, 2026: Email sent to 4 coordinators with full team data, phone numbers, and player details
