@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer'
 const NOTIFICATION_EMAILS = [
   'remaindervarun@gmail.com',
   'varuntejreddy03@gmail.com',
-  'saisreekarperala4@gmail.com',
+  'peralasreekar@gmail.com',
   'banothsuresh2525@gmail.com'
 ]
 
