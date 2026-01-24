@@ -93,7 +93,21 @@ export async function POST(request: NextRequest) {
       const { error: tError } = await supabase.from('teams').update({ approved: false, whatsapp_sent: false }).eq('id', teamId)
       updateError = tError
     } else if (action === 'delete_team') {
-      // Delete team completely - first delete related records, then the team
+      // Delete team completely - first get player hall tickets, reset their roles, then delete records
+      const { data: players } = await supabase
+        .from('team_players')
+        .select('hall_ticket')
+        .eq('team_id', teamId)
+      
+      // Reset player_role to NULL in student_data for all team members
+      if (players && players.length > 0) {
+        const hallTickets = players.map(p => p.hall_ticket)
+        await supabase
+          .from('student_data')
+          .update({ player_role: null })
+          .in('hall_ticket', hallTickets)
+      }
+      
       await supabase.from('team_players').delete().eq('team_id', teamId)
       await supabase.from('payments').delete().eq('team_id', teamId)
       const { error: tError } = await supabase.from('teams').delete().eq('id', teamId)
