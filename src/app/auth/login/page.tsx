@@ -12,7 +12,7 @@ function LoginContent() {
   const [playerRole, setPlayerRole] = useState('all-rounder')
   const [sessionExpired, setSessionExpired] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [password, setPassword] = useState('Kmce123$')
+  const [password, setPassword] = useState('')
   const [step, setStep] = useState<'hall_ticket' | 'verify_details' | 'password'>('hall_ticket')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -55,15 +55,18 @@ function LoginContent() {
       const hasLoggedInBefore = (data.login_count || 0) > 0
 
       if (hasLoggedInBefore) {
-        // Returning user - go directly to password
+        // Returning user - go directly to password with empty field
         setPlayerRole(data.player_role || 'all-rounder')
+        setPassword('')
         setStep('password')
       } else if (data.player_role) {
-        // First login but has role set - go to password
+        // First login but has role set - go to password with default
         setPlayerRole(data.player_role)
+        setPassword('Kmce123$')
         setStep('password')
       } else {
-        // First login, no role - show role selection
+        // First login, no role - show role selection with default password
+        setPassword('Kmce123$')
         setStep('verify_details')
       }
     } catch (err: any) {
