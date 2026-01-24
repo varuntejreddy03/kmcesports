@@ -131,10 +131,12 @@ export default function Home() {
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🪪 ID card is mandatory for all students (verification purpose)</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🏏 CSE, CSM, ECE only</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🪪 ID card is mandatory for all students (verification purpose)</span>
         </div>
       </div>
 
