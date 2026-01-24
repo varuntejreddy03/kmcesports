@@ -53,17 +53,26 @@ To enable login/password tracking, add these columns to your student_data table 
 - Deadline can be changed from Admin Login page or Tournament Settings
 
 ## Random Match Generator
-Available on the Admin Login page:
-- Click "Generate Random Schedule" button
+Available on the Admin Dashboard (🎲 Random button):
+- Click "🎲 Random" button in Match Schedule section
 - Fetches all approved teams from database
 - Uses Fisher-Yates shuffle for random pairing
-- Handles odd number of teams with a "bye" (advances automatically)
+- Handles odd number of teams with a "bye" (first registered team advances)
 - Shows generated matches with Regenerate option
 - Save to database requires admin authentication
 - Only deletes round 1 scheduled matches, preserves completed matches
 
+## WhatsApp Notification
+For approved+paid teams, admin can send WhatsApp message to captain:
+- Click "📱 WHATSAPP" button on team card (mobile) or table (desktop)
+- Copies full message to clipboard with team details, player roster, and all 18 tournament rules
+- Opens WhatsApp with captain's phone number
+- Admin just pastes the message and sends
+
 ## Recent Changes
-- January 24, 2026: Added random match generator on admin login page
+- January 24, 2026: Added WhatsApp button to send team details and rules to approved+paid teams
+- January 24, 2026: Removed test mode from random match generator (production-ready)
+- January 24, 2026: Added random match generator on admin dashboard
 - January 24, 2026: Registration deadline now editable from admin login and tournament settings
 - January 24, 2026: Login flow updated - returning users skip role selection and password change
 - January 23, 2026: Added registration deadline (Jan 27, 2026 at 12:30 PM)
