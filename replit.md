@@ -46,12 +46,25 @@ To enable login/password tracking, add these columns to your student_data table 
 - `password_changed_at` (timestamptz) - When password was changed
 
 ## Registration Deadline
-**Deadline: January 27, 2026 at 12:30 PM**
+**Deadline: January 27, 2026 at 12:30 PM** (Editable from Admin Login & Tournament Settings)
 - After this deadline, no new teams can be created
 - Users without teams will see "Registration Closed" message
 - Team creation page blocked with deadline notice
+- Deadline can be changed from Admin Login page or Tournament Settings
+
+## Random Match Generator
+Available on the Admin Login page:
+- Click "Generate Random Schedule" button
+- Fetches all approved teams from database
+- Uses Fisher-Yates shuffle for random pairing
+- Handles odd number of teams with a "bye" (advances automatically)
+- Shows generated matches with Regenerate option
+- Save to database requires admin authentication
+- Only deletes round 1 scheduled matches, preserves completed matches
 
 ## Recent Changes
+- January 24, 2026: Added random match generator on admin login page
+- January 24, 2026: Registration deadline now editable from admin login and tournament settings
 - January 24, 2026: Login flow updated - returning users skip role selection and password change
 - January 23, 2026: Added registration deadline (Jan 27, 2026 at 12:30 PM)
 - January 23, 2026: Added email notifications on team creation and payment confirmation
