@@ -444,15 +444,6 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        {/* Match Generator Button */}
-        <div className="mt-6">
-          <button
-            onClick={openMatchGenerator}
-            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg"
-          >
-            🎲 Generate Random Schedule
-          </button>
-        </div>
 
         {/* Match Generator Modal */}
         {showMatchGenerator && (
