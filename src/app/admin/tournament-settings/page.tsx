@@ -43,7 +43,9 @@ export default function TournamentSettingsPage() {
     end_date: '',
     venue: '',
     upi_id: '',
-    payment_instructions: ''
+    payment_instructions: '',
+    registration_deadline_date: '2026-01-27',
+    registration_deadline_time: '12:30'
   })
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -76,6 +78,15 @@ export default function TournamentSettingsPage() {
 
       if (tournamentData) {
         setSettings(tournamentData)
+        // Parse registration deadline
+        let deadlineDate = '2026-01-27'
+        let deadlineTime = '12:30'
+        if (tournamentData.registration_deadline) {
+          const deadline = new Date(tournamentData.registration_deadline)
+          deadlineDate = deadline.toISOString().split('T')[0]
+          deadlineTime = deadline.toTimeString().slice(0, 5)
+        }
+        
         setFormData({
           tournament_name: tournamentData.tournament_name || '',
           ground_name: tournamentData.ground_name || '',
@@ -89,7 +100,9 @@ export default function TournamentSettingsPage() {
           end_date: tournamentData.end_date || '',
           venue: tournamentData.venue || tournamentData.ground_name || '',
           upi_id: tournamentData.upi_id || '',
-          payment_instructions: tournamentData.payment_instructions || ''
+          payment_instructions: tournamentData.payment_instructions || '',
+          registration_deadline_date: deadlineDate,
+          registration_deadline_time: deadlineTime
         })
       }
     } catch (error) {
@@ -103,7 +116,10 @@ export default function TournamentSettingsPage() {
     setSaving(true)
     setMessage(null)
     try {
-      const dataToSave = { ...formData, sport: 'cricket', last_updated: new Date().toISOString() }
+      // Convert deadline date/time to ISO string
+      const deadlineISO = new Date(`${formData.registration_deadline_date}T${formData.registration_deadline_time}:00`).toISOString()
+      const { registration_deadline_date, registration_deadline_time, ...restFormData } = formData
+      const dataToSave = { ...restFormData, registration_deadline: deadlineISO, sport: 'cricket', last_updated: new Date().toISOString() }
       let error
       if (settings) {
         const { error: updateError } = await supabase.from('tournament_settings').update(dataToSave).eq('id', settings.id)
@@ -245,11 +261,18 @@ export default function TournamentSettingsPage() {
               <h4 className="text-xs font-black uppercase tracking-widest">Timeline</h4>
               <div className="space-y-4">
                 <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-600 uppercase">Registration Deadline</label>
+                  <div className="flex gap-2">
+                    <input type="date" value={formData.registration_deadline_date} onChange={(e) => setFormData({ ...formData, registration_deadline_date: e.target.value })} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
+                    <input type="time" value={formData.registration_deadline_time} onChange={(e) => setFormData({ ...formData, registration_deadline_time: e.target.value })} className="w-28 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
+                  </div>
+                </div>
+                <div className="space-y-1">
                   <label className="text-[9px] font-black text-slate-600 uppercase">Tournament Launch</label>
                   <input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-600 uppercase">Registration End</label>
+                  <label className="text-[9px] font-black text-slate-600 uppercase">Tournament End</label>
                   <input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
                 </div>
               </div>
