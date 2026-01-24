@@ -291,7 +291,9 @@ function LoginContent() {
                     className="w-full bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-5 md:px-6 py-3.5 md:py-4 text-lg md:text-xl font-black focus:ring-2 focus:ring-cricket-500 outline-none transition-all min-h-[48px]"
                     placeholder="••••••••"
                   />
-                  <p className="text-[9px] md:text-[10px] text-slate-600 font-bold text-center">Default: Kmce123$</p>
+                  {(student?.login_count || 0) === 0 && (
+                    <p className="text-[9px] md:text-[10px] text-slate-600 font-bold text-center">Default: Kmce123$</p>
+                  )}
                 </div>
                 <button
                   disabled={loading}
