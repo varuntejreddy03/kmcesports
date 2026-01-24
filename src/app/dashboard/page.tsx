@@ -220,7 +220,7 @@ export default function Dashboard() {
                   <div className="w-16 h-16 md:w-20 md:h-20 bg-red-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-red-500/20">⏰</div>
                   <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">Registration <span className="text-red-500">Closed</span></h2>
                   <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-10 text-sm md:text-lg">
-                    The registration deadline was January 27, 2026 at 12:30 PM. You can no longer create or join a team.
+                    The registration deadline was January 27, 2026. You can no longer create or join a team.
                   </p>
                 </>
               ) : (
