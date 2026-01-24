@@ -400,7 +400,7 @@ export default function AdminPage() {
       `${idx + 1}. ${p.student?.name || 'Unknown'} - ${p.player_role}${p.is_captain ? ' (Captain)' : ''}`
     ).join('\n')
 
-    const rules = `🏏 *KMCE Cricket Tournament Rules*
+    const rules = `*KMCE Cricket Tournament Rules*
 
 1. Teams must participate department-wise only
 2. All teams must wear WHITE uniforms
@@ -421,25 +421,25 @@ export default function AdminPage() {
 17. Organizing Committee decisions are final
 18. Play fairly - maintain sportsmanship!`
 
-    const message = `🎉 *CONGRATULATIONS!*
+    const message = `*CONGRATULATIONS!*
 
 Your team registration for KMCE Cricket Tournament has been *APPROVED* and payment *CONFIRMED*!
 
-📋 *TEAM DETAILS*
-━━━━━━━━━━━━━━━
-🏏 *Team Name:* ${team.name}
-🏢 *Department:* ${team.department || 'N/A'}
+*TEAM DETAILS*
+-----------------
+*Team Name:* ${team.name}
+*Department:* ${team.department || 'N/A'}
 
-👥 *SQUAD ROSTER*
-━━━━━━━━━━━━━━━
+*SQUAD ROSTER*
+-----------------
 ${playersList}
 
 ${rules}
 
-🎯 *All the best for the tournament!*
+*All the best for the tournament!*
 Contact coordinators for any queries:
-📞 Suresh: 6303860267
-📞 Sreeker: 9063128733`
+Suresh: 6303860267
+Sreeker: 9063128733`
 
     return message
   }
