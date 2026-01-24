@@ -26,6 +26,18 @@ export default function AdminLoginPage() {
   const [loadingTeams, setLoadingTeams] = useState(false)
   const [savingMatches, setSavingMatches] = useState(false)
   const [matchesSaved, setMatchesSaved] = useState(false)
+  const [useDummyTeams, setUseDummyTeams] = useState(false)
+
+  // Dummy teams for testing
+  const dummyTeams = [
+    { id: '1', name: 'CSE Thunder', created_at: '2026-01-20T08:00:00Z' },
+    { id: '2', name: 'ECE Warriors', created_at: '2026-01-20T09:00:00Z' },
+    { id: '3', name: 'CSM Strikers', created_at: '2026-01-20T10:00:00Z' },
+    { id: '4', name: 'CSD Phoenix', created_at: '2026-01-20T11:00:00Z' },
+    { id: '5', name: 'CSO Titans', created_at: '2026-01-20T12:00:00Z' },
+    { id: '6', name: 'CSC Dragons', created_at: '2026-01-20T13:00:00Z' },
+    { id: '7', name: 'Mech Lions', created_at: '2026-01-20T14:00:00Z' },
+  ]
 
   // Format deadline for display
   const formatDeadlineDisplay = () => {
@@ -124,17 +136,25 @@ export default function AdminLoginPage() {
 
   // Generate random matches from teams
   const generateRandomMatches = (teams: any[]) => {
-    const shuffled = shuffleArray(teams)
+    // Sort by registration time (created_at) - first registered first
+    const sortedByRegistration = [...teams].sort((a, b) => 
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+    
     const matches: {team_a: any, team_b: any}[] = []
     let bye: any | null = null
+    let teamsToShuffle = [...sortedByRegistration]
 
-    // If odd number of teams, one gets a bye
-    if (shuffled.length % 2 !== 0) {
-      bye = shuffled.pop()!
+    // If odd number of teams, first registered team gets bye (advances to next round)
+    if (teamsToShuffle.length % 2 !== 0) {
+      bye = teamsToShuffle.shift()! // First registered team gets bye
       setByeTeam(bye)
     } else {
       setByeTeam(null)
     }
+
+    // Shuffle remaining teams for random pairing
+    const shuffled = shuffleArray(teamsToShuffle)
 
     // Pair remaining teams
     for (let i = 0; i < shuffled.length; i += 2) {
@@ -150,8 +170,21 @@ export default function AdminLoginPage() {
 
   // Regenerate matches with new random order
   const regenerateMatches = () => {
-    if (approvedTeams.length > 0) {
-      generateRandomMatches(approvedTeams)
+    const teams = useDummyTeams ? dummyTeams : approvedTeams
+    if (teams.length > 0) {
+      generateRandomMatches(teams)
+    }
+  }
+
+  // Toggle between dummy and real teams
+  const toggleDummyTeams = () => {
+    const newValue = !useDummyTeams
+    setUseDummyTeams(newValue)
+    if (newValue) {
+      setApprovedTeams(dummyTeams)
+      generateRandomMatches(dummyTeams)
+    } else {
+      fetchApprovedTeams()
     }
   }
 
@@ -435,6 +468,18 @@ export default function AdminLoginPage() {
                 </button>
               </div>
 
+              {/* Toggle for testing with dummy teams */}
+              <div className="mb-4 flex items-center justify-center gap-3">
+                <span className={`text-xs font-bold ${useDummyTeams ? 'text-slate-600' : 'text-cricket-500'}`}>Real Teams</span>
+                <button
+                  onClick={toggleDummyTeams}
+                  className={`w-12 h-6 rounded-full p-1 transition-all ${useDummyTeams ? 'bg-yellow-500' : 'bg-slate-700'}`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full transition-all ${useDummyTeams ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                </button>
+                <span className={`text-xs font-bold ${useDummyTeams ? 'text-yellow-500' : 'text-slate-600'}`}>Test Mode (7 dummy)</span>
+              </div>
+
               {loadingTeams ? (
                 <div className="text-center py-10">
                   <div className="text-4xl mb-4 animate-spin">⚽</div>
@@ -445,6 +490,12 @@ export default function AdminLoginPage() {
                   <div className="text-4xl mb-4">⚠️</div>
                   <p className="text-slate-400 font-bold">Need at least 2 approved teams to generate schedule</p>
                   <p className="text-slate-600 text-sm mt-2">Currently: {approvedTeams.length} approved team(s)</p>
+                  <button
+                    onClick={toggleDummyTeams}
+                    className="mt-4 px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-xl text-sm font-bold hover:bg-yellow-500/30 transition-colors"
+                  >
+                    Try with Dummy Teams
+                  </button>
                 </div>
               ) : (
                 <>
@@ -478,7 +529,7 @@ export default function AdminLoginPage() {
                   {byeTeam && (
                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 mb-6 text-center">
                       <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
-                        Bye (Advances to Next Round)
+                        🏆 Bye - First Registered (Advances to Next Round)
                       </div>
                       <div className="font-black text-yellow-400">{byeTeam.name}</div>
                     </div>
@@ -494,14 +545,16 @@ export default function AdminLoginPage() {
                     </button>
                     <button
                       onClick={saveMatchesToDatabase}
-                      disabled={savingMatches || matchesSaved}
+                      disabled={savingMatches || matchesSaved || useDummyTeams}
                       className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
-                        matchesSaved 
-                          ? 'bg-green-600 text-white' 
-                          : 'bg-cricket-500 hover:bg-cricket-600 text-white'
+                        useDummyTeams
+                          ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                          : matchesSaved 
+                            ? 'bg-green-600 text-white' 
+                            : 'bg-cricket-500 hover:bg-cricket-600 text-white'
                       }`}
                     >
-                      {savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save Schedule'}
+                      {useDummyTeams ? '🧪 Test Mode' : savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save Schedule'}
                     </button>
                   </div>
                 </>
