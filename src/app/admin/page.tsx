@@ -165,7 +165,7 @@ export default function AdminPage() {
     }
   }
 
-  const handleAction = async (teamId: string, action: 'approve_payment' | 'reject_payment' | 'approve_team' | 'reject_team' | 'delete_team' | 'request_repayment') => {
+  const handleAction = async (teamId: string, action: 'approve_team' | 'reject_team' | 'delete_team') => {
     try {
       const response = await fetch('/api/admin/approve', {
         method: 'POST',
@@ -562,8 +562,7 @@ Sreeker: 9063128733`
                 <tr className="border-b border-white/10 bg-white/[0.02]">
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Team Identity</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Captain Details</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Payment Audit</th>
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Decision Status</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actions</th>
                 </tr>
               </thead>
@@ -586,27 +585,6 @@ Sreeker: 9063128733`
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        {team.payment ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-[0.1em] border ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                team.payment.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                  'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
-                                }`}>
-                                {team.payment.status}
-                              </span>
-                            </div>
-                            {team.payment.screenshot_url && (
-                              <a href={team.payment.screenshot_url} target="_blank" rel="noopener noreferrer" className="block text-[10px] font-black text-indigo-400 hover:text-indigo-300 underline decoration-indigo-400/30">
-                                AUDIT PROOF (UTR: {team.payment.utr_number})
-                              </a>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest italic">No Data Logged</span>
-                        )}
-                      </td>
-                      <td className="px-8 py-6">
                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${team.approved ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-slate-500/10 text-slate-500 border-white/5'}`}>
                           {team.approved ? 'REGISTERED' : 'PENDING'}
                         </span>
@@ -621,21 +599,7 @@ Sreeker: 9063128733`
                           </button>
 
                           <div className="flex gap-2 flex-wrap justify-end">
-                            {team.payment && team.payment.status === 'pending' && (
-                              <>
-                                <button onClick={() => handleAction(team.id, 'approve_payment')} className="w-8 h-8 rounded-xl bg-green-500/20 text-green-400 border border-green-500/30 flex items-center justify-center hover:bg-green-500 hover:text-black transition-all">✓</button>
-                                <button onClick={() => handleAction(team.id, 'reject_payment')} className="w-8 h-8 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-50 hover:text-black transition-all">✗</button>
-                              </>
-                            )}
-                            {team.payment && team.payment.status === 'rejected' && (
-                              <button
-                                onClick={() => { if(confirm('Request repayment? This will allow the team to submit a new payment.')) handleAction(team.id, 'request_repayment') }}
-                                className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-black transition-all"
-                              >
-                                Repay
-                              </button>
-                            )}
-                            {team.approved && team.payment?.status === 'approved' && (
+                            {team.approved && (
                               <button
                                 onClick={() => sendWhatsApp(team)}
                                 className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600 hover:text-white transition-all flex items-center gap-1"
@@ -790,29 +754,6 @@ Sreeker: 9063128733`
                 </div>
               </div>
 
-              {team.payment && (
-                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Payment</div>
-                      <div className="text-[10px] md:text-xs font-mono font-bold text-slate-400 uppercase tracking-tighter truncate">{team.payment.utr_number}</div>
-                    </div>
-                    <div className={`px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border flex-shrink-0 ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' : team.payment.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
-                      {team.payment.status}
-                    </div>
-                  </div>
-                  {team.payment.screenshot_url && (
-                    <a 
-                      href={team.payment.screenshot_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="block w-full py-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-xl text-center text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all"
-                    >
-                      📷 View Payment Proof
-                    </a>
-                  )}
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
                 {!team.approved ? (
@@ -820,13 +761,7 @@ Sreeker: 9063128733`
                 ) : (
                   <button onClick={() => handleAction(team.id, 'reject_team')} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">REJECT SQUAD</button>
                 )}
-                {team.payment && team.payment.status === 'pending' && (
-                  <button onClick={() => handleAction(team.id, 'approve_payment')} className="py-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">VERIFY FEE</button>
-                )}
-                {team.payment && team.payment.status === 'rejected' && (
-                  <button onClick={() => { if(confirm('Request repayment?')) handleAction(team.id, 'request_repayment') }} className="py-3 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all">REPAY</button>
-                )}
-                {team.approved && team.payment?.status === 'approved' && (
+                {team.approved && (
                   <button onClick={() => sendWhatsApp(team)} className="py-3 bg-green-600/20 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all flex items-center justify-center gap-1">
                     <span>📱</span> WHATSAPP
                   </button>

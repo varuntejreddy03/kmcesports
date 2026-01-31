@@ -18,7 +18,7 @@ const formatDeadlineMessage = (date: Date) => {
   return `${dateStr} at ${hour12}:${minutes} ${ampm}`
 }
 
-type RegistrationStatus = 'not_registered' | 'payment_pending' | 'approval_pending' | 'approved' | 'rejected'
+type RegistrationStatus = 'not_registered' | 'approval_pending' | 'approved' | 'rejected'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -136,20 +136,11 @@ export default function Dashboard() {
             student_data: sData?.find(s => s.hall_ticket === p.hall_ticket)
           })) || [])
 
-          // Payment Status
-          const { data: payments } = await supabase
-            .from('payments')
-            .select('*')
-            .eq('team_id', teamData.id)
-            .order('submitted_at', { ascending: false })
-
-          const payment = payments?.[0]
-          if (payment) {
-            if (payment.status === 'approved') setStatus('approved')
-            else if (payment.status === 'rejected') setStatus('rejected')
-            else setStatus('approval_pending')
+          // Team approval status (no payment required)
+          if (teamData.approved) {
+            setStatus('approved')
           } else {
-            setStatus('payment_pending')
+            setStatus('approval_pending')
           }
         }
       }
@@ -263,22 +254,6 @@ export default function Dashboard() {
             {/* Left Column: Team Summary */}
             <div className="lg:col-span-2 space-y-6 md:space-y-8">
               {/* Registration Alerts */}
-              {status === 'payment_pending' && (
-                <div className="p-0.5 md:p-1 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl md:rounded-3xl">
-                  <div className="bg-[#0f172a] p-4 md:p-6 rounded-[14px] md:rounded-[22px] flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6 justify-between">
-                    <div className="flex items-center gap-3 md:gap-4">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-500/20 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl text-yellow-500 flex-shrink-0">💰</div>
-                      <div>
-                        <h4 className="font-black text-yellow-500 text-sm md:text-base">Payment Required</h4>
-                        <p className="text-slate-400 text-xs md:text-sm font-medium">Complete payment to finalize registration.</p>
-                      </div>
-                    </div>
-                    <Link href={`/payment?teamId=${team?.id}`} className="w-full sm:w-auto px-6 md:px-8 py-3 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 transition-all text-sm text-center min-h-[44px] flex items-center justify-center">
-                      Pay Now
-                    </Link>
-                  </div>
-                </div>
-              )}
 
               {/* Team ID Card */}
               <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] overflow-hidden group">
@@ -403,10 +378,9 @@ function StatBox({ label, value }: { label: string, value: string }) {
 function StatusBadge({ status }: { status: RegistrationStatus }) {
   const configs = {
     not_registered: { text: 'Not Active', color: 'text-slate-400 bg-slate-400/10' },
-    payment_pending: { text: 'Action Needed', color: 'text-yellow-500 bg-yellow-500/10 animate-pulse' },
-    approval_pending: { text: 'Verifying', color: 'text-blue-400 bg-blue-400/10' },
+    approval_pending: { text: 'Pending Approval', color: 'text-yellow-500 bg-yellow-500/10 animate-pulse' },
     approved: { text: 'Confirmed', color: 'text-green-400 bg-green-400/10' },
-    rejected: { text: 'Fix Entry', color: 'text-red-400 bg-red-400/10' },
+    rejected: { text: 'Rejected', color: 'text-red-400 bg-red-400/10' },
   }
   const config = configs[status]
 

@@ -367,7 +367,7 @@ export default function CreateTeamPage() {
         } catch (emailErr) {
           console.error('Failed to send team creation email:', emailErr)
         }
-        router.push(`/payment?teamId=${teamId}`)
+        router.push('/dashboard')
       } else {
         setError('Team updated successfully!')
         setTimeout(() => router.push('/dashboard'), 1500)

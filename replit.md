@@ -1,7 +1,7 @@
 # College Cricket Tournament
 
 ## Overview
-A Next.js web application for managing college cricket tournament registrations, teams, and payments. The app uses Supabase as the backend database.
+A Next.js web application for managing college cricket tournament registrations and teams. The app uses Supabase as the backend database. Payment system removed - registration is now free.
 
 ## Project Structure
 - `/src/app` - Next.js 14 app router pages
@@ -35,7 +35,6 @@ The app uses the following Supabase tables:
 - `student_data` - Student information
 - `teams` - Team registrations
 - `team_players` - Players assigned to teams
-- `payments` - Payment records for team registrations
 - `tournament_settings` - Tournament configuration
 
 ### Optional Login Tracking Columns (student_data)
@@ -70,8 +69,11 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- January 31, 2026: Removed payment system completely - registration is now free
+- January 31, 2026: Teams are approved directly without payment requirement
+- January 31, 2026: WhatsApp button now shows for all approved teams
 - January 24, 2026: Added admin ability to edit player roles and remove players from teams
-- January 24, 2026: Added WhatsApp button to send team details and rules to approved+paid teams
+- January 24, 2026: Added WhatsApp button to send team details and rules to approved teams
 - January 24, 2026: Removed test mode from random match generator (production-ready)
 - January 24, 2026: Added random match generator on admin dashboard
 - January 24, 2026: Registration deadline now editable from admin login and tournament settings
