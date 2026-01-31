@@ -130,12 +130,12 @@ export default function Home() {
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🏏 CSE, CSM, ECE only</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🎉 FREE Registration</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🪪 ID card is mandatory for all students (verification purpose)</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🏏 CSE, CSM, ECE only</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🎉 FREE Registration</span>
           <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🪪 ID card is mandatory for all students (verification purpose)</span>
         </div>
       </div>
@@ -242,7 +242,7 @@ export default function Home() {
               { step: 1, icon: '📝', title: 'Register', desc: 'Create your student account with hall ticket number', color: 'from-blue-500 to-cyan-500' },
               { step: 2, icon: '🔐', title: 'Login', desc: 'Sign in with your credentials', color: 'from-purple-500 to-pink-500' },
               { step: 3, icon: '👥', title: 'Create Team', desc: 'Form your squad with players from same department', color: 'from-orange-500 to-yellow-500' },
-              { step: 4, icon: '💳', title: 'Pay & Done', desc: 'Complete payment and upload screenshot', color: 'from-green-500 to-emerald-500' },
+              { step: 4, icon: '✅', title: 'Done!', desc: 'Wait for admin approval and you are ready', color: 'from-green-500 to-emerald-500' },
             ].map((item, idx) => (
               <div 
                 key={idx} 
@@ -285,7 +285,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-3 md:px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
             {[
-              { value: settings?.registration_fee || '2500', label: 'Registration Fee', prefix: '₹' },
+              { value: 'FREE', label: 'Registration', prefix: '' },
               { value: `${settings?.min_players || '11'}-${settings?.max_players || '15'}`, label: 'Players Per Team', prefix: '' },
               { value: settings?.start_date ? new Date(settings.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBA', label: 'Tournament Starts', prefix: '' },
               { value: '12 Overs', label: 'Format', prefix: '' },
@@ -347,8 +347,8 @@ export default function Home() {
               
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="p-4 md:p-5 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
-                  <div className="text-cricket-500 text-[9px] md:text-xs font-black uppercase tracking-widest mb-1 md:mb-2">Registration Fee</div>
-                  <div className="text-xl md:text-2xl font-black text-white">₹{settings?.registration_fee || '2500'}</div>
+                  <div className="text-cricket-500 text-[9px] md:text-xs font-black uppercase tracking-widest mb-1 md:mb-2">Registration</div>
+                  <div className="text-xl md:text-2xl font-black text-green-400">FREE</div>
                 </div>
                 <div className="p-4 md:p-5 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
                   <div className="text-cricket-500 text-[9px] md:text-xs font-black uppercase tracking-widest mb-1 md:mb-2">Squad Size</div>
