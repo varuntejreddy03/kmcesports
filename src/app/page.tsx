@@ -222,6 +222,58 @@ export default function Home() {
         </div>
       </div>
 
+      {/* About Section */}
+      <div id="about" className="py-16 md:py-24 bg-[#0a0f1a] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cricket-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+        <div className="max-w-6xl mx-auto px-3 md:px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="animate-fadeIn">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-6">
+                <span>🌟</span>
+                <span>The Legacy of KMCE</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight leading-tight uppercase italic">
+                The Biggest Sporting <br />
+                <span className="text-cricket-500">Spectacle at KMCE</span>
+              </h2>
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-8 font-medium">
+                The KMCE Premier League (KPL) is more than just a tournament; it's where talent meets passion.
+                Bringing together the brightest minds from all departments, we celebrate the spirit of
+                cricket on the hallowed grounds of KMCE.
+              </p>
+              <div className="grid grid-cols-2 gap-4 md:gap-6">
+                {[
+                  { label: 'Depts', value: '3' },
+                  { label: 'Athletes', value: '100+' },
+                  { label: 'Format', value: 'T12' },
+                  { label: 'Trophy', value: 'KPL 🏆' },
+                ].map((stat, i) => (
+                  <div key={i} className="bg-white/5 border border-white/10 p-5 rounded-3xl hover:border-cricket-500/30 transition-all">
+                    <div className="text-cricket-500 text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</div>
+                    <div className="text-xl md:text-3xl font-black">{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="relative group animate-fadeIn">
+              <div className="absolute -inset-1 bg-gradient-to-r from-cricket-600 to-indigo-600 rounded-[40px] blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-[#0f172a] border border-white/10 rounded-[40px] p-8 md:p-12 h-full shadow-2xl">
+                <div className="text-5xl mb-6">🏆</div>
+                <h3 className="text-2xl md:text-4xl font-black mb-4 uppercase tracking-tighter italic">Ultimate Glory</h3>
+                <p className="text-slate-400 text-sm md:text-lg leading-relaxed mb-8">
+                  Every run, every wicket, and every diving catch counts. Build your department's legacy and draft your
+                  way to the prestigious KPL Trophy. Only one department will emerge as the undisputed champions of 2026.
+                </p>
+                <div className="flex items-center gap-3 text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em]">
+                  <span className="w-12 h-px bg-cricket-500"></span>
+                  Pride of KMCE
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* How It Works Section */}
       <div id="guide" className="py-12 md:py-20 bg-gradient-to-b from-[#0a0f1a] to-[#0f172a]">
         <div className="max-w-6xl mx-auto px-3 md:px-4">
