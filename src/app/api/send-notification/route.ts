@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    
+
     if (!supabaseServiceKey) {
       console.error('SUPABASE_SERVICE_ROLE_KEY not configured')
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
 
     const teamCreatedAt = new Date(team.created_at).getTime()
     const now = Date.now()
-    const fiveMinutes = 5 * 60 * 1000
-    if (type === 'team_creation' && (now - teamCreatedAt) > fiveMinutes) {
+    const oneHour = 60 * 60 * 1000
+    if (type === 'team_creation' && (now - teamCreatedAt) > oneHour) {
       return NextResponse.json({ error: 'Team creation notification window expired' }, { status: 400 })
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const captainStudent = studentsData?.find(s => s.hall_ticket === captain?.hall_ticket)
 
     const captainDept = getDepartmentFromHallTicket(captain?.hall_ticket || '')
-    
+
     const teamData = {
       teamName: team.name,
       teamId: team.id,

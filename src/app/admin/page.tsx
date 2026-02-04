@@ -27,7 +27,7 @@ export default function AdminPage() {
 
   // Random Match Generator State
   const [showMatchGenerator, setShowMatchGenerator] = useState(false)
-  const [generatedMatches, setGeneratedMatches] = useState<{team_a: any, team_b: any}[]>([])
+  const [generatedMatches, setGeneratedMatches] = useState<{ team_a: any, team_b: any }[]>([])
   const [byeTeam, setByeTeam] = useState<any | null>(null)
   const [savingMatches, setSavingMatches] = useState(false)
   const [matchesSaved, setMatchesSaved] = useState(false)
@@ -224,11 +224,11 @@ export default function AdminPage() {
   // Generate random matches from teams
   const generateRandomMatches = (teamsToUse: any[]) => {
     // Sort by registration time (created_at) - first registered first
-    const sortedByRegistration = [...teamsToUse].sort((a, b) => 
+    const sortedByRegistration = [...teamsToUse].sort((a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
-    
-    const matchList: {team_a: any, team_b: any}[] = []
+
+    const matchList: { team_a: any, team_b: any }[] = []
     let bye: any | null = null
     let teamsToShuffle = [...sortedByRegistration]
 
@@ -348,11 +348,11 @@ export default function AdminPage() {
         .from('team_players')
         .update({ player_role: editPlayerRole })
         .eq('id', playerId)
-      
+
       if (error) throw error
-      
+
       // Refresh players
-      setTeamPlayers(prev => prev.map(p => 
+      setTeamPlayers(prev => prev.map(p =>
         p.id === playerId ? { ...p, player_role: editPlayerRole } : p
       ))
       setEditingPlayer(null)
@@ -370,7 +370,7 @@ export default function AdminPage() {
       alert('Cannot remove captain. Transfer captaincy first or delete the entire team.')
       return
     }
-    
+
     if (!confirm(`Remove ${playerName} from this team?`)) return
 
     try {
@@ -378,14 +378,14 @@ export default function AdminPage() {
         .from('team_players')
         .delete()
         .eq('id', playerId)
-      
+
       if (error) throw error
-      
+
       // Refresh players list
       setTeamPlayers(prev => prev.filter(p => p.id !== playerId))
-      
+
       // Update team player count
-      setTeams(prev => prev.map(t => 
+      setTeams(prev => prev.map(t =>
         t.id === teamId ? { ...t, playerCount: (t.playerCount || 1) - 1 } : t
       ))
     } catch (error) {
@@ -396,50 +396,55 @@ export default function AdminPage() {
 
   // Generate WhatsApp message with team data and rules
   const generateWhatsAppMessage = (team: any, players: any[]) => {
-    const playersList = players.map((p, idx) => 
-      `${idx + 1}. ${p.student?.name || 'Unknown'} - ${p.player_role}${p.is_captain ? ' (Captain)' : ''}`
+    const playersList = players.map((p, idx) =>
+      `${idx + 1}. ${p.student?.name || 'Unknown'} (${p.player_role})${p.is_captain ? ' [Captain]' : ''}`
     ).join('\n')
 
-    const rules = `*KMCE Cricket Tournament Rules*
+    const rules = `*TOURNAMENT RULES:*
 
-1. Teams must participate department-wise only
-2. All teams must wear WHITE uniforms
-3. Each match: 12 overs per side
-4. Umpire decisions are final - only captain can communicate
-5. No arguments, sledging, or disputes
-6. No unparliamentary language/physical abuse - instant disqualification
+1. Department-wise participation only
+2. Mandatory WHITE uniforms
+3. 12 overs per side
+4. Umpire decisions are final
+5. Strict anti-sledging policy
+6. Instant DQ for physical abuse
 7. Proper cricket shoes required
-8. Report 30 mins before match time
-9. Walkover if team fails to report on time
-10. Knockout basis matches
-11. No leg-byes, no LBW
-12. Powerplay: 4 overs
-13. Max 15 members (11 playing + 4 subs)
-14. Bring your own cricket equipment
-15. Impact Player rule applicable
-16. Max 2 players can bowl up to 3 overs each
-17. Organizing Committee decisions are final
-18. Play fairly - maintain sportsmanship!`
+8. Report 30 mins early
+9. Walkover if late
+10. Knockout format
+11. No leg-byes / No LBW
+12. 4 Overs Powerplay
+13. Max 15 members (11+4)
+14. Bring your own kit
+15. Impact Player rule active
+16. Max 2 bowlers can bowl 3 overs
+17. Committee decisions final`
 
-    const message = `*CONGRATULATIONS!*
+    const message = `*KMCE PREMIER LEAGUE 2026*
+*OFFICIAL SQUAD CONFIRMATION*
 
-Your team registration for KMCE Cricket Tournament has been *APPROVED* and payment *CONFIRMED*!
+Hello Captain, your team registration for the KMCE Cricket Tournament has been *SUCCESSFULLY APPROVED*! 
 
-*TEAM DETAILS*
+*TEAM IDENTITY:*
 -----------------
 *Team Name:* ${team.name}
 *Department:* ${team.department || 'N/A'}
 
-*SQUAD ROSTER*
+*OFFICIAL SQUAD:*
 -----------------
 ${playersList}
 
 ${rules}
 
-*All the best for the tournament!*
-Contact coordinators for any queries:
+*Next Steps:*
+1. Share this data with your teammates.
+2. Review the rules carefully.
+3. Bring college ID cards for verification.
+
+*Game on! See you on the field.*
+Coordinators:
 Suresh: 6303860267
-Sreeker: 9063128733`
+Sreekar: 9063128733`
 
     return message
   }
@@ -468,19 +473,19 @@ Sreeker: 9063128733`
       let department = team.department
       if (!department && captain?.hall_ticket) {
         const deptCode = captain.hall_ticket.substring(6, 8)
-        const deptMap: {[key: string]: string} = {
+        const deptMap: { [key: string]: string } = {
           '05': 'CSE', '69': 'CSO', '04': 'ECE',
           '66': 'CSM', '62': 'CSC', '67': 'CSD'
         }
         department = deptMap[deptCode] || 'N/A'
       }
-      
+
       const teamWithDept = { ...team, department: department || 'N/A' }
       const message = generateWhatsAppMessage(teamWithDept, mergedPlayers)
-      
+
       const cleanPhone = captainPhone.replace(/\D/g, '')
       const phoneWithCountry = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`
-      
+
       // Encode message for URL - works on iOS
       const encodedMessage = encodeURIComponent(message)
       window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMessage}`, '_blank')
@@ -629,13 +634,13 @@ Sreeker: 9063128733`
                             )}
                             {team.payment && team.payment.status === 'rejected' && (
                               <button
-                                onClick={() => { if(confirm('Request repayment? This will allow the team to submit a new payment.')) handleAction(team.id, 'request_repayment') }}
+                                onClick={() => { if (confirm('Request repayment? This will allow the team to submit a new payment.')) handleAction(team.id, 'request_repayment') }}
                                 className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 hover:bg-yellow-500 hover:text-black transition-all"
                               >
                                 Repay
                               </button>
                             )}
-                            {team.approved && team.payment?.status === 'approved' && (
+                            {team.approved && (
                               <button
                                 onClick={() => sendWhatsApp(team)}
                                 className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600 hover:text-white transition-all flex items-center gap-1"
@@ -650,7 +655,7 @@ Sreeker: 9063128733`
                               {team.approved ? 'Revoke' : 'Register 🚀'}
                             </button>
                             <button
-                              onClick={() => { if(confirm('DELETE this team completely? This cannot be undone!')) handleAction(team.id, 'delete_team') }}
+                              onClick={() => { if (confirm('DELETE this team completely? This cannot be undone!')) handleAction(team.id, 'delete_team') }}
                               className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white transition-all"
                             >
                               Delete
@@ -802,10 +807,10 @@ Sreeker: 9063128733`
                     </div>
                   </div>
                   {team.payment.screenshot_url && (
-                    <a 
-                      href={team.payment.screenshot_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={team.payment.screenshot_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="block w-full py-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-xl text-center text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all"
                     >
                       📷 View Payment Proof
@@ -824,14 +829,14 @@ Sreeker: 9063128733`
                   <button onClick={() => handleAction(team.id, 'approve_payment')} className="py-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">VERIFY FEE</button>
                 )}
                 {team.payment && team.payment.status === 'rejected' && (
-                  <button onClick={() => { if(confirm('Request repayment?')) handleAction(team.id, 'request_repayment') }} className="py-3 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all">REPAY</button>
+                  <button onClick={() => { if (confirm('Request repayment?')) handleAction(team.id, 'request_repayment') }} className="py-3 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all">REPAY</button>
                 )}
-                {team.approved && team.payment?.status === 'approved' && (
+                {team.approved && (
                   <button onClick={() => sendWhatsApp(team)} className="py-3 bg-green-600/20 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all flex items-center justify-center gap-1">
                     <span>📱</span> WHATSAPP
                   </button>
                 )}
-                <button onClick={() => { if(confirm('DELETE this team completely?')) handleAction(team.id, 'delete_team') }} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all col-span-2">DELETE TEAM</button>
+                <button onClick={() => { if (confirm('DELETE this team completely?')) handleAction(team.id, 'delete_team') }} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all col-span-2">DELETE TEAM</button>
               </div>
 
               {expandedTeamId === team.id && (
@@ -1110,11 +1115,10 @@ Sreeker: 9063128733`
                     <button
                       onClick={saveGeneratedMatches}
                       disabled={savingMatches || matchesSaved}
-                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
-                        matchesSaved 
-                          ? 'bg-green-600 text-white' 
-                          : 'bg-cricket-500 hover:bg-cricket-600 text-white'
-                      }`}
+                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${matchesSaved
+                        ? 'bg-green-600 text-white'
+                        : 'bg-cricket-500 hover:bg-cricket-600 text-white'
+                        }`}
                     >
                       {savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save'}
                     </button>
