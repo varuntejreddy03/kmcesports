@@ -21,8 +21,7 @@ const formatDeadlineMessage = (date: Date) => {
 export default function CreateTeamPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [registrationClosed, setRegistrationClosed] = useState(false)
-  const [deadlineDate, setDeadlineDate] = useState<Date>(DEFAULT_DEADLINE)
+  const [registrationOpen, setRegistrationOpen] = useState(true)
   const [captain, setCaptain] = useState<StudentData | null>(null)
   const [teamName, setTeamName] = useState('')
   const [selectedPlayers, setSelectedPlayers] = useState<StudentData[]>([])
@@ -41,6 +40,7 @@ export default function CreateTeamPage() {
   const [showAddPlayerForm, setShowAddPlayerForm] = useState(false)
   const [newPlayerHallTicket, setNewPlayerHallTicket] = useState('')
   const [newPlayerName, setNewPlayerName] = useState('')
+  const [newPlayerPhone, setNewPlayerPhone] = useState('')
   const [addingPlayer, setAddingPlayer] = useState(false)
   const [addPlayerError, setAddPlayerError] = useState<string | null>(null)
   const [captainRole, setCaptainRole] = useState('all-rounder')
@@ -60,20 +60,14 @@ export default function CreateTeamPage() {
 
   const init = async () => {
     try {
-      // Fetch deadline from database
       const { data: settingsData } = await supabase
         .from('tournament_settings')
-        .select('registration_deadline')
+        .select('registration_open')
         .eq('sport', 'cricket')
         .maybeSingle()
-      
-      const deadline = settingsData?.registration_deadline 
-        ? new Date(settingsData.registration_deadline)
-        : DEFAULT_DEADLINE
-      setDeadlineDate(deadline)
-      
-      if (new Date() > deadline) {
-        setRegistrationClosed(true)
+
+      if (settingsData && settingsData.registration_open === false) {
+        setRegistrationOpen(false)
         setLoading(false)
         return
       }
@@ -170,6 +164,18 @@ export default function CreateTeamPage() {
 
   const confirmAddPlayer = () => {
     if (playerToAdd) {
+      if (takenHallTickets.has(playerToAdd.hall_ticket)) {
+        alert('This player is already in another team')
+        setShowRoleModal(false)
+        setPlayerToAdd(null)
+        return
+      }
+      if (selectedPlayers.some(p => p.hall_ticket === playerToAdd.hall_ticket)) {
+        alert('This player is already in your squad')
+        setShowRoleModal(false)
+        setPlayerToAdd(null)
+        return
+      }
       setSelectedPlayers(prev => [...prev, { ...playerToAdd, player_role: selectedRole }])
       setShowRoleModal(false)
       setPlayerToAdd(null)
@@ -178,36 +184,42 @@ export default function CreateTeamPage() {
 
   const handleAddNewPlayer = async () => {
     if (!captain || !captainDeptGroup) return
-    
+
     const hallTicket = newPlayerHallTicket.toUpperCase().trim()
     const playerName = newPlayerName.trim()
-    
+    const playerPhone = newPlayerPhone.trim()
+
+    if (hallTicket === captain.hall_ticket) {
+      setAddPlayerError('You are already the captain and part of the squad!')
+      return
+    }
+
     // Validate hall ticket format (10 characters)
     if (hallTicket.length !== 10) {
       setAddPlayerError('Hall ticket must be exactly 10 characters')
       return
     }
-    
+
     // Validate KMCE college code (P81 or P85 at positions 3-5)
     if (!isKMCEStudent(hallTicket)) {
       setAddPlayerError('Invalid Hall Ticket. Only KMCE students (P81/P85) are allowed.')
       return
     }
-    
+
     if (!playerName || playerName.length < 2) {
       setAddPlayerError('Please enter a valid name')
       return
     }
-    
+
     // Check if same department group as captain
     if (!isEligibleForGroup(hallTicket, captainDeptGroup)) {
       setAddPlayerError('Player is not eligible - must be from the same department group')
       return
     }
-    
+
     setAddingPlayer(true)
     setAddPlayerError(null)
-    
+
     try {
       // Check if player already exists in database
       const { data: existingPlayer } = await supabase
@@ -215,11 +227,19 @@ export default function CreateTeamPage() {
         .select('*')
         .eq('hall_ticket', hallTicket)
         .maybeSingle()
-      
+
       if (existingPlayer) {
-        // Player exists - check if already in a team
-        if (takenHallTickets.has(hallTicket)) {
+        // Double check against latest taken list
+        const { data: takenCheck } = await supabase.from('team_players').select('hall_ticket').eq('hall_ticket', hallTicket).maybeSingle()
+        if (takenCheck) {
           setAddPlayerError('This player is already in another team')
+          setTakenHallTickets(prev => new Set(prev).add(hallTicket))
+          return
+        }
+
+        // Check if already in current squad
+        if (selectedPlayers.some(p => p.hall_ticket === hallTicket)) {
+          setAddPlayerError('This player is already in your squad')
           return
         }
         // Add existing player to selection
@@ -229,7 +249,15 @@ export default function CreateTeamPage() {
         setShowAddPlayerForm(false)
         setNewPlayerHallTicket('')
         setNewPlayerName('')
+        setNewPlayerPhone('')
       } else {
+        // Validate phone for brand new players
+        if (!playerPhone || playerPhone.length < 10) {
+          setAddPlayerError('Mobile number is required for new players')
+          setAddingPlayer(false)
+          return
+        }
+
         // Add new player to database
         const deptInfo = getDepartmentInfo(hallTicket)
         const { data: newPlayer, error: insertError } = await supabase
@@ -238,14 +266,14 @@ export default function CreateTeamPage() {
             hall_ticket: hallTicket,
             name: playerName,
             year: captain.year || '3',
-            phone: '',
+            phone: playerPhone,
             role: 'student'
           }])
           .select()
           .single()
-        
+
         if (insertError) throw insertError
-        
+
         // Add to allStudents list and open role modal
         setAllStudents(prev => [...prev, newPlayer])
         setPlayerToAdd(newPlayer)
@@ -267,23 +295,23 @@ export default function CreateTeamPage() {
     if (s.hall_ticket === captain?.hall_ticket) return false
     if (takenHallTickets.has(s.hall_ticket)) return false
     if (selectedPlayers.some(p => p.hall_ticket === s.hall_ticket)) return false
-    
+
     // Department eligibility filter - only show students eligible for captain's group
     if (captainDeptGroup && !isEligibleForGroup(s.hall_ticket, captainDeptGroup)) return false
-    
+
     // Search filter
-    if (searchTerm && 
-        !s.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !s.hall_ticket.toLowerCase().includes(searchTerm.toLowerCase())) return false
-    
+    if (searchTerm &&
+      !s.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !s.hall_ticket.toLowerCase().includes(searchTerm.toLowerCase())) return false
+
     return true
   })
 
   const handleCreateTeam = async () => {
     if (!captain) return
-    if (!captainDeptGroup) { 
-      setError('NOT ELIGIBLE – DEPARTMENT RULE VIOLATION'); 
-      return 
+    if (!captainDeptGroup) {
+      setError('NOT ELIGIBLE – DEPARTMENT RULE VIOLATION');
+      return
     }
     if (selectedPlayers.length < 10) { setError('At least 11 players required (10 + Captain)'); return }
     if (selectedPlayers.length > 14) { setError('Maximum 15 players allowed'); return }
@@ -349,7 +377,7 @@ export default function CreateTeamPage() {
           player_role: p.player_role || 'all-rounder'
         }))
       ]
-      
+
       for (const player of allPlayerRoles) {
         await supabase
           .from('student_data')
@@ -367,7 +395,7 @@ export default function CreateTeamPage() {
         } catch (emailErr) {
           console.error('Failed to send team creation email:', emailErr)
         }
-        router.push(`/payment?teamId=${teamId}`)
+        router.push('/dashboard')
       } else {
         setError('Team updated successfully!')
         setTimeout(() => router.push('/dashboard'), 1500)
@@ -385,12 +413,12 @@ export default function CreateTeamPage() {
     </div>
   )
 
-  if (registrationClosed) return (
+  if (!registrationOpen) return (
     <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center">
       <div className="text-center px-4">
         <div className="text-6xl mb-4">⏰</div>
-        <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">Registration <span className="text-red-500">Closed</span></h1>
-        <p className="text-slate-400 text-lg mb-6">The deadline was {formatDeadlineMessage(deadlineDate)}</p>
+        <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">Registration <span className="text-red-500">Frozen</span></h1>
+        <p className="text-slate-400 text-lg mb-6">Entries are currently frozen by the admin.</p>
         <Link href="/dashboard" className="inline-flex items-center gap-2 bg-cricket-500 hover:bg-cricket-600 text-white font-bold py-3 px-6 rounded-xl transition-colors min-h-[44px]">
           ← Back to Dashboard
         </Link>
@@ -443,19 +471,18 @@ export default function CreateTeamPage() {
                   </div>
                   <div className="mt-3 pt-3 border-t border-white/10">
                     <div className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Your Role</div>
-                    <div className="flex gap-2">
-                      {['batsman', 'bowler', 'all-rounder'].map(role => (
+                    <div className="flex flex-wrap gap-2">
+                      {['batsman', 'bowler', 'all-rounder', 'wicket-keeper'].map(role => (
                         <button
                           key={role}
                           type="button"
                           onClick={() => setCaptainRole(role)}
-                          className={`flex-1 py-2 px-2 md:px-3 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all min-h-[44px] ${
-                            captainRole === role 
-                              ? 'bg-cricket-500 text-black' 
-                              : 'bg-white/5 text-slate-400 hover:bg-white/10'
-                          }`}
+                          className={`flex-1 py-2 px-2 md:px-3 rounded-lg text-[10px] md:text-xs font-black uppercase transition-all min-h-[44px] ${captainRole === role
+                            ? 'bg-cricket-500 text-black'
+                            : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                            }`}
                         >
-                          {role === 'all-rounder' ? 'All-Round' : role}
+                          {role.replace('-', ' ')}
                         </button>
                       ))}
                     </div>
@@ -546,12 +573,12 @@ export default function CreateTeamPage() {
                     </div>
                   )
                 })}
-                
+
                 {/* No results - show add player option */}
                 {searchTerm.length >= 3 && availableStudents.length === 0 && !showAddPlayerForm && (
                   <div className="text-center py-6 md:py-8 border-2 border-dashed border-white/10 rounded-xl md:rounded-2xl">
                     <div className="text-slate-500 font-bold mb-3 md:mb-4 text-sm md:text-base">No players found</div>
-                    <button 
+                    <button
                       onClick={() => setShowAddPlayerForm(true)}
                       className="px-4 md:px-6 py-3 bg-cricket-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-cricket-500 transition-all min-h-[44px]"
                     >
@@ -559,13 +586,13 @@ export default function CreateTeamPage() {
                     </button>
                   </div>
                 )}
-                
+
                 {/* Add New Player Form */}
                 {showAddPlayerForm && (
                   <div className="bg-white/5 border border-cricket-500/30 p-3 md:p-4 rounded-xl md:rounded-2xl space-y-3 md:space-y-4">
                     <div className="text-xs md:text-sm font-black text-cricket-500 uppercase tracking-widest">Add New Player</div>
                     <div className="text-[9px] md:text-[10px] text-slate-500">Only your department group can be added</div>
-                    
+
                     <input
                       type="text"
                       placeholder="Hall Ticket (10 chars)"
@@ -574,7 +601,7 @@ export default function CreateTeamPage() {
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600 min-h-[44px]"
                       maxLength={10}
                     />
-                    
+
                     <input
                       type="text"
                       placeholder="Player Full Name"
@@ -582,19 +609,40 @@ export default function CreateTeamPage() {
                       onChange={(e) => setNewPlayerName(e.target.value.toUpperCase())}
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-600 min-h-[44px]"
                     />
-                    
+
+                    {/* Only show phone if hall ticket is not in our database */}
+                    {newPlayerHallTicket.length === 10 && !allStudents.some(s => s.hall_ticket === newPlayerHallTicket) && (
+                      <div className="space-y-1.5 animate-fadeIn">
+                        <label className="text-[10px] font-black text-cricket-500 uppercase tracking-widest px-1">Mobile Number (Required for Login)</label>
+                        <input
+                          type="tel"
+                          placeholder="Player Mobile Number"
+                          value={newPlayerPhone}
+                          onChange={(e) => setNewPlayerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          className="w-full bg-white/10 border border-cricket-500/30 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-500 min-h-[44px]"
+                          maxLength={10}
+                        />
+                      </div>
+                    )}
+
                     {addPlayerError && (
                       <div className="text-red-400 text-xs font-bold">{addPlayerError}</div>
                     )}
-                    
+
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => { setShowAddPlayerForm(false); setAddPlayerError(null); setNewPlayerHallTicket(''); setNewPlayerName(''); }}
+                      <button
+                        onClick={() => {
+                          setShowAddPlayerForm(false);
+                          setAddPlayerError(null);
+                          setNewPlayerHallTicket('');
+                          setNewPlayerName('');
+                          setNewPlayerPhone('');
+                        }}
                         className="flex-1 py-3 text-slate-500 font-bold text-xs min-h-[44px]"
                       >
                         Cancel
                       </button>
-                      <button 
+                      <button
                         onClick={handleAddNewPlayer}
                         disabled={addingPlayer || newPlayerHallTicket.length !== 10 || !newPlayerName}
                         className="flex-1 py-3 bg-cricket-600 text-white rounded-xl text-xs font-black disabled:opacity-30 min-h-[44px]"

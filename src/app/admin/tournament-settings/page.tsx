@@ -33,19 +33,15 @@ export default function TournamentSettingsPage() {
   const [formData, setFormData] = useState({
     tournament_name: '',
     ground_name: '',
-    registration_fee: 2500,
-    max_teams: 16,
     registration_open: true,
     rules_text: '',
     min_players: 11,
     max_players: 15,
-    start_date: '',
-    end_date: '',
+    max_teams: 16,
     venue: '',
     upi_id: '',
     payment_instructions: '',
-    registration_deadline_date: '2026-01-27',
-    registration_deadline_time: '12:30'
+    start_date: ''
   })
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -78,31 +74,18 @@ export default function TournamentSettingsPage() {
 
       if (tournamentData) {
         setSettings(tournamentData)
-        // Parse registration deadline
-        let deadlineDate = '2026-01-27'
-        let deadlineTime = '12:30'
-        if (tournamentData.registration_deadline) {
-          const deadline = new Date(tournamentData.registration_deadline)
-          deadlineDate = deadline.toISOString().split('T')[0]
-          deadlineTime = deadline.toTimeString().slice(0, 5)
-        }
-        
         setFormData({
           tournament_name: tournamentData.tournament_name || '',
           ground_name: tournamentData.ground_name || '',
-          registration_fee: tournamentData.registration_fee || 2500,
-          max_teams: tournamentData.max_teams || 16,
           registration_open: tournamentData.registration_open ?? true,
           rules_text: tournamentData.rules_text || '',
           min_players: tournamentData.min_players || 11,
           max_players: tournamentData.max_players || 15,
-          start_date: tournamentData.start_date || '',
-          end_date: tournamentData.end_date || '',
+          max_teams: tournamentData.max_teams || 16,
           venue: tournamentData.venue || tournamentData.ground_name || '',
           upi_id: tournamentData.upi_id || '',
           payment_instructions: tournamentData.payment_instructions || '',
-          registration_deadline_date: deadlineDate,
-          registration_deadline_time: deadlineTime
+          start_date: tournamentData.start_date || ''
         })
       }
     } catch (error) {
@@ -116,10 +99,12 @@ export default function TournamentSettingsPage() {
     setSaving(true)
     setMessage(null)
     try {
-      // Convert deadline date/time to ISO string
-      const deadlineISO = new Date(`${formData.registration_deadline_date}T${formData.registration_deadline_time}:00`).toISOString()
-      const { registration_deadline_date, registration_deadline_time, ...restFormData } = formData
-      const dataToSave = { ...restFormData, registration_deadline: deadlineISO, sport: 'cricket', last_updated: new Date().toISOString() }
+      const dataToSave = {
+        ...formData,
+        sport: 'cricket',
+        last_updated: new Date().toISOString(),
+        start_date: formData.start_date || null
+      }
       let error
       if (settings) {
         const { error: updateError } = await supabase.from('tournament_settings').update(dataToSave).eq('id', settings.id)
@@ -187,6 +172,16 @@ export default function TournamentSettingsPage() {
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800"
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tournament Start Date</label>
+                  <input
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                  />
+                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest px-1">Leave blank for "TBA"</div>
+                </div>
               </div>
             </section>
 
@@ -237,7 +232,7 @@ export default function TournamentSettingsPage() {
           <div className="space-y-6">
             <aside className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-6">
               <h4 className="text-xs font-black uppercase tracking-widest">Squad Dynamics</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                   <div className="text-[9px] font-black text-slate-600 uppercase mb-1">Min Players</div>
                   <input type="number" value={formData.min_players} onChange={(e) => setFormData({ ...formData, min_players: parseInt(e.target.value) })} className="bg-transparent font-black text-xl outline-none w-full" />
@@ -246,37 +241,10 @@ export default function TournamentSettingsPage() {
                   <div className="text-[9px] font-black text-slate-600 uppercase mb-1">Max Players</div>
                   <input type="number" value={formData.max_players} onChange={(e) => setFormData({ ...formData, max_players: parseInt(e.target.value) })} className="bg-transparent font-black text-xl outline-none w-full" />
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <div className="text-[9px] font-black text-slate-600 uppercase mb-1">Registration Fee</div>
-                  <input type="number" value={formData.registration_fee} onChange={(e) => setFormData({ ...formData, registration_fee: parseInt(e.target.value) })} className="bg-transparent font-black text-xl outline-none w-full" />
-                </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <div className="text-[9px] font-black text-slate-600 uppercase mb-1">Total Slots</div>
-                  <input type="number" value={formData.max_teams} onChange={(e) => setFormData({ ...formData, max_teams: parseInt(e.target.value) })} className="bg-transparent font-black text-xl outline-none w-full" />
-                </div>
               </div>
             </aside>
 
-            <aside className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-widest">Timeline</h4>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-600 uppercase">Registration Deadline</label>
-                  <div className="flex gap-2">
-                    <input type="date" value={formData.registration_deadline_date} onChange={(e) => setFormData({ ...formData, registration_deadline_date: e.target.value })} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
-                    <input type="time" value={formData.registration_deadline_time} onChange={(e) => setFormData({ ...formData, registration_deadline_time: e.target.value })} className="w-28 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-600 uppercase">Tournament Launch</label>
-                  <input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black text-slate-600 uppercase">Tournament End</label>
-                  <input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold" />
-                </div>
-              </div>
-            </aside>
+
 
             <div className="px-6 py-4 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-between">
               <div>

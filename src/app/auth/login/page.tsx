@@ -39,7 +39,17 @@ function LoginContent() {
         .single()
 
       if (error || !data) {
-        setError('Hall Ticket not found. New students can register using the link below.')
+        // Check if hall ticket is exactly 10 alphanumeric characters
+        const upperHallTicket = hallTicket.toUpperCase()
+        const isValid10Chars = /^[A-Z0-9]{10}$/.test(upperHallTicket)
+
+        if (isValid10Chars) {
+          // Auto-redirect to student registration with hall ticket pre-filled
+          router.push(`/auth/student-register?hallTicket=${encodeURIComponent(upperHallTicket)}`)
+          return
+        }
+
+        setError('Hall Ticket not found. Please enter a valid 10-character Hall Ticket (letters/numbers only).')
         return
       }
 
@@ -136,7 +146,7 @@ function LoginContent() {
       }
 
       setSessionStartTime()
-      
+
       // Only force password change on FIRST login with default password
       const isFirstLogin = (student.login_count || 0) === 0
       if (isFirstLogin && password === 'Kmce123$' && !student.password_changed && student.hall_ticket !== 'ADMIN') {
@@ -304,13 +314,22 @@ function LoginContent() {
                 >
                   {loading ? 'Unlocking...' : 'Launch Dashboard 🚀'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setStep('hall_ticket')}
-                  className="w-full py-2 text-slate-600 hover:text-slate-400 text-xs font-black uppercase tracking-widest transition-colors min-h-[44px]"
-                >
-                  ← Wrong User?
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep('verify_details')}
+                    className="w-full py-2 text-cricket-400 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors min-h-[44px]"
+                  >
+                    ✎ Update My Role/Details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep('hall_ticket')}
+                    className="w-full py-2 text-slate-600 hover:text-slate-400 text-[10px] font-black uppercase tracking-widest transition-colors min-h-[44px]"
+                  >
+                    ← Wrong User?
+                  </button>
+                </div>
               </form>
             )}
           </div>

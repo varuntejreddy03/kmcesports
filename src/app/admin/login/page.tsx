@@ -11,7 +11,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  
+
   // Deadline editing state
   const [isEditingDeadline, setIsEditingDeadline] = useState(false)
   const [deadlineDate, setDeadlineDate] = useState('2026-01-27')
@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
   // Match generator state
   const [showMatchGenerator, setShowMatchGenerator] = useState(false)
   const [approvedTeams, setApprovedTeams] = useState<any[]>([])
-  const [generatedMatches, setGeneratedMatches] = useState<{team_a: any, team_b: any}[]>([])
+  const [generatedMatches, setGeneratedMatches] = useState<{ team_a: any, team_b: any }[]>([])
   const [byeTeam, setByeTeam] = useState<any | null>(null)
   const [loadingTeams, setLoadingTeams] = useState(false)
   const [savingMatches, setSavingMatches] = useState(false)
@@ -59,7 +59,7 @@ export default function AdminLoginPage() {
         .select('registration_deadline')
         .eq('sport', 'cricket')
         .maybeSingle()
-      
+
       if (data?.registration_deadline) {
         const deadline = new Date(data.registration_deadline)
         setDeadlineDate(deadline.toISOString().split('T')[0])
@@ -74,14 +74,14 @@ export default function AdminLoginPage() {
     setSavingDeadline(true)
     try {
       const deadlineISO = new Date(`${deadlineDate}T${deadlineTime}:00`).toISOString()
-      
+
       // Check if record exists
       const { data: existing } = await supabase
         .from('tournament_settings')
         .select('id')
         .eq('sport', 'cricket')
         .maybeSingle()
-      
+
       if (existing) {
         await supabase
           .from('tournament_settings')
@@ -92,7 +92,7 @@ export default function AdminLoginPage() {
           .from('tournament_settings')
           .insert({ sport: 'cricket', registration_deadline: deadlineISO })
       }
-      
+
       setIsEditingDeadline(false)
     } catch (err) {
       console.error('Error saving deadline:', err)
@@ -110,7 +110,7 @@ export default function AdminLoginPage() {
         .select('*')
         .eq('status', 'approved')
         .order('name')
-      
+
       if (data) {
         setApprovedTeams(data)
         if (data.length > 0) {
@@ -137,11 +137,11 @@ export default function AdminLoginPage() {
   // Generate random matches from teams
   const generateRandomMatches = (teams: any[]) => {
     // Sort by registration time (created_at) - first registered first
-    const sortedByRegistration = [...teams].sort((a, b) => 
+    const sortedByRegistration = [...teams].sort((a, b) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
-    
-    const matches: {team_a: any, team_b: any}[] = []
+
+    const matches: { team_a: any, team_b: any }[] = []
     let bye: any | null = null
     let teamsToShuffle = [...sortedByRegistration]
 
@@ -267,7 +267,9 @@ export default function AdminLoginPage() {
       })
 
       if (signInError) {
+        // If credentials are invalid, it might be a new admin or a wrong password
         if (signInError.message.includes('Invalid login credentials')) {
+          // Try to sign up only if we suspect the user doesn't exist
           const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -279,8 +281,21 @@ export default function AdminLoginPage() {
               }
             }
           })
-          if (signUpError) throw signUpError
-          await supabase.auth.signInWithPassword({ email, password })
+
+          if (signUpError) {
+            // If signup says user exists, then the original signin failed because of wrong password
+            if (signUpError.message.includes('User already registered') || signUpError.message.includes('already in use')) {
+              setError('Incorrect password for Administrator account.')
+              setLoading(false)
+              return
+            }
+            throw signUpError
+          }
+
+          // If signup was successful, it might need email confirmation depending on Supabase settings
+          // But usually we just try to sign in again
+          const { error: secondSignInError } = await supabase.auth.signInWithPassword({ email, password })
+          if (secondSignInError) throw secondSignInError
         } else {
           throw signInError
         }
@@ -416,7 +431,7 @@ export default function AdminLoginPage() {
               </div>
             </div>
           ) : (
-            <div 
+            <div
               onClick={() => setIsEditingDeadline(true)}
               className="text-2xl md:text-3xl font-black text-white cursor-pointer hover:text-cricket-400 transition-colors"
               title="Click to edit"
@@ -537,13 +552,12 @@ export default function AdminLoginPage() {
                     <button
                       onClick={saveMatchesToDatabase}
                       disabled={savingMatches || matchesSaved || useDummyTeams}
-                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${
-                        useDummyTeams
+                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${useDummyTeams
                           ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                          : matchesSaved 
-                            ? 'bg-green-600 text-white' 
+                          : matchesSaved
+                            ? 'bg-green-600 text-white'
                             : 'bg-cricket-500 hover:bg-cricket-600 text-white'
-                      }`}
+                        }`}
                     >
                       {useDummyTeams ? '🧪 Test Mode' : savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save Schedule'}
                     </button>

@@ -5,17 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const formatDeadlineShort = (dateStr: string | null) => {
-  if (!dateStr) return 'Jan 27, 12:30 PM'
-  const date = new Date(dateStr)
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-  const formattedDate = date.toLocaleDateString('en-US', options)
-  const hours = date.getHours()
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  const ampm = hours >= 12 ? 'PM' : 'AM'
-  const hour12 = hours % 12 || 12
-  return `${formattedDate}, ${hour12}:${minutes} ${ampm}`
-}
+
 
 export default function Home() {
   const router = useRouter()
@@ -111,7 +101,7 @@ export default function Home() {
               KMCE<span className="text-cricket-500">Cricket</span>
             </span>
           </Link>
-          
+
           <div className="flex items-center gap-2 md:gap-8">
             <a href="#guide" className="px-3 py-1.5 md:px-4 md:py-2 bg-cricket-500/20 border border-cricket-500/30 text-cricket-400 rounded-lg text-xs md:text-sm font-bold hover:bg-cricket-500 hover:text-white transition-all">Guide</a>
             <a href="#rules" className="px-3 py-1.5 md:px-4 md:py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg text-xs md:text-sm font-bold hover:bg-yellow-500 hover:text-black transition-all">Rules</a>
@@ -127,16 +117,16 @@ export default function Home() {
       {/* Scrolling Announcement Ticker */}
       <div className="fixed top-14 md:top-16 left-0 right-0 z-40 bg-yellow-500 py-2 md:py-2.5 overflow-hidden">
         <div className="animate-marquee whitespace-nowrap flex">
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🏏 CSE, CSM, ECE only</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🪪 ID card is mandatory for all students (verification purpose)</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🏏 CSE, CSM, ECE only</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>✅ Same dept players allowed</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>📋 Read rules first</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>💰 Fee: ₹3000</span>
-          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{color: '#000'}}>🪪 ID card is mandatory for all students (verification purpose)</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>🏏 CSE, CSM, ECE only</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>✅ Same dept players allowed</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>📋 Read rules first</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>🏆 FREE TO PLAY</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>🪪 ID card is mandatory for all students (verification purpose)</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>🏏 CSE, CSM, ECE only</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>✅ Same dept players allowed</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>📋 Read rules first</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>🏆 FREE TO PLAY</span>
+          <span className="mx-4 md:mx-8 font-black text-xs md:text-sm uppercase tracking-wide md:tracking-widest" style={{ color: '#000' }}>🪪 ID card is mandatory for all students (verification purpose)</span>
         </div>
       </div>
 
@@ -147,7 +137,7 @@ export default function Home() {
           <div className="absolute top-1/4 left-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-cricket-600/20 blur-[100px] md:blur-[150px] rounded-full"></div>
           <div className="absolute bottom-1/4 right-1/4 w-[200px] md:w-[400px] h-[200px] md:h-[400px] bg-indigo-600/15 blur-[80px] md:blur-[120px] rounded-full"></div>
         </div>
-        
+
         {/* Cricket Ball Decorations */}
         <div className="absolute top-20 right-5 md:right-10 text-4xl md:text-6xl opacity-10 animate-bounce">🏏</div>
         <div className="absolute bottom-20 left-5 md:left-10 text-6xl md:text-8xl opacity-5">🏏</div>
@@ -174,26 +164,35 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mb-4 md:mb-6 px-4">
-            <button
-              onClick={handleRegisterClick}
-              className="px-6 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-lg hover:scale-105 transition-all shadow-2xl shadow-cricket-600/30 active:scale-95 flex items-center justify-center gap-2 md:gap-3 min-h-[52px]"
-            >
-              <span>Register Your Team</span>
-              <span className="text-xl md:text-2xl">🏏</span>
-            </button>
+            {settings?.registration_open !== false ? (
+              <button
+                onClick={handleRegisterClick}
+                className="px-6 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-lg hover:scale-105 transition-all shadow-2xl shadow-cricket-600/30 active:scale-95 flex items-center justify-center gap-2 md:gap-3 min-h-[52px]"
+              >
+                <span>Become Captain</span>
+                <span className="text-xl md:text-2xl">👑</span>
+              </button>
+            ) : (
+              <div className="px-6 md:px-10 py-4 md:py-5 bg-white/5 border border-white/10 text-red-500 rounded-xl md:rounded-2xl font-black text-sm md:text-lg flex items-center justify-center gap-2 min-h-[52px] opacity-75">
+                <span>Registration Frozen ❄️</span>
+              </div>
+            )}
             <Link
               href="/auth/login"
               className="px-6 md:px-10 py-4 md:py-5 bg-white/5 border border-white/10 text-white rounded-xl md:rounded-2xl font-bold text-sm md:text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 min-h-[52px]"
             >
-              <span>Player Login</span>
+              <span>Already in a Team?</span>
               <span>→</span>
             </Link>
           </div>
 
           {/* ID Card Note */}
-          <div className="text-center mb-6 md:mb-8 px-4">
+          <div className="text-center mb-6 md:mb-8 px-4 flex flex-col gap-2 items-center">
             <p className="text-yellow-400 text-xs md:text-sm font-bold bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-2 inline-block">
               🪪 Note: ID card is mandatory for all students and is used for verification purpose.
+            </p>
+            <p className="text-indigo-400 text-[10px] md:text-xs font-black uppercase tracking-widest bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-2 inline-block">
+              ✨ Captains can add new players directly if not found in search!
             </p>
           </div>
 
@@ -236,21 +235,21 @@ export default function Home() {
             </h2>
             <p className="text-sm md:text-base text-slate-400 mt-3 max-w-xl mx-auto">Follow these simple steps to register your team</p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
               { step: 1, icon: '📝', title: 'Register', desc: 'Create your student account with hall ticket number', color: 'from-blue-500 to-cyan-500' },
               { step: 2, icon: '🔐', title: 'Login', desc: 'Sign in with your credentials', color: 'from-purple-500 to-pink-500' },
               { step: 3, icon: '👥', title: 'Create Team', desc: 'Form your squad with players from same department', color: 'from-orange-500 to-yellow-500' },
-              { step: 4, icon: '💳', title: 'Pay & Done', desc: 'Complete payment and upload screenshot', color: 'from-green-500 to-emerald-500' },
+              { step: 4, icon: '✅', title: 'Finalize', desc: 'Review your squad and complete registration', color: 'from-green-500 to-emerald-500' },
             ].map((item, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className="group relative bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 hover:bg-white/10 hover:border-white/20 hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden"
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
                 <div className="absolute -top-10 -right-10 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-                
+
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
                     <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center text-white text-sm md:text-base font-black shadow-lg`}>
@@ -258,18 +257,18 @@ export default function Home() {
                     </span>
                     <span className="text-2xl md:text-3xl group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">{item.icon}</span>
                   </div>
-                  
+
                   <h3 className="text-lg md:text-xl font-black uppercase tracking-wide mb-2 group-hover:text-cricket-400 transition-colors">{item.title}</h3>
                   <p className="text-xs md:text-sm text-slate-400 leading-relaxed">{item.desc}</p>
                 </div>
-                
+
                 <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
               </div>
             ))}
           </div>
 
           <div className="text-center mt-8">
-            <Link 
+            <Link
               href="/auth/student-register"
               className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-base hover:scale-105 transition-all shadow-xl shadow-cricket-600/20"
             >
@@ -285,7 +284,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-3 md:px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
             {[
-              { value: settings?.registration_fee || '2500', label: 'Registration Fee', prefix: '₹' },
+              { value: 'FREE', label: 'Entry Type', prefix: '' },
               { value: `${settings?.min_players || '11'}-${settings?.max_players || '15'}`, label: 'Players Per Team', prefix: '' },
               { value: settings?.start_date ? new Date(settings.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'TBA', label: 'Tournament Starts', prefix: '' },
               { value: '12 Overs', label: 'Format', prefix: '' },
@@ -314,7 +313,7 @@ export default function Home() {
                 Tournament <span className="text-yellow-400">Rules</span>
               </h2>
             </div>
-            
+
             <div className="bg-yellow-500/5 border-2 border-yellow-500/30 rounded-2xl md:rounded-[40px] p-6 md:p-10 relative overflow-hidden shadow-2xl shadow-yellow-500/10">
               <div className="absolute top-0 right-0 w-32 md:w-40 h-32 md:h-40 bg-yellow-500/10 blur-3xl rounded-full"></div>
               <div className="absolute bottom-0 left-0 w-24 md:w-32 h-24 md:h-32 bg-cricket-500/10 blur-3xl rounded-full"></div>
@@ -344,11 +343,11 @@ export default function Home() {
               <p className="text-sm md:text-lg text-slate-400 mb-6 md:mb-8 leading-relaxed">
                 {settings?.rules || 'Form your squad from your department and compete for glory in the inter-departmental cricket championship. Build your dream team and claim victory!'}
               </p>
-              
+
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div className="p-4 md:p-5 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
-                  <div className="text-cricket-500 text-[9px] md:text-xs font-black uppercase tracking-widest mb-1 md:mb-2">Registration Fee</div>
-                  <div className="text-xl md:text-2xl font-black text-white">₹{settings?.registration_fee || '2500'}</div>
+                  <div className="text-cricket-500 text-[9px] md:text-xs font-black uppercase tracking-widest mb-1 md:mb-2">Entry Fee</div>
+                  <div className="text-xl md:text-2xl font-black text-white">FREE</div>
                 </div>
                 <div className="p-4 md:p-5 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
                   <div className="text-cricket-500 text-[9px] md:text-xs font-black uppercase tracking-widest mb-1 md:mb-2">Squad Size</div>
@@ -371,7 +370,7 @@ export default function Home() {
               <div className="bg-gradient-to-br from-cricket-600 to-indigo-700 rounded-3xl md:rounded-[40px] p-6 md:p-12 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 md:w-40 h-32 md:h-40 bg-white/10 rounded-full blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-24 md:w-32 h-24 md:h-32 bg-black/20 rounded-full blur-2xl"></div>
-                
+
                 <div className="relative z-10 text-center">
                   <div className="text-5xl md:text-6xl mb-4 md:mb-6">🏏</div>
                   <div className="inline-block px-3 md:px-4 py-1 md:py-1.5 bg-white/20 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest mb-3 md:mb-4">
@@ -380,19 +379,19 @@ export default function Home() {
                   <h3 className="text-2xl md:text-3xl font-black mb-4 md:mb-6 uppercase">
                     Join the<br /><span className="text-white/60">Championship</span>
                   </h3>
-                  
+
                   <div className="bg-white/10 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 mb-6 md:mb-8 border border-white/10">
-                    <div className="text-[10px] md:text-xs font-bold text-white/60 uppercase tracking-widest mb-1 md:mb-2">Deadline</div>
+                    <div className="text-[10px] md:text-xs font-bold text-white/60 uppercase tracking-widest mb-1 md:mb-2">Status</div>
                     <div className="text-2xl md:text-3xl font-black">
-                      {formatDeadlineShort(settings?.registration_deadline)}
+                      OPEN 🏏
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={handleRegisterClick}
                     className="w-full py-4 md:py-5 bg-white text-[#0f172a] rounded-xl md:rounded-2xl font-black text-base md:text-lg hover:bg-white/90 transition-all shadow-2xl min-h-[52px]"
                   >
-                    Register Now
+                    Become Captain 👑
                   </button>
                 </div>
               </div>
@@ -467,7 +466,7 @@ export default function Home() {
               onClick={handleRegisterClick}
               className="px-6 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-lg hover:scale-105 transition-all shadow-2xl shadow-cricket-600/30 min-h-[52px]"
             >
-              Register Your Team 🏏
+              Become Captain 👑
             </button>
             <Link
               href="/auth/student-register"

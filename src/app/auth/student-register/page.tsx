@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase, isKMCEStudent } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function StudentRegisterPage() {
+function StudentRegisterContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     hallTicket: '',
     name: '',
@@ -19,13 +20,29 @@ export default function StudentRegisterPage() {
   const [success, setSuccess] = useState(false)
   const [hallTicketError, setHallTicketError] = useState<string | null>(null)
 
+  // Pre-fill hall ticket from URL parameter on mount
+  useEffect(() => {
+    const hallTicketFromUrl = searchParams.get('hallTicket')
+    if (hallTicketFromUrl) {
+      const upperValue = hallTicketFromUrl.toUpperCase().slice(0, 10)
+      setFormData(prev => ({ ...prev, hallTicket: upperValue }))
+
+      // Validate the pre-filled hall ticket
+      if (upperValue.length === 10) {
+        if (!isKMCEStudent(upperValue)) {
+          setHallTicketError('Invalid Hall Ticket. Only KMCE students (P81/P85) are allowed.')
+        }
+      }
+    }
+  }, [searchParams])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    
+
     if (name === 'hallTicket') {
       const upperValue = value.toUpperCase().slice(0, 10)
       setFormData(prev => ({ ...prev, hallTicket: upperValue }))
-      
+
       // Instant validation for hall ticket
       if (upperValue.length === 10) {
         if (!isKMCEStudent(upperValue)) {
@@ -258,11 +275,10 @@ export default function StudentRegisterPage() {
                         key={role.id}
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, playerRole: role.id }))}
-                        className={`py-2.5 md:py-3 px-2 md:px-3 rounded-lg md:rounded-xl text-[9px] md:text-xs font-black uppercase tracking-wide border transition-all flex items-center justify-center gap-1 md:gap-2 min-h-[44px] ${
-                          formData.playerRole === role.id 
-                            ? 'bg-gradient-to-r from-cricket-600 to-indigo-600 border-cricket-400 text-white shadow-lg shadow-cricket-600/30' 
-                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
-                        }`}
+                        className={`py-2.5 md:py-3 px-2 md:px-3 rounded-lg md:rounded-xl text-[9px] md:text-xs font-black uppercase tracking-wide border transition-all flex items-center justify-center gap-1 md:gap-2 min-h-[44px] ${formData.playerRole === role.id
+                          ? 'bg-gradient-to-r from-cricket-600 to-indigo-600 border-cricket-400 text-white shadow-lg shadow-cricket-600/30'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-white'
+                          }`}
                       >
                         <span>{role.icon}</span>
                         <span className="truncate">{role.label}</span>
@@ -309,5 +325,17 @@ export default function StudentRegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function StudentRegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <StudentRegisterContent />
+    </Suspense>
   )
 }

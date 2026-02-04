@@ -6,28 +6,18 @@ import Link from 'next/link'
 import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import { StudentData, Team } from '@/types'
 
-const DEFAULT_DEADLINE = new Date('2026-01-27T12:30:00')
 
-const formatDeadlineMessage = (date: Date) => {
-  const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', year: 'numeric' }
-  const dateStr = date.toLocaleDateString('en-US', options)
-  const hours = date.getHours()
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  const ampm = hours >= 12 ? 'PM' : 'AM'
-  const hour12 = hours % 12 || 12
-  return `${dateStr} at ${hour12}:${minutes} ${ampm}`
-}
 
 type RegistrationStatus = 'not_registered' | 'payment_pending' | 'approval_pending' | 'approved' | 'rejected'
 
 export default function Dashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [registrationClosed, setRegistrationClosed] = useState(false)
-  const [deadlineDate, setDeadlineDate] = useState<Date>(DEFAULT_DEADLINE)
+  const [registrationOpen, setRegistrationOpen] = useState(true)
   const [student, setStudent] = useState<StudentData | null>(null)
   const [team, setTeam] = useState<Team | null>(null)
   const [teamPlayers, setTeamPlayers] = useState<any[]>([])
+  const [isCaptain, setIsCaptain] = useState(false)
   const [status, setStatus] = useState<RegistrationStatus>('not_registered')
   const [matches, setMatches] = useState<any[]>([])
 
@@ -64,18 +54,15 @@ export default function Dashboard() {
 
   const checkUser = async () => {
     try {
-      // Fetch deadline from database
       const { data: settingsData } = await supabase
         .from('tournament_settings')
-        .select('registration_deadline')
+        .select('registration_open')
         .eq('sport', 'cricket')
         .maybeSingle()
-      
-      const deadline = settingsData?.registration_deadline 
-        ? new Date(settingsData.registration_deadline)
-        : DEFAULT_DEADLINE
-      setDeadlineDate(deadline)
-      setRegistrationClosed(new Date() > deadline)
+
+      if (settingsData) {
+        setRegistrationOpen(settingsData.registration_open ?? true)
+      }
 
       const isExpired = checkSessionTimeout()
       if (isExpired) {
@@ -118,6 +105,8 @@ export default function Dashboard() {
 
         if (teamData) {
           setTeam(teamData)
+          // Check if current user is the captain
+          setIsCaptain(teamData.captain_id === studentData.hall_ticket)
 
           // Players
           const { data: pData } = await supabase
@@ -136,20 +125,11 @@ export default function Dashboard() {
             student_data: sData?.find(s => s.hall_ticket === p.hall_ticket)
           })) || [])
 
-          // Payment Status
-          const { data: payments } = await supabase
-            .from('payments')
-            .select('*')
-            .eq('team_id', teamData.id)
-            .order('submitted_at', { ascending: false })
-
-          const payment = payments?.[0]
-          if (payment) {
-            if (payment.status === 'approved') setStatus('approved')
-            else if (payment.status === 'rejected') setStatus('rejected')
-            else setStatus('approval_pending')
+          // Approval Status
+          if (teamData.approved) {
+            setStatus('approved')
           } else {
-            setStatus('payment_pending')
+            setStatus('approval_pending')
           }
         }
       }
@@ -233,29 +213,48 @@ export default function Dashboard() {
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-cricket-600 to-indigo-600 rounded-3xl md:rounded-[40px] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
             <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 p-6 md:p-12 rounded-3xl md:rounded-[40px] text-center">
-              {registrationClosed ? (
-                <>
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-red-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-red-500/20">⏰</div>
-                  <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">Registration <span className="text-red-500">Closed</span></h2>
-                  <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-10 text-sm md:text-lg">
-                    The registration deadline was {formatDeadlineMessage(deadlineDate)}. You can no longer create or join a team.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-white/5 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-white/10">🏆</div>
-                  <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">You're not in a team yet!</h2>
-                  <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-10 text-sm md:text-lg">
-                    Gather your department's finest players and lead them to glory. The championship awaits its next legend.
-                  </p>
+              <>
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-white/5 rounded-2xl md:rounded-3xl flex items-center justify-center text-3xl md:text-4xl mx-auto mb-4 md:mb-6 border border-white/10">🏆</div>
+                <h2 className="text-2xl md:text-3xl font-black mb-3 md:mb-4">You're not in a team yet!</h2>
+                <p className="text-slate-400 max-w-lg mx-auto mb-6 md:mb-8 text-sm md:text-lg">
+                  Choose your path: Lead your own squad as captain or wait for a captain to add you to their team.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                  {/* Captain Option */}
                   <Link
                     href="/team/create"
-                    className="inline-flex items-center gap-2 md:gap-3 px-6 md:px-10 py-4 md:py-5 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white rounded-xl md:rounded-2xl font-black text-base md:text-xl hover:scale-[1.02] md:hover:scale-[1.05] transition-all shadow-xl shadow-cricket-600/30 min-h-[52px]"
+                    className="group relative bg-gradient-to-br from-cricket-600/20 to-indigo-600/20 border-2 border-cricket-500/30 hover:border-cricket-500 p-6 rounded-2xl md:rounded-3xl text-center transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-cricket-600/20"
                   >
-                    Create Your Squad 🚀
+                    <div className="w-12 h-12 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl flex items-center justify-center text-2xl mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                      👑
+                    </div>
+                    <h3 className="font-black text-lg mb-2 text-cricket-400 group-hover:text-cricket-300">Become a Captain</h3>
+                    <p className="text-slate-400 text-xs md:text-sm">
+                      Create your own team and add players from your department
+                    </p>
+                    <div className="mt-4 inline-flex items-center gap-2 text-cricket-500 font-bold text-sm group-hover:gap-3 transition-all">
+                      <span>Create Team</span>
+                      <span>→</span>
+                    </div>
                   </Link>
-                </>
-              )}
+
+                  {/* Player Option */}
+                  <div className="relative bg-white/5 border-2 border-white/10 p-6 rounded-2xl md:rounded-3xl text-center">
+                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-2xl mx-auto mb-4">
+                      🏏
+                    </div>
+                    <h3 className="font-black text-lg mb-2 text-slate-300">I'm a Player</h3>
+                    <p className="text-slate-400 text-xs md:text-sm">
+                      Share your Hall Ticket with your captain and wait to be added
+                    </p>
+                    <div className="mt-4 bg-slate-800/50 rounded-xl px-4 py-2.5 border border-white/10">
+                      <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Your Hall Ticket</div>
+                      <div className="font-mono font-bold text-white tracking-wider">{student?.hall_ticket}</div>
+                    </div>
+                  </div>
+                </div>
+              </>
             </div>
           </div>
         ) : (
@@ -263,24 +262,22 @@ export default function Dashboard() {
             {/* Left Column: Team Summary */}
             <div className="lg:col-span-2 space-y-6 md:space-y-8">
               {/* Registration Alerts */}
-              {status === 'payment_pending' && (
-                <div className="p-0.5 md:p-1 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl md:rounded-3xl">
-                  <div className="bg-[#0f172a] p-4 md:p-6 rounded-[14px] md:rounded-[22px] flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6 justify-between">
-                    <div className="flex items-center gap-3 md:gap-4">
-                      <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-500/20 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl text-yellow-500 flex-shrink-0">💰</div>
-                      <div>
-                        <h4 className="font-black text-yellow-500 text-sm md:text-base">Payment Required</h4>
-                        <p className="text-slate-400 text-xs md:text-sm font-medium">Complete payment to finalize registration.</p>
-                      </div>
-                    </div>
-                    <Link href={`/payment?teamId=${team?.id}`} className="w-full sm:w-auto px-6 md:px-8 py-3 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 transition-all text-sm text-center min-h-[44px] flex items-center justify-center">
-                      Pay Now
-                    </Link>
+
+
+              {/* Player Role Info - Only show for non-captains */}
+              {team && !isCaptain && (
+                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl md:rounded-3xl p-4 md:p-5 flex items-center gap-3 md:gap-4">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-indigo-500/20 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl flex-shrink-0">
+                    👥
+                  </div>
+                  <div>
+                    <h4 className="font-black text-indigo-400 text-sm md:text-base">You're a Team Member</h4>
+                    <p className="text-slate-400 text-xs md:text-sm font-medium">
+                      Contact your captain for any team changes. Only captains can edit the squad.
+                    </p>
                   </div>
                 </div>
               )}
-
-              {/* Team ID Card */}
               <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] overflow-hidden group">
                 <div className="p-5 md:p-8 pb-3 md:pb-4">
                   <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-widest mb-1">Active Squad</div>
