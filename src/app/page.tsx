@@ -542,14 +542,14 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <a href="tel:6303860267" className="bg-white/5 border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl hover:bg-white/[0.08] transition-all group flex items-center gap-4 md:gap-5 min-h-[80px]">
+            <a href="tel:9390155430" className="bg-white/5 border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl hover:bg-white/[0.08] transition-all group flex items-center gap-4 md:gap-5 min-h-[80px]">
               <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-cricket-500 to-indigo-600 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-lg shadow-cricket-500/20 group-hover:scale-110 transition-transform flex-shrink-0">
                 📞
               </div>
               <div>
                 <div className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Coordinator</div>
                 <div className="text-lg md:text-xl font-black text-white">Suresh</div>
-                <div className="text-cricket-400 font-bold text-sm md:text-base">6303860267</div>
+                <div className="text-cricket-400 font-bold text-sm md:text-base">9390155430</div>
               </div>
             </a>
             <a href="tel:9063128733" className="bg-white/5 border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl hover:bg-white/[0.08] transition-all group flex items-center gap-4 md:gap-5 min-h-[80px]">
@@ -558,7 +558,7 @@ export default function Home() {
               </div>
               <div>
                 <div className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Coordinator</div>
-                <div className="text-lg md:text-xl font-black text-white">Sreeker</div>
+                <div className="text-lg md:text-xl font-black text-white">Sreekar</div>
                 <div className="text-cricket-400 font-bold text-sm md:text-base">9063128733</div>
               </div>
             </a>
@@ -579,7 +579,7 @@ export default function Home() {
             Inter-Department Cricket Championship 2026
           </p>
           <div className="text-slate-700 text-[10px] md:text-xs">
-            For enquiries: <span className="text-slate-500">Suresh (6303860267)</span> • <span className="text-slate-500">Sreeker (9063128733)</span>
+            For enquiries: <span className="text-slate-500">Suresh (9390155430)</span> • <span className="text-slate-500">Sreekar (9063128733)</span>
           </div>
         </div>
       </footer>

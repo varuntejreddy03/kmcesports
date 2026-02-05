@@ -443,7 +443,7 @@ ${rules}
 
 *Game on! See you on the field.*
 Coordinators:
-Suresh: 6303860267
+Suresh: 9390155430
 Sreekar: 9063128733`
 
     return message

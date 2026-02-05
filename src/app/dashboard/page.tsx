@@ -10,6 +10,14 @@ import { StudentData, Team } from '@/types'
 
 type RegistrationStatus = 'not_registered' | 'payment_pending' | 'approval_pending' | 'approved' | 'rejected'
 
+interface TournamentSettings {
+  rules_text?: string
+  venue?: string
+  start_date?: string
+  min_players?: number
+  max_players?: number
+}
+
 export default function Dashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -20,9 +28,13 @@ export default function Dashboard() {
   const [isCaptain, setIsCaptain] = useState(false)
   const [status, setStatus] = useState<RegistrationStatus>('not_registered')
   const [matches, setMatches] = useState<any[]>([])
+  const [showRulesModal, setShowRulesModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [tournamentSettings, setTournamentSettings] = useState<TournamentSettings | null>(null)
 
   useEffect(() => {
     checkUser()
+    fetchMatches()
 
     const sessionCheckInterval = setInterval(() => {
       const isExpired = checkSessionTimeout()
@@ -33,17 +45,7 @@ export default function Dashboard() {
 
     const channel = supabase
       .channel('dashboard-matches')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
-        supabase
-          .from('matches')
-          .select(`
-            *,
-            team_a:teams!team_a_id(name),
-            team_b:teams!team_b_id(name)
-          `)
-          .order('match_date', { ascending: true })
-          .then(({ data }) => { if (data) setMatches(data) })
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, fetchMatches)
       .subscribe()
 
     return () => {
@@ -52,16 +54,29 @@ export default function Dashboard() {
     }
   }, [])
 
+  const fetchMatches = async () => {
+    const { data } = await supabase
+      .from('matches')
+      .select(`
+        *,
+        team_a:teams!team_a_id(name),
+        team_b:teams!team_b_id(name)
+      `)
+      .order('match_date', { ascending: true })
+    if (data) setMatches(data)
+  }
+
   const checkUser = async () => {
     try {
       const { data: settingsData } = await supabase
         .from('tournament_settings')
-        .select('registration_open')
+        .select('*')
         .eq('sport', 'cricket')
         .maybeSingle()
 
       if (settingsData) {
         setRegistrationOpen(settingsData.registration_open ?? true)
+        setTournamentSettings(settingsData)
       }
 
       const isExpired = checkSessionTimeout()
@@ -361,28 +376,113 @@ export default function Dashboard() {
               <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] p-5 md:p-8">
                 <h4 className="font-black text-[10px] md:text-xs uppercase tracking-widest text-cricket-500 mb-4 md:mb-6">Quick Links</h4>
                 <div className="space-y-2 md:space-y-3">
-                  <Link
-                    href="/#cricket-info"
-                    className="flex items-center gap-3 md:gap-4 w-full p-3 md:p-4 bg-white/5 hover:bg-cricket-500/10 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group min-h-[44px]"
+                  <button
+                    onClick={() => setShowRulesModal(true)}
+                    className="flex items-center gap-3 md:gap-4 w-full p-3 md:p-4 bg-white/5 hover:bg-cricket-500/10 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group min-h-[44px] text-left"
                   >
                     <span className="text-lg md:text-xl group-hover:scale-110 transition-transform">📜</span>
                     Tournament Rules
-                  </Link>
-                  <Link
-                    href="/#schedule"
-                    className="flex items-center gap-3 md:gap-4 w-full p-3 md:p-4 bg-white/5 hover:bg-cricket-500/10 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group min-h-[44px]"
+                  </button>
+                  <button
+                    onClick={() => setShowScheduleModal(true)}
+                    className="flex items-center gap-3 md:gap-4 w-full p-3 md:p-4 bg-white/5 hover:bg-cricket-500/10 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group min-h-[44px] text-left"
                   >
                     <span className="text-lg md:text-xl group-hover:scale-110 transition-transform">📅</span>
                     Full Schedule
-                  </Link>
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] p-5 md:p-8">
+                <h4 className="font-black text-[10px] md:text-xs uppercase tracking-widest text-cricket-500 mb-4 md:mb-6">Contact</h4>
+                <p className="text-xs md:text-sm text-slate-400 mb-4">For any queries regarding the website or Cricket rules contact:</p>
+                <div className="space-y-2 md:space-y-3">
                   <a
-                    href="mailto:support@kmce.local"
+                    href="tel:9390155430"
                     className="flex items-center gap-3 md:gap-4 w-full p-3 md:p-4 bg-white/5 hover:bg-cricket-500/10 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group min-h-[44px]"
                   >
-                    <span className="text-lg md:text-xl group-hover:scale-110 transition-transform">💬</span>
-                    Support
+                    <span className="text-lg md:text-xl group-hover:scale-110 transition-transform">📞</span>
+                    <span className="flex flex-col">
+                      <span className="text-white">Suresh</span>
+                      <span className="text-slate-400 normal-case tracking-normal">9390155430</span>
+                    </span>
+                  </a>
+                  <a
+                    href="tel:9063128733"
+                    className="flex items-center gap-3 md:gap-4 w-full p-3 md:p-4 bg-white/5 hover:bg-cricket-500/10 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 hover:border-cricket-500/20 group min-h-[44px]"
+                  >
+                    <span className="text-lg md:text-xl group-hover:scale-110 transition-transform">📞</span>
+                    <span className="flex flex-col">
+                      <span className="text-white">Sreekar</span>
+                      <span className="text-slate-400 normal-case tracking-normal">9063128733</span>
+                    </span>
                   </a>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showRulesModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowRulesModal(false)}>
+            <div className="bg-[#0f172a] border border-white/10 rounded-2xl md:rounded-[32px] max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📜</span>
+                  <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-yellow-400">Tournament Rules</h3>
+                </div>
+                <button onClick={() => setShowRulesModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-xl">×</button>
+              </div>
+              <div className="p-4 md:p-6 overflow-y-auto max-h-[60vh]">
+                {tournamentSettings?.rules_text ? (
+                  <div className="whitespace-pre-wrap text-sm md:text-base leading-relaxed text-white">
+                    {tournamentSettings.rules_text}
+                  </div>
+                ) : (
+                  <p className="text-slate-400">Rules not available. Please check back later.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showScheduleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowScheduleModal(false)}>
+            <div className="bg-[#0f172a] border border-white/10 rounded-2xl md:rounded-[32px] max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📅</span>
+                  <h3 className="text-lg md:text-xl font-black uppercase tracking-widest text-cricket-500">Match Schedule</h3>
+                </div>
+                <button onClick={() => setShowScheduleModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-xl">×</button>
+              </div>
+              <div className="p-4 md:p-6 overflow-y-auto max-h-[60vh]">
+                {matches.length > 0 ? (
+                  <div className="space-y-3">
+                    {matches.map((m: any) => (
+                      <div key={m.id} className="flex items-center gap-4 bg-white/5 rounded-xl p-4 border border-white/10">
+                        <div className="text-2xl">🏏</div>
+                        <div className="flex-1">
+                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                            {new Date(m.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} • {m.match_time?.slice(0, 5)}
+                          </div>
+                          <div className="font-bold text-sm md:text-base text-white uppercase italic">
+                            {m.team_a?.name || 'TBD'} vs {m.team_b?.name || 'TBD'}
+                          </div>
+                          <div className="text-[10px] text-white/40 mt-1 uppercase font-bold">📍 {m.venue}</div>
+                        </div>
+                        {m.status === 'completed' && (
+                          <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-[10px] font-bold uppercase">Done</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <span className="text-4xl mb-4 block">⏳</span>
+                    <p className="text-slate-400">No matches scheduled yet. Check back after the draws!</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

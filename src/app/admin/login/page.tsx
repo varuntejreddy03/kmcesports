@@ -450,10 +450,10 @@ export default function AdminLoginPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/5 border border-white/5 rounded-2xl p-4 text-center">
               <div className="text-sm font-black text-white uppercase tracking-tight">Suresh</div>
-              <a href="tel:6303860267" className="text-cricket-500 font-mono text-sm font-bold hover:text-cricket-400 transition-colors">6303860267</a>
+              <a href="tel:9390155430" className="text-cricket-500 font-mono text-sm font-bold hover:text-cricket-400 transition-colors">9390155430</a>
             </div>
             <div className="bg-white/5 border border-white/5 rounded-2xl p-4 text-center">
-              <div className="text-sm font-black text-white uppercase tracking-tight">Sreeker</div>
+              <div className="text-sm font-black text-white uppercase tracking-tight">Sreekar</div>
               <a href="tel:9063128733" className="text-cricket-500 font-mono text-sm font-bold hover:text-cricket-400 transition-colors">9063128733</a>
             </div>
           </div>

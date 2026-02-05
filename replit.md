@@ -124,7 +124,7 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Delete teams completely (removes team, players, and payments)
 - View team member phone numbers
 - Schedule matches between approved teams
-- Cricket coordinators: Suresh (6303860267), Sreeker (9063128733)
+- Cricket coordinators: Suresh (9390155430), Sreekar (9063128733)
 
 ## Session Management
 - Sessions timeout after 30 minutes of **inactivity** (activity-based)
