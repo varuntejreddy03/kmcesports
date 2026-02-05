@@ -70,6 +70,10 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 5, 2026: Fixed session expiry - now activity-based (resets on user interaction)
+- February 5, 2026: Enabled Supabase auto token refresh for stable authentication
+- February 5, 2026: Added retry logic for Hall Ticket lookups to fix intermittent data fetch failures
+- February 5, 2026: Fixed cross-origin warnings in Next.js development
 - January 24, 2026: Added admin ability to edit player roles and remove players from teams
 - January 24, 2026: Added WhatsApp button to send team details and rules to approved+paid teams
 - January 24, 2026: Removed test mode from random match generator (production-ready)
@@ -123,10 +127,16 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Cricket coordinators: Suresh (6303860267), Sreeker (9063128733)
 
 ## Session Management
-- Sessions timeout after 30 minutes of inactivity
-- Session start time stored in localStorage (session_start_time)
+- Sessions timeout after 30 minutes of **inactivity** (activity-based)
+- User activity (clicks, keystrokes, scrolling, touch) resets the session timer
+- Activity tracking stored in localStorage (session_last_activity)
+- Supabase tokens auto-refresh when active and proactively refresh before expiry
 - All protected pages check session every 60 seconds
 - On expiration, users are redirected to /auth/login?expired=true
+
+### Data Fetching Reliability
+- Hall Ticket lookups use retry logic (3 attempts with backoff)
+- Supabase queries wrapped with retrySupabaseQuery() for network resilience
 
 ## Department Eligibility System
 Team creation uses department-based eligibility validation:
