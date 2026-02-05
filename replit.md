@@ -70,6 +70,8 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 5, 2026: Fixed duplicate player bug - players on pending teams now blocked from other teams
+- February 5, 2026: Added server-side validation before team creation to prevent race conditions
 - February 5, 2026: Fixed session expiry - now activity-based (resets on user interaction)
 - February 5, 2026: Enabled Supabase auto token refresh for stable authentication
 - February 5, 2026: Added retry logic for Hall Ticket lookups to fix intermittent data fetch failures

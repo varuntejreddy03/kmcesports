@@ -326,6 +326,46 @@ export default function CreateTeamPage() {
     setSubmitting(true)
     setError(null)
     try {
+      // Re-validate that all selected players are still available (server-side check)
+      const allHallTickets = [captain.hall_ticket, ...selectedPlayers.map(p => p.hall_ticket)]
+      const { data: alreadyTaken } = await supabase
+        .from('team_players')
+        .select('hall_ticket')
+        .in('hall_ticket', allHallTickets)
+
+      // For editing, exclude players from the current team
+      let conflictingPlayers = alreadyTaken || []
+      if (isEditing && existingTeamId) {
+        const { data: currentTeamPlayers } = await supabase
+          .from('team_players')
+          .select('hall_ticket')
+          .eq('team_id', existingTeamId)
+        const currentTeamHallTickets = new Set(currentTeamPlayers?.map(p => p.hall_ticket) || [])
+        conflictingPlayers = conflictingPlayers.filter(p => !currentTeamHallTickets.has(p.hall_ticket))
+      }
+
+      if (conflictingPlayers.length > 0) {
+        // Get names of conflicting players for better error message
+        const conflictingHallTickets = conflictingPlayers.map(p => p.hall_ticket)
+        const { data: conflictingStudents } = await supabase
+          .from('student_data')
+          .select('name, hall_ticket')
+          .in('hall_ticket', conflictingHallTickets)
+        
+        const conflictingNames = conflictingStudents?.map(s => s.name).join(', ') || conflictingHallTickets.join(', ')
+        
+        // Refresh the taken list so UI updates
+        const { data: freshTaken } = await supabase.from('team_players').select('hall_ticket')
+        setTakenHallTickets(new Set(freshTaken?.map(p => p.hall_ticket) || []))
+        
+        // Remove conflicting players from selection
+        setSelectedPlayers(prev => prev.filter(p => !conflictingHallTickets.includes(p.hall_ticket)))
+        
+        setError(`These players are already on another team: ${conflictingNames}. They have been removed from your selection.`)
+        setSubmitting(false)
+        return
+      }
+
       let teamId = existingTeamId
 
       if (isEditing && teamId) {
@@ -367,7 +407,16 @@ export default function CreateTeamPage() {
       ]
 
       const { error: playersError } = await supabase.from('team_players').insert(playersToAdd)
-      if (playersError) throw playersError
+      if (playersError) {
+        // Check if it's a unique constraint violation (player already on another team)
+        if (playersError.code === '23505' || playersError.message?.includes('duplicate') || playersError.message?.includes('unique')) {
+          // Refresh taken list and show user-friendly error
+          const { data: freshTaken } = await supabase.from('team_players').select('hall_ticket')
+          setTakenHallTickets(new Set(freshTaken?.map(p => p.hall_ticket) || []))
+          throw new Error('One or more players were just added to another team. Please refresh and try again.')
+        }
+        throw playersError
+      }
 
       // Update player_role in student_data for all players
       const allPlayerRoles = [
