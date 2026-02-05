@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { supabase, setSessionStartTime, isKMCEStudent } from '@/lib/supabase'
+import { supabase, setSessionStartTime, isKMCEStudent, retrySupabaseQuery } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { StudentData } from '@/types'
 import Link from 'next/link'
@@ -32,19 +32,20 @@ function LoginContent() {
     setError(null)
 
     try {
-      const { data, error } = await supabase
-        .from('student_data')
-        .select('*')
-        .eq('hall_ticket', hallTicket.toUpperCase())
-        .single()
+      const upperHallTicket = hallTicket.toUpperCase().trim()
+      
+      const { data, error } = await retrySupabaseQuery<StudentData>(() => 
+        supabase
+          .from('student_data')
+          .select('*')
+          .eq('hall_ticket', upperHallTicket)
+          .single()
+      )
 
       if (error || !data) {
-        // Check if hall ticket is exactly 10 alphanumeric characters
-        const upperHallTicket = hallTicket.toUpperCase()
         const isValid10Chars = /^[A-Z0-9]{10}$/.test(upperHallTicket)
 
         if (isValid10Chars) {
-          // Auto-redirect to student registration with hall ticket pre-filled
           router.push(`/auth/student-register?hallTicket=${encodeURIComponent(upperHallTicket)}`)
           return
         }

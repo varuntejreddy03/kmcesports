@@ -5,22 +5,25 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: false,
+    autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
   }
 })
 
 const SESSION_DURATION = 30 * 60 * 1000
+const ACTIVITY_KEY = 'session_last_activity'
+const SESSION_START_KEY = 'session_start_time'
 
 export const checkSessionTimeout = () => {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined') return false
 
-  const loginTime = localStorage.getItem('session_start_time')
-  if (loginTime) {
-    const elapsed = Date.now() - parseInt(loginTime)
+  const lastActivity = localStorage.getItem(ACTIVITY_KEY)
+  if (lastActivity) {
+    const elapsed = Date.now() - parseInt(lastActivity)
     if (elapsed > SESSION_DURATION) {
-      localStorage.removeItem('session_start_time')
+      localStorage.removeItem(ACTIVITY_KEY)
+      localStorage.removeItem(SESSION_START_KEY)
       supabase.auth.signOut()
       return true
     }
@@ -30,14 +33,79 @@ export const checkSessionTimeout = () => {
 
 export const setSessionStartTime = () => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem('session_start_time', Date.now().toString())
+    const now = Date.now().toString()
+    localStorage.setItem(SESSION_START_KEY, now)
+    localStorage.setItem(ACTIVITY_KEY, now)
+  }
+}
+
+export const updateLastActivity = () => {
+  if (typeof window !== 'undefined') {
+    const hasSession = localStorage.getItem(SESSION_START_KEY)
+    if (hasSession) {
+      localStorage.setItem(ACTIVITY_KEY, Date.now().toString())
+    }
   }
 }
 
 export const clearSessionStartTime = () => {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('session_start_time')
+    localStorage.removeItem(SESSION_START_KEY)
+    localStorage.removeItem(ACTIVITY_KEY)
   }
+}
+
+export const refreshSupabaseSession = async () => {
+  try {
+    const { data, error } = await supabase.auth.refreshSession()
+    if (error) {
+      console.error('Session refresh error:', error)
+      return false
+    }
+    if (data.session) {
+      updateLastActivity()
+      return true
+    }
+    return false
+  } catch (err) {
+    console.error('Session refresh failed:', err)
+    return false
+  }
+}
+
+export async function retrySupabaseQuery<T>(
+  queryFn: () => PromiseLike<{ data: T | null; error: any }>,
+  maxRetries: number = 3,
+  delayMs: number = 500
+): Promise<{ data: T | null; error: any }> {
+  let lastError: any = null
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await queryFn()
+      
+      if (!result.error && result.data !== null) {
+        return result
+      }
+      
+      if (result.error && result.error.code !== 'PGRST116') {
+        lastError = result.error
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, delayMs * attempt))
+          continue
+        }
+      }
+      
+      return result
+    } catch (err) {
+      lastError = err
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs * attempt))
+      }
+    }
+  }
+  
+  return { data: null, error: lastError || new Error('Query failed after retries') }
 }
 
 // KMCE College validation - check if hall ticket belongs to KMCE (P81 or P85 at positions 3-5)

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
+import { supabase, checkSessionTimeout, clearSessionStartTime, retrySupabaseQuery, updateLastActivity } from '@/lib/supabase'
 import { StudentData, Team } from '@/types'
 
 
@@ -80,11 +80,15 @@ export default function Dashboard() {
       const hallTicket = user.user_metadata?.hall_ticket
       if (!hallTicket) return
 
-      const { data: studentData } = await supabase
-        .from('student_data')
-        .select('*')
-        .eq('hall_ticket', hallTicket)
-        .maybeSingle()
+      updateLastActivity()
+
+      const { data: studentData } = await retrySupabaseQuery<StudentData>(() =>
+        supabase
+          .from('student_data')
+          .select('*')
+          .eq('hall_ticket', hallTicket)
+          .maybeSingle()
+      )
 
       if (!studentData) return
       setStudent(studentData)
