@@ -70,6 +70,8 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 6, 2026: Added Analytics dashboard to admin panel (total teams, branch breakdown, team overview)
+- February 6, 2026: Added "Message All Members" button to send custom WhatsApp messages to all team players
 - February 5, 2026: Fixed duplicate player bug - players on pending teams now blocked from other teams
 - February 5, 2026: Added server-side validation before team creation to prevent race conditions
 - February 5, 2026: Fixed session expiry - now activity-based (resets on user interaction)
@@ -119,6 +121,8 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - January 22, 2026: Configured for Replit environment (port 5000, host 0.0.0.0)
 
 ## Admin Features
+- **Analytics Dashboard**: Toggle with 📊 button to see total teams, approved/pending counts, total players, paid teams, branch-wise player breakdown (CSE, CSM, ECE, CSC, CSD, CSO), and team overview list
+- **Message All Members**: 📩 button on each team to send custom WhatsApp message to all team players (separate from captain WhatsApp button)
 - View all teams with captain details and player counts
 - Approve/reject team registrations
 - Approve/reject payments
