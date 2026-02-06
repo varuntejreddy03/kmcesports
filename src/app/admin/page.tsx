@@ -610,6 +610,29 @@ Sreekar: 9063128733`
     window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMessage}`, '_blank')
   }
 
+  const sendToAllMembers = () => {
+    if (!customMessage.trim()) {
+      alert('Please type a message first')
+      return
+    }
+    const phonesWithData = messageMembers
+      .map(m => m.student?.phone || m.student?.phone_number)
+      .filter(Boolean)
+    if (phonesWithData.length === 0) {
+      alert('No phone numbers found for this team')
+      return
+    }
+    setMessageSending(true)
+    phonesWithData.forEach((phone: string, index: number) => {
+      setTimeout(() => {
+        openWhatsAppForMember(phone)
+        if (index === phonesWithData.length - 1) {
+          setMessageSending(false)
+        }
+      }, index * 800)
+    })
+  }
+
   const filteredTeams = teams.filter(t => {
     if (filter === 'all') return true
     if (filter === 'approved') return t.approved
@@ -690,13 +713,12 @@ Sreekar: 9063128733`
               </div>
             ) : analyticsData && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                   {[
                     { label: 'Total Teams', value: analyticsData.totalTeams, color: 'text-white' },
                     { label: 'Approved', value: analyticsData.approvedTeams, color: 'text-green-400' },
                     { label: 'Pending', value: analyticsData.pendingTeams, color: 'text-yellow-500' },
                     { label: 'Total Players', value: analyticsData.totalPlayers, color: 'text-cricket-400' },
-                    { label: 'Paid Teams', value: analyticsData.paidTeams, color: 'text-indigo-400' },
                   ].map((stat, i) => (
                     <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5">
                       <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</div>
@@ -1263,18 +1285,28 @@ Sreekar: 9063128733`
                 />
               </div>
 
-              <button
-                onClick={copyMessageToClipboard}
-                className="w-full py-3 bg-cricket-500/20 text-cricket-400 border border-cricket-500/30 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-cricket-500 hover:text-white transition-all min-h-[44px]"
-              >
-                📋 Copy Message
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={copyMessageToClipboard}
+                  className="py-3 bg-cricket-500/20 text-cricket-400 border border-cricket-500/30 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-cricket-500 hover:text-white transition-all min-h-[44px]"
+                >
+                  📋 Copy Message
+                </button>
+                <button
+                  onClick={sendToAllMembers}
+                  disabled={messageSending}
+                  className="py-3 bg-green-600/20 text-green-400 border border-green-500/30 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all min-h-[44px] disabled:opacity-50"
+                >
+                  {messageSending ? '⏳ Opening...' : '🚀 Send to All'}
+                </button>
+              </div>
 
               <div>
                 <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Members ({messageMembers.length})</div>
                 {messageSending ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cricket-500"></div>
+                  <div className="flex flex-col items-center justify-center py-8 gap-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+                    <div className="text-[10px] text-green-400 font-black uppercase tracking-widest">Opening WhatsApp for all members...</div>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -1293,7 +1325,7 @@ Sreekar: 9063128733`
                                 onClick={() => openWhatsAppForMember(phone)}
                                 className="px-3 py-2 bg-green-600/20 text-green-400 border border-green-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-green-600 hover:text-white transition-all min-h-[44px] flex items-center"
                               >
-                                📱 WhatsApp
+                                📱
                               </button>
                             )}
                           </div>
