@@ -37,6 +37,19 @@ export default function AdminPage() {
   const [editPlayerRole, setEditPlayerRole] = useState('')
   const [savingPlayer, setSavingPlayer] = useState(false)
 
+  // Analytics State
+  const [showAnalytics, setShowAnalytics] = useState(false)
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [allPlayersData, setAllPlayersData] = useState<any[]>([])
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+
+  // Message All Members State
+  const [showMessageModal, setShowMessageModal] = useState(false)
+  const [messageTeam, setMessageTeam] = useState<any>(null)
+  const [customMessage, setCustomMessage] = useState('')
+  const [messageMembers, setMessageMembers] = useState<any[]>([])
+  const [messageSending, setMessageSending] = useState(false)
+
   useEffect(() => {
     checkAdmin()
 
@@ -495,6 +508,108 @@ Sreekar: 9063128733`
     }
   }
 
+  const deptMap: { [key: string]: string } = {
+    '05': 'CSE', '69': 'CSO', '04': 'ECE',
+    '66': 'CSM', '62': 'CSC', '67': 'CSD'
+  }
+
+  const fetchAnalyticsData = async () => {
+    setAnalyticsLoading(true)
+    try {
+      const { data: allTeamPlayers, error: tpErr } = await supabase
+        .from('team_players')
+        .select('hall_ticket, team_id')
+
+      if (tpErr) throw tpErr
+
+      const hallTickets = allTeamPlayers?.map(p => p.hall_ticket) || []
+      const { data: studentsData } = await supabase
+        .from('student_data')
+        .select('*')
+        .in('hall_ticket', hallTickets)
+
+      const playersWithStudents = (allTeamPlayers || []).map(p => ({
+        ...p,
+        student: studentsData?.find(s => s.hall_ticket === p.hall_ticket)
+      }))
+      setAllPlayersData(playersWithStudents)
+
+      const branchCounts: { [key: string]: number } = {}
+      playersWithStudents.forEach(p => {
+        if (p.hall_ticket && p.hall_ticket.length >= 8) {
+          const code = p.hall_ticket.substring(6, 8)
+          const branch = deptMap[code] || 'OTHER'
+          branchCounts[branch] = (branchCounts[branch] || 0) + 1
+        }
+      })
+
+      const totalPlayers = teams.reduce((sum, t) => sum + (t.playerCount || 0), 0)
+      const approvedTeams = teams.filter(t => t.approved).length
+      const pendingTeams = teams.filter(t => !t.approved).length
+      const paidTeams = teams.filter(t => t.payment?.status === 'approved').length
+
+      setAnalyticsData({
+        totalTeams: teams.length,
+        approvedTeams,
+        pendingTeams,
+        totalPlayers,
+        paidTeams,
+        branchCounts
+      })
+    } catch (err) {
+      console.error('Error fetching analytics:', err)
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }
+
+  const toggleAnalytics = () => {
+    const next = !showAnalytics
+    setShowAnalytics(next)
+    if (next) fetchAnalyticsData()
+  }
+
+  const openMessageAllModal = async (team: any) => {
+    setMessageTeam(team)
+    setCustomMessage(`Hi ${team.name} members! `)
+    setMessageSending(true)
+    setShowMessageModal(true)
+    try {
+      const { data: playersData, error } = await supabase
+        .from('team_players')
+        .select('*')
+        .eq('team_id', team.id)
+      if (error) throw error
+      const hallTickets = playersData.map(p => p.hall_ticket)
+      const { data: studentsData } = await supabase
+        .from('student_data')
+        .select('*')
+        .in('hall_ticket', hallTickets)
+      const members = playersData.map(p => ({
+        ...p,
+        student: studentsData?.find(s => s.hall_ticket === p.hall_ticket)
+      }))
+      setMessageMembers(members)
+    } catch (err) {
+      console.error('Error fetching team members:', err)
+    } finally {
+      setMessageSending(false)
+    }
+  }
+
+  const copyMessageToClipboard = () => {
+    navigator.clipboard.writeText(customMessage)
+      .then(() => alert('Message copied to clipboard!'))
+      .catch(() => alert('Failed to copy message'))
+  }
+
+  const openWhatsAppForMember = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, '')
+    const phoneWithCountry = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`
+    const encodedMessage = encodeURIComponent(customMessage)
+    window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMessage}`, '_blank')
+  }
+
   const filteredTeams = teams.filter(t => {
     if (filter === 'all') return true
     if (filter === 'approved') return t.approved
@@ -524,6 +639,13 @@ Sreekar: 9063128733`
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
+            <button
+              onClick={toggleAnalytics}
+              className={`w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 rounded-xl text-xs font-bold transition-all border flex items-center justify-center min-h-[44px] ${showAnalytics ? 'bg-cricket-500/20 border-cricket-500/30 text-cricket-400' : 'bg-white/5 hover:bg-white/10 border-white/10'}`}
+            >
+              <span className="md:hidden">📊</span>
+              <span className="hidden md:inline">📊 Analytics</span>
+            </button>
             <Link href="/admin/tournament-settings" className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center">
               <span className="md:hidden">⚙️</span>
               <span className="hidden md:inline">⚙️ Settings</span>
@@ -558,6 +680,71 @@ Sreekar: 9063128733`
             ))}
           </div>
         </div>
+
+        {/* Analytics Section */}
+        {showAnalytics && (
+          <div className="mb-8 md:mb-12 animate-fadeIn">
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cricket-500"></div>
+              </div>
+            ) : analyticsData && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+                  {[
+                    { label: 'Total Teams', value: analyticsData.totalTeams, color: 'text-white' },
+                    { label: 'Approved', value: analyticsData.approvedTeams, color: 'text-green-400' },
+                    { label: 'Pending', value: analyticsData.pendingTeams, color: 'text-yellow-500' },
+                    { label: 'Total Players', value: analyticsData.totalPlayers, color: 'text-cricket-400' },
+                    { label: 'Paid Teams', value: analyticsData.paidTeams, color: 'text-indigo-400' },
+                  ].map((stat, i) => (
+                    <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5">
+                      <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</div>
+                      <div className={`text-2xl md:text-3xl font-black ${stat.color}`}>{stat.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] p-4 md:p-6">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Branch-wise Breakdown</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {Object.entries(analyticsData.branchCounts || {}).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([branch, count]) => (
+                      <div key={branch} className="bg-white/5 border border-white/10 rounded-xl p-3 md:p-4 text-center">
+                        <div className="text-lg md:text-2xl font-black text-cricket-400">{count as number}</div>
+                        <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{branch}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] overflow-hidden">
+                  <div className="px-4 md:px-6 py-3 md:py-4 border-b border-white/10 bg-white/[0.02]">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Team Overview</div>
+                  </div>
+                  <div className="divide-y divide-white/[0.05]">
+                    {teams.map((team) => (
+                      <div key={team.id} className="px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <span className="font-black text-xs md:text-sm uppercase italic truncate">{team.name}</span>
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex-shrink-0">{team.captain?.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-[9px] font-black text-cricket-500/70 uppercase tracking-widest">{team.playerCount || 0} players</span>
+                          <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${team.approved ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
+                            {team.approved ? 'Approved' : 'Pending'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${team.payment?.status === 'approved' ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : team.payment?.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' : team.payment?.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-slate-500/10 text-slate-600 border-white/5'}`}>
+                            {team.payment?.status || 'No Payment'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Teams Table - Desktop */}
         <div className="hidden lg:block bg-white/5 backdrop-blur-xl border border-white/10 rounded-[40px] overflow-hidden shadow-2xl">
@@ -648,6 +835,12 @@ Sreekar: 9063128733`
                                 📱 WhatsApp
                               </button>
                             )}
+                            <button
+                              onClick={() => openMessageAllModal(team)}
+                              className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600 hover:text-white transition-all flex items-center gap-1"
+                            >
+                              📩 All
+                            </button>
                             <button
                               onClick={() => handleAction(team.id, team.approved ? 'reject_team' : 'approve_team')}
                               className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${team.approved ? 'bg-white/5 text-slate-500 hover:bg-red-500 hover:text-white' : 'bg-white text-black hover:bg-cricket-500 shadow-lg'}`}
@@ -836,6 +1029,9 @@ Sreekar: 9063128733`
                     <span>📱</span> WHATSAPP
                   </button>
                 )}
+                <button onClick={() => openMessageAllModal(team)} className="py-3 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all flex items-center justify-center gap-1 min-h-[44px]">
+                  <span>📩</span> MSG ALL
+                </button>
                 <button onClick={() => { if (confirm('DELETE this team completely?')) handleAction(team.id, 'delete_team') }} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all col-span-2">DELETE TEAM</button>
               </div>
 
@@ -1040,6 +1236,77 @@ Sreekar: 9063128733`
           )}
         </div>
       </main>
+
+      {/* Message All Members Modal */}
+      {showMessageModal && messageTeam && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] border border-white/10 rounded-[32px] p-5 md:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base md:text-xl font-black uppercase tracking-tight">Message All — {messageTeam.name}</h2>
+              <button
+                onClick={() => { setShowMessageModal(false); setMessageTeam(null); setMessageMembers([]) }}
+                className="text-slate-500 hover:text-white transition-colors text-2xl min-h-[44px] min-w-[44px] flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Custom Message</label>
+                <textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  rows={4}
+                  className="w-full bg-[#1e293b] border border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-cricket-500 outline-none transition-all resize-none"
+                  placeholder="Type your message..."
+                />
+              </div>
+
+              <button
+                onClick={copyMessageToClipboard}
+                className="w-full py-3 bg-cricket-500/20 text-cricket-400 border border-cricket-500/30 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-cricket-500 hover:text-white transition-all min-h-[44px]"
+              >
+                📋 Copy Message
+              </button>
+
+              <div>
+                <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Members ({messageMembers.length})</div>
+                {messageSending ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cricket-500"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {messageMembers.map((m, idx) => {
+                      const phone = m.student?.phone || m.student?.phone_number
+                      return (
+                        <div key={idx} className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-black uppercase truncate">{m.student?.name || 'Unknown'}</div>
+                            <div className="text-[10px] font-mono text-slate-500">{phone || 'No phone'}</div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {m.is_captain && <span className="text-[8px] font-black text-yellow-500 uppercase tracking-widest">★</span>}
+                            {phone && (
+                              <button
+                                onClick={() => openWhatsAppForMember(phone)}
+                                className="px-3 py-2 bg-green-600/20 text-green-400 border border-green-500/30 rounded-lg text-[9px] font-black uppercase hover:bg-green-600 hover:text-white transition-all min-h-[44px] flex items-center"
+                              >
+                                📱 WhatsApp
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Random Match Generator Modal */}
       {showMatchGenerator && (
