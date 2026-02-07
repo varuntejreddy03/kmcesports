@@ -2049,9 +2049,9 @@ Sreekar: 9063128733`
                       </div>
                     )}
 
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4 text-center">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                        Only play-in round matches will be saved. Future rounds are scheduled after results come in.
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
+                      <p className="text-[10px] text-yellow-400 font-bold uppercase tracking-widest">
+                        🧪 Test Mode — Nothing is saved to database. Use Redraw or Reset freely.
                       </p>
                     </div>
 
@@ -2063,14 +2063,22 @@ Sreekar: 9063128733`
                         🔄 Redraw
                       </button>
                       <button
-                        onClick={saveGeneratedMatches}
-                        disabled={savingMatches || matchesSaved || generatedMatches.length === 0}
-                        className={`flex-1 py-3 rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] ${matchesSaved
-                          ? 'bg-green-600 text-white'
-                          : 'bg-cricket-500 hover:bg-cricket-600 text-white'
-                          }`}
+                        onClick={() => {
+                          if (spinIntervalRef.current) clearInterval(spinIntervalRef.current)
+                          if (drawIntervalRef.current) clearInterval(drawIntervalRef.current)
+                          setDrawPhase('idle')
+                          setDrawnTeams([])
+                          setCurrentDrawIndex(0)
+                          setBracketRounds([])
+                          setGeneratedMatches([])
+                          setByeTeam(null)
+                          setMatchesSaved(false)
+                          setSpinningTeams([])
+                          setShowMatchGenerator(false)
+                        }}
+                        className="flex-1 py-3 bg-red-500/80 hover:bg-red-600 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
                       >
-                        {savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save Bracket'}
+                        ✖ Reset & Close
                       </button>
                     </div>
                   </div>
