@@ -52,15 +52,17 @@ To enable login/password tracking, add these columns to your student_data table 
 - Team creation page blocked with deadline notice
 - Deadline can be changed from Admin Login page or Tournament Settings
 
-## Random Match Generator
+## Live Draw & Knockout Bracket Generator
 Available on the Admin Dashboard (🎲 Random button):
 - Click "🎲 Random" button in Match Schedule section
-- Fetches all approved teams from database
-- Uses Fisher-Yates shuffle for random pairing
-- Handles odd number of teams with a "bye" (first registered team advances)
-- Shows generated matches with Regenerate option
-- Save to database requires admin authentication
-- Only deletes round 1 scheduled matches, preserves completed matches
+- **Live Draw Animation**: All approved team names shown, then spin/shuffle visually for 3 seconds
+- **One-by-one Drawing**: Teams are drawn from the pool one at a time (800ms each) and placed into bracket slots
+- **Full Knockout Bracket**: Generates multi-round bracket (Play-in → Quarterfinals → Semifinals → Final)
+- **Fair bracket math**: Calculates play-in matches for non-power-of-2 team counts, bye teams advance automatically
+- **Transparency**: All team names visible during shuffle — no bias possible (great for screen-sharing/projector)
+- Uses Fisher-Yates shuffle for true random ordering
+- Save to database stores play-in/first round matches; future rounds scheduled after results
+- Redraw button resets and runs the full animation again
 
 ## WhatsApp Notification
 For approved+paid teams, admin can send WhatsApp message to captain:
@@ -70,6 +72,7 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 7, 2026: Upgraded Random Match Generator to Live Draw with spinning animation, one-by-one team drawing, and full knockout bracket (Play-in → QF → SF → Final)
 - February 7, 2026: Replaced Guide section on landing page with Registered Teams section showing team names and captain names
 - February 7, 2026: Added year-wise breakdown to analytics (1st/2nd/3rd/4th year based on roll number prefixes)
 - February 7, 2026: Added CSV export button (📥) in admin navbar to download all teams with player details

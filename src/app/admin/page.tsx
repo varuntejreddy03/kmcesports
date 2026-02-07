@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supabase'
 import { TeamWithDetails } from '@/types'
@@ -48,6 +48,15 @@ export default function AdminPage() {
 
   // Mobile Actions Menu State
   const [showMobileActions, setShowMobileActions] = useState(false)
+
+  // Live Draw State
+  const [drawPhase, setDrawPhase] = useState<'idle' | 'spinning' | 'drawing' | 'complete'>('idle')
+  const [spinningTeams, setSpinningTeams] = useState<any[]>([])
+  const [drawnTeams, setDrawnTeams] = useState<any[]>([])
+  const [currentDrawIndex, setCurrentDrawIndex] = useState(0)
+  const [bracketRounds, setBracketRounds] = useState<any[]>([])
+  const spinIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const drawIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Message All Members State
   const [showMessageModal, setShowMessageModal] = useState(false)
@@ -276,33 +285,215 @@ export default function AdminPage() {
 
   // Open match generator
   const openMatchGenerator = () => {
+    if (spinIntervalRef.current) clearInterval(spinIntervalRef.current)
+    if (drawIntervalRef.current) clearInterval(drawIntervalRef.current)
     setShowMatchGenerator(true)
+    setDrawPhase('idle')
+    setDrawnTeams([])
+    setCurrentDrawIndex(0)
+    setBracketRounds([])
+    setGeneratedMatches([])
+    setByeTeam(null)
+    setMatchesSaved(false)
     const approvedTeams = teams.filter(t => t.approved)
-    if (approvedTeams.length > 0) {
-      generateRandomMatches(approvedTeams)
-    }
+    setSpinningTeams(approvedTeams)
   }
 
-  // Regenerate matches
-  const regenerateMatches = () => {
+  // Start the live draw animation
+  const startLiveDraw = () => {
     const approvedTeams = teams.filter(t => t.approved)
-    if (approvedTeams.length > 0) {
-      generateRandomMatches(approvedTeams)
+    if (approvedTeams.length < 2) return
+
+    setDrawPhase('spinning')
+    setDrawnTeams([])
+    setCurrentDrawIndex(0)
+    setBracketRounds([])
+
+    let shuffleCount = 0
+    const maxShuffles = 30
+    spinIntervalRef.current = setInterval(() => {
+      setSpinningTeams(prev => shuffleArray([...prev]))
+      shuffleCount++
+      if (shuffleCount >= maxShuffles) {
+        if (spinIntervalRef.current) clearInterval(spinIntervalRef.current)
+        const finalOrder = shuffleArray([...approvedTeams])
+        setSpinningTeams(finalOrder)
+        setTimeout(() => startDrawingPhase(finalOrder), 500)
+      }
+    }, 100)
+  }
+
+  // Drawing phase - one by one
+  const startDrawingPhase = (orderedTeams: any[]) => {
+    setDrawPhase('drawing')
+    let idx = 0
+    drawIntervalRef.current = setInterval(() => {
+      if (idx < orderedTeams.length) {
+        const team = orderedTeams[idx]
+        setDrawnTeams(prev => [...prev, team])
+        setSpinningTeams(prev => prev.filter(t => t.id !== team.id))
+        setCurrentDrawIndex(idx + 1)
+        idx++
+      } else {
+        if (drawIntervalRef.current) clearInterval(drawIntervalRef.current)
+        setTimeout(() => {
+          const bracket = generateKnockoutBracket(orderedTeams)
+          setBracketRounds(bracket)
+          setDrawPhase('complete')
+        }, 600)
+      }
+    }, 800)
+  }
+
+  // Generate knockout bracket from shuffled teams
+  const generateKnockoutBracket = (shuffledTeams: any[]) => {
+    const total = shuffledTeams.length
+    if (total < 2) return []
+
+    let nearestPow2 = 1
+    while (nearestPow2 < total) nearestPow2 *= 2
+
+    const numPlayInMatches = total - (nearestPow2 / 2)
+    const isPowerOf2 = (total & (total - 1)) === 0
+
+    const getRoundName = (teamsInRound: number) => {
+      if (teamsInRound <= 2) return 'Final'
+      if (teamsInRound <= 4) return 'Semifinals'
+      if (teamsInRound <= 8) return 'Quarterfinals'
+      return `Round of ${teamsInRound}`
     }
+
+    const rounds: any[] = []
+    let matchCounter = 1
+
+    if (isPowerOf2) {
+      const firstRoundMatches: any[] = []
+      for (let i = 0; i < shuffledTeams.length; i += 2) {
+        firstRoundMatches.push({
+          match_num: matchCounter++,
+          team_a: shuffledTeams[i],
+          team_b: shuffledTeams[i + 1],
+          round: 1,
+          round_name: getRoundName(total)
+        })
+      }
+      rounds.push({ name: getRoundName(total), matches: firstRoundMatches })
+
+      setGeneratedMatches(firstRoundMatches.map((m: any) => ({ team_a: m.team_a, team_b: m.team_b })))
+      setByeTeam(null)
+
+      let remaining = total / 2
+      let roundIdx = 2
+      while (remaining >= 2) {
+        const roundName = getRoundName(remaining)
+        const numMatches = remaining / 2
+        const roundMatches: any[] = []
+        for (let i = 0; i < numMatches; i++) {
+          roundMatches.push({
+            match_num: matchCounter++,
+            team_a: null,
+            team_b: null,
+            round: roundIdx,
+            round_name: roundName
+          })
+        }
+        rounds.push({ name: roundName, matches: roundMatches })
+        remaining = remaining / 2
+        roundIdx++
+      }
+    } else {
+      const halfBracket = nearestPow2 / 2
+      const byeCount = halfBracket - numPlayInMatches
+      const byeTeamsList = shuffledTeams.slice(0, byeCount)
+      const playInTeamsList = shuffledTeams.slice(byeCount)
+
+      const playInMatches: any[] = []
+      for (let i = 0; i < playInTeamsList.length; i += 2) {
+        playInMatches.push({
+          match_num: matchCounter++,
+          team_a: playInTeamsList[i],
+          team_b: playInTeamsList[i + 1],
+          round: 0,
+          round_name: 'Play-in Round'
+        })
+      }
+      rounds.push({ name: 'Play-in Round', matches: playInMatches })
+
+      setGeneratedMatches(playInMatches.map((m: any) => ({ team_a: m.team_a, team_b: m.team_b })))
+      setByeTeam(byeTeamsList.length > 0 ? byeTeamsList : null)
+
+      const nextRoundMatches: any[] = []
+      const nextRoundName = getRoundName(halfBracket)
+      let byeIdx = 0
+      for (let i = 0; i < halfBracket / 2; i++) {
+        let teamA: any = null
+        let teamB: any = null
+
+        if (byeIdx < byeTeamsList.length) {
+          teamA = byeTeamsList[byeIdx]
+          byeIdx++
+        }
+
+        nextRoundMatches.push({
+          match_num: matchCounter++,
+          team_a: teamA,
+          team_b: teamB,
+          round: 1,
+          round_name: nextRoundName,
+          is_bye: teamA !== null && teamB === null
+        })
+      }
+      rounds.push({ name: nextRoundName, matches: nextRoundMatches })
+
+      let remaining = halfBracket / 2
+      let roundIdx = 2
+      while (remaining >= 2) {
+        const roundName = getRoundName(remaining)
+        const numMatches = remaining / 2
+        const roundMatches: any[] = []
+        for (let i = 0; i < numMatches; i++) {
+          roundMatches.push({
+            match_num: matchCounter++,
+            team_a: null,
+            team_b: null,
+            round: roundIdx,
+            round_name: roundName
+          })
+        }
+        rounds.push({ name: roundName, matches: roundMatches })
+        remaining = remaining / 2
+        roundIdx++
+      }
+    }
+
+    return rounds
+  }
+
+  // Regenerate matches (reset draw)
+  const regenerateMatches = () => {
+    if (spinIntervalRef.current) clearInterval(spinIntervalRef.current)
+    if (drawIntervalRef.current) clearInterval(drawIntervalRef.current)
+    setDrawPhase('idle')
+    setDrawnTeams([])
+    setCurrentDrawIndex(0)
+    setBracketRounds([])
+    setGeneratedMatches([])
+    setByeTeam(null)
+    setMatchesSaved(false)
+    const approvedTeams = teams.filter(t => t.approved)
+    setSpinningTeams(approvedTeams)
   }
 
   // Save generated matches to database
   const saveGeneratedMatches = async () => {
     setSavingMatches(true)
     try {
-      // Delete existing scheduled matches for round 1 only
       await supabase
         .from('matches')
         .delete()
         .eq('round', 1)
         .eq('status', 'scheduled')
 
-      // Insert new matches
       const matchesToInsert = generatedMatches.map((match, index) => ({
         team_a_id: match.team_a.id,
         team_b_id: match.team_b.id,
@@ -1681,15 +1872,24 @@ Sreekar: 9063128733`
         </div>
       )}
 
-      {/* Random Match Generator Modal */}
+      {/* Live Draw Knockout Bracket Modal */}
       {showMatchGenerator && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] border border-white/10 rounded-[32px] p-6 md:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#0f172a] border border-white/10 rounded-[32px] p-6 md:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-black uppercase tracking-tight">Random Schedule</h2>
+              <h2 className="text-xl font-black uppercase italic tracking-tight">
+                {drawPhase === 'idle' && 'Live Draw'}
+                {drawPhase === 'spinning' && 'SHUFFLING...'}
+                {drawPhase === 'drawing' && `Drawing team ${currentDrawIndex} of ${teams.filter(t => t.approved).length}...`}
+                {drawPhase === 'complete' && 'Knockout Bracket'}
+              </h2>
               <button
-                onClick={() => setShowMatchGenerator(false)}
-                className="text-slate-500 hover:text-white transition-colors text-2xl"
+                onClick={() => {
+                  if (spinIntervalRef.current) clearInterval(spinIntervalRef.current)
+                  if (drawIntervalRef.current) clearInterval(drawIntervalRef.current)
+                  setShowMatchGenerator(false)
+                }}
+                className="text-slate-500 hover:text-white transition-colors text-2xl min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 ×
               </button>
@@ -1699,72 +1899,185 @@ Sreekar: 9063128733`
               const approvedTeams = teams.filter(t => t.approved)
               if (approvedTeams.length < 2) {
                 return (
-                  <div className="text-center py-10">
+                  <div className="text-center py-10 animate-fadeIn">
                     <div className="text-4xl mb-4">⚠️</div>
                     <p className="text-slate-400 font-bold">Need at least 2 approved teams</p>
                     <p className="text-slate-600 text-sm mt-2">Currently: {approvedTeams.length} team(s)</p>
                   </div>
                 )
               }
-              return (
-                <>
-                  <div className="mb-4 text-center">
-                    <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                      {approvedTeams.length} Teams → {generatedMatches.length} Matches
-                    </span>
-                  </div>
 
-                  {/* Generated Matches */}
-                  <div className="space-y-3 mb-6">
-                    {generatedMatches.map((match, index) => (
-                      <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <div className="text-[9px] font-black text-cricket-500 uppercase tracking-widest mb-2">
-                          Match {index + 1}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 text-center">
-                            <div className="font-black text-sm">{match.team_a.name}</div>
-                          </div>
-                          <div className="px-4 text-slate-600 font-black text-xs">VS</div>
-                          <div className="flex-1 text-center">
-                            <div className="font-black text-sm">{match.team_b.name}</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Bye Team */}
-                  {byeTeam && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 mb-6 text-center">
-                      <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
-                        🏆 Bye - First Registered (Advances)
-                      </div>
-                      <div className="font-black text-yellow-400">{byeTeam.name}</div>
+              if (drawPhase === 'idle') {
+                return (
+                  <div className="animate-fadeIn">
+                    <div className="mb-4 text-center">
+                      <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                        {approvedTeams.length} Teams in the Pool
+                      </span>
                     </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-6">
+                      {spinningTeams.map((team) => (
+                        <div key={team.id} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center transition-all">
+                          <div className="font-black text-xs uppercase tracking-tight truncate">{team.name}</div>
+                        </div>
+                      ))}
+                    </div>
                     <button
-                      onClick={regenerateMatches}
-                      className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-sm transition-colors"
+                      onClick={startLiveDraw}
+                      className="w-full py-4 bg-cricket-500 hover:bg-cricket-600 text-white rounded-2xl font-black text-lg uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse"
                     >
-                      🔄 Regenerate
-                    </button>
-                    <button
-                      onClick={saveGeneratedMatches}
-                      disabled={savingMatches || matchesSaved}
-                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${matchesSaved
-                        ? 'bg-green-600 text-white'
-                        : 'bg-cricket-500 hover:bg-cricket-600 text-white'
-                        }`}
-                    >
-                      {savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save'}
+                      🎲 START DRAW
                     </button>
                   </div>
-                </>
-              )
+                )
+              }
+
+              if (drawPhase === 'spinning') {
+                return (
+                  <div className="animate-fadeIn">
+                    <div className="mb-4 text-center">
+                      <span className="text-sm font-black text-cricket-400 uppercase tracking-widest animate-pulse">
+                        Shuffling Teams...
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {spinningTeams.map((team, idx) => (
+                        <div
+                          key={`spin-${idx}-${team.id}`}
+                          className="bg-white/5 border border-cricket-500/40 rounded-xl p-3 text-center transition-all animate-pulse"
+                          style={{ animationDelay: `${idx * 50}ms` }}
+                        >
+                          <div className="font-black text-xs uppercase tracking-tight truncate text-cricket-300">{team.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
+
+              if (drawPhase === 'drawing') {
+                return (
+                  <div className="animate-fadeIn">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Remaining Pool</div>
+                        <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+                          {spinningTeams.map((team) => (
+                            <div key={team.id} className="bg-white/5 border border-white/5 rounded-lg p-2.5 text-center opacity-50 transition-all">
+                              <div className="font-bold text-xs text-slate-400 truncate">{team.name}</div>
+                            </div>
+                          ))}
+                          {spinningTeams.length === 0 && (
+                            <div className="text-center py-4 text-slate-600 text-xs font-bold">All teams drawn!</div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest mb-3">Bracket Order</div>
+                        <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+                          {drawnTeams.map((team, idx) => (
+                            <div
+                              key={team.id}
+                              className={`border rounded-lg p-2.5 text-center transition-all ${
+                                idx === drawnTeams.length - 1
+                                  ? 'bg-cricket-500/20 border-cricket-500/50 scale-[1.02]'
+                                  : 'bg-white/5 border-white/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 justify-center">
+                                <span className="text-[10px] font-black text-slate-500 w-5">{idx + 1}</span>
+                                <span className="font-black text-xs uppercase tracking-tight truncate">{team.name}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              if (drawPhase === 'complete') {
+                return (
+                  <div className="animate-fadeIn">
+                    <div className="space-y-6 mb-6">
+                      {bracketRounds.map((round, roundIdx) => (
+                        <div key={roundIdx}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest">{round.name}</div>
+                            <div className="flex-1 h-px bg-white/10"></div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {round.matches.map((match: any, matchIdx: number) => (
+                              <div key={matchIdx} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                  Match {match.match_num}
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex-1 text-center">
+                                    <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-600 italic'}`}>
+                                      {match.team_a ? match.team_a.name : 'TBD'}
+                                    </div>
+                                    {match.is_bye && match.team_a && (
+                                      <span className="inline-block mt-1 text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">BYE</span>
+                                    )}
+                                  </div>
+                                  <div className="px-2 text-slate-600 font-black text-[10px]">VS</div>
+                                  <div className="flex-1 text-center">
+                                    <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-600 italic'}`}>
+                                      {match.team_b ? match.team_b.name : 'TBD'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {byeTeam && Array.isArray(byeTeam) && byeTeam.length > 0 && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
+                        <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
+                          Teams with Bye (Advance to Next Round)
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+                          {byeTeam.map((t: any) => (
+                            <span key={t.id} className="text-xs font-black text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-lg">{t.name}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4 text-center">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        Only play-in round matches will be saved. Future rounds are scheduled after results come in.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={regenerateMatches}
+                        className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
+                      >
+                        🔄 Redraw
+                      </button>
+                      <button
+                        onClick={saveGeneratedMatches}
+                        disabled={savingMatches || matchesSaved || generatedMatches.length === 0}
+                        className={`flex-1 py-3 rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] ${matchesSaved
+                          ? 'bg-green-600 text-white'
+                          : 'bg-cricket-500 hover:bg-cricket-600 text-white'
+                          }`}
+                      >
+                        {savingMatches ? 'Saving...' : matchesSaved ? '✓ Saved!' : '💾 Save Bracket'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+
+              return null
             })()}
           </div>
         </div>
