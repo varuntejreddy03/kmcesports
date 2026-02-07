@@ -44,6 +44,13 @@ export default function AdminPage() {
   const [squadB, setSquadB] = useState<any[]>([])
   const [loadingSquads, setLoadingSquads] = useState(false)
 
+  // Match Result State
+  const [resultMatchId, setResultMatchId] = useState<string | null>(null)
+  const [resultWinnerId, setResultWinnerId] = useState('')
+  const [resultMargin, setResultMargin] = useState('')
+  const [resultMarginType, setResultMarginType] = useState('runs')
+  const [savingResult, setSavingResult] = useState(false)
+
   // Player Edit State
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null)
   const [editPlayerRole, setEditPlayerRole] = useState('')
@@ -136,8 +143,8 @@ export default function AdminPage() {
       .from('matches')
       .select(`
         *,
-        team_a:teams!team_a_id(name),
-        team_b:teams!team_b_id(name)
+        team_a:teams!team_a_id(id, name),
+        team_b:teams!team_b_id(id, name)
       `)
       .order('match_date', { ascending: true })
 
@@ -329,6 +336,80 @@ export default function AdminPage() {
       alert(`Failed to save: ${err?.message || 'Unknown error'}`)
     } finally {
       setSavingMatchDetail(false)
+    }
+  }
+
+  const openResultModal = (match: any) => {
+    setResultMatchId(match.id)
+    setResultWinnerId(match.winner_id || '')
+    setResultMargin('')
+    setResultMarginType('runs')
+    if (match.result_margin) {
+      const parts = match.result_margin.match(/^(\d+)\s+(.+)$/)
+      if (parts) {
+        setResultMargin(parts[1])
+        setResultMarginType(parts[2])
+      } else {
+        setResultMargin(match.result_margin)
+        setResultMarginType('runs')
+      }
+    }
+  }
+
+  const saveMatchResult = async () => {
+    if (!resultMatchId || !resultWinnerId) {
+      alert('Please select the winning team')
+      return
+    }
+    setSavingResult(true)
+    try {
+      const margin = resultMargin ? `${resultMargin} ${resultMarginType}` : null
+
+      const { error } = await supabase
+        .from('matches')
+        .update({
+          winner_id: resultWinnerId,
+          result_margin: margin,
+          status: 'completed'
+        })
+        .eq('id', resultMatchId)
+      if (error) throw error
+
+      const currentMatch = matches.find(m => m.id === resultMatchId)
+      if (currentMatch && currentMatch.round !== undefined && currentMatch.match_number !== undefined) {
+        await advanceWinner(currentMatch, resultWinnerId)
+      }
+
+      setResultMatchId(null)
+      fetchMatches()
+    } catch (err: any) {
+      console.error('Error saving result:', err)
+      alert(`Failed to save result: ${err?.message || 'Unknown error'}`)
+    } finally {
+      setSavingResult(false)
+    }
+  }
+
+  const advanceWinner = async (match: any, winnerId: string) => {
+    const currentRound = match.round ?? 0
+    const currentMatchNum = match.match_number ?? 1
+    const nextRound = currentRound + 1
+    const nextMatchNum = Math.ceil(currentMatchNum / 2)
+    const isFirstOfPair = currentMatchNum % 2 === 1
+
+    const { data: nextMatches } = await supabase
+      .from('matches')
+      .select('*')
+      .eq('round', nextRound)
+      .eq('match_number', nextMatchNum)
+
+    if (nextMatches && nextMatches.length > 0) {
+      const nextMatch = nextMatches[0]
+      const updateField = isFirstOfPair ? 'team_a_id' : 'team_b_id'
+      await supabase
+        .from('matches')
+        .update({ [updateField]: winnerId })
+        .eq('id', nextMatch.id)
     }
   }
 
@@ -643,13 +724,37 @@ export default function AdminPage() {
       if (delError) console.error('Delete error:', delError)
 
       const today = new Date().toISOString().split('T')[0]
-      const matchesToInsert = generatedMatches.map((match, index) => ({
-        team_a_id: match.team_a.id,
-        team_b_id: match.team_b.id,
-        match_date: today,
-        match_time: '09:00',
-        venue: 'Main Stadium Ground'
-      }))
+      const matchesToInsert: any[] = []
+
+      if (bracketRounds.length > 0) {
+        bracketRounds.forEach((round: any) => {
+          round.matches.forEach((match: any) => {
+            matchesToInsert.push({
+              team_a_id: match.team_a?.id || null,
+              team_b_id: match.team_b?.id || null,
+              match_date: today,
+              match_time: '09:00',
+              venue: 'Main Stadium Ground',
+              round: match.round ?? 0,
+              match_number: match.match_num ?? 1,
+              status: 'scheduled'
+            })
+          })
+        })
+      } else {
+        generatedMatches.forEach((match, index) => {
+          matchesToInsert.push({
+            team_a_id: match.team_a.id,
+            team_b_id: match.team_b.id,
+            match_date: today,
+            match_time: '09:00',
+            venue: 'Main Stadium Ground',
+            round: 1,
+            match_number: index + 1,
+            status: 'scheduled'
+          })
+        })
+      }
 
       console.log('Inserting matches:', JSON.stringify(matchesToInsert))
       const { data, error } = await supabase.from('matches').insert(matchesToInsert).select()
@@ -1924,10 +2029,24 @@ Sreekar: 9063128733`
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mt-8 md:mt-12">
             {matches.map((match) => (
-              <div key={match.id} className="bg-white/5 border border-white/10 p-5 md:p-8 rounded-2xl md:rounded-[40px] relative overflow-hidden group hover:bg-white/[0.08] transition-all">
+              <div key={match.id} className={`border p-5 md:p-8 rounded-2xl md:rounded-[40px] relative overflow-hidden group transition-all ${
+                match.status === 'completed' ? 'bg-green-500/5 border-green-500/20' : 'bg-white/5 border-white/10 hover:bg-white/[0.08]'
+              }`}>
                 <div className="flex justify-between items-start mb-5 md:mb-8">
-                  <div className="text-[9px] md:text-[10px] font-black text-cricket-400 uppercase tracking-widest bg-cricket-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-cricket-500/20">
-                    {new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                  <div className="flex items-center gap-2">
+                    <div className="text-[9px] md:text-[10px] font-black text-cricket-400 uppercase tracking-widest bg-cricket-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-cricket-500/20">
+                      {new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </div>
+                    {match.status === 'completed' && (
+                      <div className="text-[9px] font-black text-green-400 uppercase tracking-widest bg-green-500/10 px-2.5 py-1.5 rounded-full border border-green-500/20">
+                        ✓ Done
+                      </div>
+                    )}
+                    {match.round !== null && match.round !== undefined && (
+                      <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-2.5 py-1.5 rounded-full">
+                        R{match.round}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => deleteMatch(match.id)}
@@ -1937,30 +2056,56 @@ Sreekar: 9063128733`
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 md:gap-6 mb-6 md:mb-10">
-                  <div className="flex-1 text-center min-w-0">
+                <div className="flex items-center justify-between gap-3 md:gap-6 mb-3">
+                  <div className={`flex-1 text-center min-w-0 py-2 px-2 rounded-xl ${match.winner_id === match.team_a_id ? 'bg-cricket-500/10 border border-cricket-500/20' : ''}`}>
                     <div className="text-[9px] md:text-[10px] text-white/40 font-black uppercase tracking-widest mb-0.5 md:mb-1">Home</div>
-                    <div className="text-sm md:text-xl font-black uppercase italic text-white leading-tight truncate">{match.team_a?.name}</div>
+                    <div className={`text-sm md:text-xl font-black uppercase italic leading-tight truncate ${
+                      match.winner_id === match.team_a_id ? 'text-cricket-400' : match.winner_id === match.team_b_id ? 'text-slate-600' : 'text-white'
+                    }`}>{match.team_a?.name || 'TBA'}</div>
+                    {match.winner_id === match.team_a_id && <div className="text-[9px] text-cricket-500 font-black mt-1">🏆 WINNER</div>}
                   </div>
-                  <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 text-[8px] md:text-[9px] font-black text-cricket-500 italic flex-shrink-0">VS</div>
-                  <div className="flex-1 text-center min-w-0">
+                  <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full border text-[8px] md:text-[9px] font-black italic flex-shrink-0 ${
+                    match.status === 'completed' ? 'bg-green-500/20 border-green-500/20 text-green-400' : 'bg-white/5 border-white/10 text-cricket-500'
+                  }`}>{match.status === 'completed' ? '✓' : 'VS'}</div>
+                  <div className={`flex-1 text-center min-w-0 py-2 px-2 rounded-xl ${match.winner_id === match.team_b_id ? 'bg-cricket-500/10 border border-cricket-500/20' : ''}`}>
                     <div className="text-[9px] md:text-[10px] text-white/40 font-black uppercase tracking-widest mb-0.5 md:mb-1">Away</div>
-                    <div className="text-sm md:text-xl font-black uppercase italic text-white leading-tight truncate">{match.team_b?.name}</div>
+                    <div className={`text-sm md:text-xl font-black uppercase italic leading-tight truncate ${
+                      match.winner_id === match.team_b_id ? 'text-cricket-400' : match.winner_id === match.team_a_id ? 'text-slate-600' : 'text-white'
+                    }`}>{match.team_b?.name || 'TBA'}</div>
+                    {match.winner_id === match.team_b_id && <div className="text-[9px] text-cricket-500 font-black mt-1">🏆 WINNER</div>}
                   </div>
                 </div>
+
+                {match.result_margin && (
+                  <div className="text-center text-[10px] font-bold text-slate-400 mb-4">
+                    Won by {match.result_margin}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-white/5 gap-2">
                   <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">🕒 {match.match_time?.slice(0, 5)}</div>
                   <div className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">📍 {match.venue}</div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5 flex-wrap">
                   <button
                     onClick={() => openMatchDetail(match)}
                     className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all min-h-[44px]"
                   >
-                    ⚙️ Playing 11 & Details
+                    ⚙️ Details
                   </button>
+                  {match.team_a_id && match.team_b_id && (
+                    <button
+                      onClick={() => openResultModal(match)}
+                      className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all min-h-[44px] ${
+                        match.status === 'completed'
+                          ? 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
+                          : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400'
+                      }`}
+                    >
+                      {match.status === 'completed' ? '✏️ Edit Result' : '🏆 Result'}
+                    </button>
+                  )}
                   {match.score_link && (
                     <a
                       href={match.score_link}
@@ -2327,6 +2472,95 @@ Sreekar: 9063128733`
           </div>
         </div>
       )}
+
+      {/* Match Result Modal */}
+      {resultMatchId && (() => {
+        const match = matches.find((m: any) => m.id === resultMatchId)
+        if (!match) return null
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-4">
+            <div className="bg-[#0d1424] border border-white/10 rounded-2xl md:rounded-3xl w-full max-w-md">
+              <div className="p-5 md:p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-widest">🏆 Match Result</h3>
+                  <button onClick={() => setResultMatchId(null)} className="text-slate-500 hover:text-white text-xl transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">✕</button>
+                </div>
+
+                <div className="text-center mb-6 pb-4 border-b border-white/10">
+                  <div className="text-sm md:text-base font-black text-white uppercase">{match.team_a?.name} <span className="text-cricket-500 mx-2">vs</span> {match.team_b?.name}</div>
+                </div>
+
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Select Winner</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setResultWinnerId(match.team_a_id)}
+                        className={`py-4 px-3 rounded-xl text-xs font-black uppercase transition-all min-h-[60px] border ${
+                          resultWinnerId === match.team_a_id
+                            ? 'bg-cricket-500/20 border-cricket-500/50 text-cricket-400'
+                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        }`}
+                      >
+                        {resultWinnerId === match.team_a_id && '🏆 '}{match.team_a?.name || 'Team A'}
+                      </button>
+                      <button
+                        onClick={() => setResultWinnerId(match.team_b_id)}
+                        className={`py-4 px-3 rounded-xl text-xs font-black uppercase transition-all min-h-[60px] border ${
+                          resultWinnerId === match.team_b_id
+                            ? 'bg-cricket-500/20 border-cricket-500/50 text-cricket-400'
+                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                        }`}
+                      >
+                        {resultWinnerId === match.team_b_id && '🏆 '}{match.team_b?.name || 'Team B'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Winning Margin</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={resultMargin}
+                        onChange={(e) => setResultMargin(e.target.value)}
+                        placeholder="e.g. 5"
+                        className="flex-1 bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cricket-500/50 min-h-[48px] placeholder:text-slate-600"
+                      />
+                      <select
+                        value={resultMarginType}
+                        onChange={(e) => setResultMarginType(e.target.value)}
+                        className="bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cricket-500/50 min-h-[48px] appearance-none"
+                      >
+                        <option value="runs" className="bg-[#0d1424]">Runs</option>
+                        <option value="wickets" className="bg-[#0d1424]">Wickets</option>
+                        <option value="(Super Over)" className="bg-[#0d1424]">Super Over</option>
+                        <option value="(DLS)" className="bg-[#0d1424]">DLS</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <button
+                    onClick={() => setResultMatchId(null)}
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all min-h-[48px]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveMatchResult}
+                    disabled={savingResult || !resultWinnerId}
+                    className="flex-1 py-3 bg-cricket-500 hover:bg-cricket-600 text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all min-h-[48px] disabled:opacity-50"
+                  >
+                    {savingResult ? 'Saving...' : 'Save Result'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Match Detail Modal */}
       {matchDetailId && (() => {

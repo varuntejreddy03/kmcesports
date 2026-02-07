@@ -78,7 +78,34 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Opens WhatsApp with captain's phone number
 - Admin just pastes the message and sends
 
+## Required Supabase Migration
+Run this SQL in Supabase SQL Editor to add match result & bracket columns:
+```sql
+ALTER TABLE matches 
+ADD COLUMN IF NOT EXISTS winner_id uuid REFERENCES teams(id),
+ADD COLUMN IF NOT EXISTS result_margin text,
+ADD COLUMN IF NOT EXISTS round integer DEFAULT 0,
+ADD COLUMN IF NOT EXISTS match_number integer DEFAULT 1,
+ADD COLUMN IF NOT EXISTS score_link text,
+ADD COLUMN IF NOT EXISTS playing_11_a text,
+ADD COLUMN IF NOT EXISTS playing_11_b text,
+ADD COLUMN IF NOT EXISTS impact_sub_a text,
+ADD COLUMN IF NOT EXISTS impact_sub_b text;
+```
+
+## Match Result & Auto-Advance System
+- Admin can enter match results: select winner + enter margin (runs/wickets/super over/DLS)
+- Saving result marks match as "completed" and auto-advances winner to next round match
+- Auto-advance uses round/match_number: match N in round R feeds into match ceil(N/2) in round R+1
+- Bracket save now stores all rounds (Play-in, QF, SF, Final) with round/match_number metadata
+- Dedicated /matches page shows full tournament bracket grouped by rounds with results
+
 ## Recent Changes
+- February 7, 2026: Added /matches page — dedicated tournament bracket with round grouping, results, and live scores
+- February 7, 2026: Added match result system — admin enters winner + margin, auto-advances to next round
+- February 7, 2026: Updated bracket save to include round/match_number/status for all rounds
+- February 7, 2026: Landing page schedule replaced with link to /matches page
+- February 7, 2026: Squad-based Playing 11 selection — admin picks from registered players (checkbox UI)
 - February 7, 2026: Added Playing 11, Impact Subs, and Live Score Link management per match (admin modal with save to DB)
 - February 7, 2026: Live Score link visible on landing page match cards for public viewing (pulse animation)
 - February 7, 2026: Added live draw broadcast via Supabase Realtime — captains see full draw animation on their dashboard in real-time

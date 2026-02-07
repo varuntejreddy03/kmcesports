@@ -12,40 +12,13 @@ export default function Home() {
   const router = useRouter()
   const [settings, setSettings] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [matches, setMatches] = useState<any[]>([])
   const [showBannerPopup, setShowBannerPopup] = useState(false)
   const [registeredTeams, setRegisteredTeams] = useState<any[]>([])
 
   useEffect(() => {
     fetchSettings()
-    fetchMatches()
     fetchRegisteredTeams()
-
-    const channel = supabase
-      .channel('landing-matches')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
-        fetchMatches()
-      })
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
   }, [])
-
-  const fetchMatches = async () => {
-    const { data } = await supabase
-      .from('matches')
-      .select(`
-        *,
-        team_a:teams!team_a_id(name),
-        team_b:teams!team_b_id(name)
-      `)
-      .order('match_date', { ascending: true })
-      .limit(6)
-
-    if (data) setMatches(data)
-  }
 
   const fetchSettings = async () => {
     try {
@@ -141,7 +114,7 @@ export default function Home() {
             <a href="#teams" className="px-3 py-1.5 md:px-4 md:py-2 bg-cricket-500/20 border border-cricket-500/30 text-cricket-400 rounded-lg text-xs md:text-sm font-bold hover:bg-cricket-500 hover:text-white transition-all">Teams</a>
             <a href="#rules" className="px-3 py-1.5 md:px-4 md:py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg text-xs md:text-sm font-bold hover:bg-yellow-500 hover:text-black transition-all">Rules</a>
             <a href="#about" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">About</a>
-            <a href="#schedule" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Schedule</a>
+            <Link href="/matches" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Matches</Link>
             <Link href="/auth/login" className="px-4 md:px-5 py-2 md:py-2.5 bg-cricket-600 hover:bg-cricket-500 text-white rounded-lg md:rounded-xl font-bold text-xs md:text-sm transition-all shadow-lg shadow-cricket-600/20 min-h-[44px] flex items-center">
               Login
             </Link>
@@ -546,67 +519,24 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Schedule Section */}
+      {/* Schedule Section - Link to Matches Page */}
       <div id="schedule" className="py-16 md:py-24 bg-[#0a0f1a]">
         <div className="max-w-6xl mx-auto px-3 md:px-4">
-          <div className="text-center mb-10 md:mb-16">
-            <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-3 md:mb-4">Fixtures</div>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight">
+          <div className="text-center">
+            <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-3 md:mb-4">Fixtures & Results</div>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6">
               Match <span className="text-cricket-500">Schedule</span>
             </h2>
+            <p className="text-slate-500 text-xs md:text-sm max-w-md mx-auto mb-8">
+              View the full knockout bracket, live scores, and match results
+            </p>
+            <Link
+              href="/matches"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-cricket-600 hover:bg-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-base transition-all shadow-lg shadow-cricket-600/20 min-h-[48px]"
+            >
+              🏏 View Tournament Bracket →
+            </Link>
           </div>
-
-          {matches.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {matches.map((match) => (
-                <div key={match.id} className="bg-white/5 border border-white/10 p-5 md:p-6 rounded-2xl md:rounded-3xl hover:bg-white/[0.08] transition-all group">
-                  <div className="flex justify-between items-center mb-4 md:mb-6">
-                    <div className="text-[10px] md:text-xs font-black text-cricket-400 bg-cricket-500/10 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full">
-                      {new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </div>
-                    <div className="text-[10px] md:text-xs font-bold text-slate-500">{match.match_time?.slice(0, 5)} IST</div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 md:gap-4 mb-4 md:mb-6">
-                    <div className="flex-1 text-center min-w-0">
-                      <div className="text-sm md:text-lg font-black text-white uppercase truncate">{match.team_a?.name || 'TBA'}</div>
-                    </div>
-                    <div className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center bg-cricket-600/20 rounded-full text-cricket-500 text-[10px] md:text-xs font-black flex-shrink-0">
-                      VS
-                    </div>
-                    <div className="flex-1 text-center min-w-0">
-                      <div className="text-sm md:text-lg font-black text-white uppercase truncate">{match.team_b?.name || 'TBA'}</div>
-                    </div>
-                  </div>
-
-                  <div className="text-center text-[10px] md:text-xs font-bold text-slate-500 pt-3 md:pt-4 border-t border-white/5 truncate">
-                    📍 {match.venue || 'Main Ground'}
-                  </div>
-
-                  {match.score_link && (
-                    <div className="mt-3 pt-3 border-t border-white/5 text-center">
-                      <a
-                        href={match.score_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-cricket-500/20 hover:bg-cricket-500/40 text-cricket-400 hover:text-cricket-300 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all min-h-[40px] animate-pulse"
-                      >
-                        📊 Live Score
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white/5 border border-dashed border-white/10 rounded-2xl md:rounded-[40px] py-12 md:py-20 text-center px-4">
-              <div className="text-5xl md:text-6xl mb-4 md:mb-6 opacity-20">🏏</div>
-              <h3 className="text-lg md:text-2xl font-black text-slate-400 uppercase tracking-widest mb-2">Schedule Coming Soon</h3>
-              <p className="text-slate-600 text-xs md:text-sm max-w-md mx-auto">
-                Tournament fixtures will be announced once team registrations close. Stay tuned!
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
