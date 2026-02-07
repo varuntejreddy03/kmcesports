@@ -35,11 +35,14 @@ export default function AdminPage() {
   // Match Detail Modal State
   const [matchDetailId, setMatchDetailId] = useState<string | null>(null)
   const [matchScoreLink, setMatchScoreLink] = useState('')
-  const [matchPlaying11A, setMatchPlaying11A] = useState('')
-  const [matchPlaying11B, setMatchPlaying11B] = useState('')
+  const [matchPlaying11A, setMatchPlaying11A] = useState<string[]>([])
+  const [matchPlaying11B, setMatchPlaying11B] = useState<string[]>([])
   const [matchImpactSubA, setMatchImpactSubA] = useState('')
   const [matchImpactSubB, setMatchImpactSubB] = useState('')
   const [savingMatchDetail, setSavingMatchDetail] = useState(false)
+  const [squadA, setSquadA] = useState<any[]>([])
+  const [squadB, setSquadB] = useState<any[]>([])
+  const [loadingSquads, setLoadingSquads] = useState(false)
 
   // Player Edit State
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null)
@@ -249,13 +252,59 @@ export default function AdminPage() {
     if (!error) fetchMatches()
   }
 
-  const openMatchDetail = (match: any) => {
+  const fetchSquad = async (teamId: string) => {
+    const { data: playersData } = await supabase.from('team_players').select('*').eq('team_id', teamId)
+    if (!playersData || playersData.length === 0) return []
+    const hallTickets = playersData.map(p => p.hall_ticket)
+    const { data: studentsData } = await supabase.from('student_data').select('hall_ticket, name, player_role').in('hall_ticket', hallTickets)
+    return playersData.map(player => ({
+      ...player,
+      name: studentsData?.find(s => s.hall_ticket === player.hall_ticket)?.name || player.hall_ticket,
+      player_role: player.player_role || studentsData?.find(s => s.hall_ticket === player.hall_ticket)?.player_role || ''
+    }))
+  }
+
+  const openMatchDetail = async (match: any) => {
     setMatchDetailId(match.id)
     setMatchScoreLink(match.score_link || '')
-    setMatchPlaying11A(match.playing_11_a || '')
-    setMatchPlaying11B(match.playing_11_b || '')
     setMatchImpactSubA(match.impact_sub_a || '')
     setMatchImpactSubB(match.impact_sub_b || '')
+    setLoadingSquads(true)
+    setSquadA([])
+    setSquadB([])
+
+    try {
+      const savedA: string[] = match.playing_11_a ? JSON.parse(match.playing_11_a) : []
+      const savedB: string[] = match.playing_11_b ? JSON.parse(match.playing_11_b) : []
+      setMatchPlaying11A(savedA)
+      setMatchPlaying11B(savedB)
+    } catch {
+      setMatchPlaying11A([])
+      setMatchPlaying11B([])
+    }
+
+    try {
+      const [sA, sB] = await Promise.all([
+        fetchSquad(match.team_a_id),
+        fetchSquad(match.team_b_id)
+      ])
+      setSquadA(sA)
+      setSquadB(sB)
+    } catch (err) {
+      console.error('Error fetching squads:', err)
+    } finally {
+      setLoadingSquads(false)
+    }
+  }
+
+  const togglePlaying11 = (list: string[], setList: (v: string[]) => void, playerName: string, impactSub: string, setImpactSub: (v: string) => void) => {
+    if (list.includes(playerName)) {
+      setList(list.filter(n => n !== playerName))
+      if (impactSub === playerName) setImpactSub('')
+    } else {
+      if (list.length >= 11) return
+      setList([...list, playerName])
+    }
   }
 
   const saveMatchDetail = async () => {
@@ -266,8 +315,8 @@ export default function AdminPage() {
         .from('matches')
         .update({
           score_link: matchScoreLink || null,
-          playing_11_a: matchPlaying11A || null,
-          playing_11_b: matchPlaying11B || null,
+          playing_11_a: matchPlaying11A.length > 0 ? JSON.stringify(matchPlaying11A) : null,
+          playing_11_b: matchPlaying11B.length > 0 ? JSON.stringify(matchPlaying11B) : null,
           impact_sub_a: matchImpactSubA || null,
           impact_sub_b: matchImpactSubB || null,
         })
@@ -2309,44 +2358,58 @@ Sreekar: 9063128733`
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] md:text-xs font-black text-cricket-400 uppercase tracking-widest mb-2">🏏 {match.team_a?.name} — Playing 11</label>
-                      <textarea
-                        value={matchPlaying11A}
-                        onChange={(e) => setMatchPlaying11A(e.target.value)}
-                        placeholder="Player names, one per line"
-                        rows={6}
-                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-cricket-500/50 placeholder:text-slate-600 resize-none"
-                      />
-                      <label className="block text-[10px] font-black text-orange-400 uppercase tracking-widest mt-3 mb-2">⚡ Impact Sub</label>
-                      <input
-                        type="text"
-                        value={matchImpactSubA}
-                        onChange={(e) => setMatchImpactSubA(e.target.value)}
-                        placeholder="Impact substitute name"
-                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 min-h-[44px] placeholder:text-slate-600"
-                      />
+                  {loadingSquads ? (
+                    <div className="text-center py-8 text-slate-500 text-sm">Loading squads...</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { team: match.team_a, squad: squadA, selected: matchPlaying11A, setSelected: setMatchPlaying11A, impactSub: matchImpactSubA, setImpactSub: setMatchImpactSubA },
+                        { team: match.team_b, squad: squadB, selected: matchPlaying11B, setSelected: setMatchPlaying11B, impactSub: matchImpactSubB, setImpactSub: setMatchImpactSubB }
+                      ].map(({ team, squad, selected, setSelected, impactSub, setImpactSub }, idx) => (
+                        <div key={idx}>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-[10px] md:text-xs font-black text-cricket-400 uppercase tracking-widest">🏏 {team?.name} — Playing 11</label>
+                            <span className={`text-[10px] font-black ${selected.length === 11 ? 'text-green-400' : 'text-slate-500'}`}>{selected.length}/11</span>
+                          </div>
+                          <div className="bg-white/5 border border-white/10 rounded-xl p-2 max-h-[240px] overflow-y-auto space-y-1">
+                            {squad.length === 0 ? (
+                              <div className="text-[10px] text-slate-600 text-center py-4">No players found</div>
+                            ) : squad.map((player: any) => {
+                              const isSelected = selected.includes(player.name)
+                              const isImpact = impactSub === player.name
+                              return (
+                                <div
+                                  key={player.hall_ticket}
+                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all min-h-[40px] ${isSelected ? 'bg-cricket-500/20 border border-cricket-500/30' : 'hover:bg-white/5 border border-transparent'}`}
+                                  onClick={() => togglePlaying11(selected, setSelected, player.name, impactSub, setImpactSub)}
+                                >
+                                  <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-[10px] font-black ${isSelected ? 'bg-cricket-500 text-black' : 'bg-white/10 text-slate-600'}`}>
+                                    {isSelected ? '✓' : ''}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-white truncate">{player.name}</div>
+                                    <div className="text-[9px] text-slate-500">{player.player_role || 'Player'}{isImpact ? ' • ⚡ IMPACT' : ''}</div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          <label className="block text-[10px] font-black text-orange-400 uppercase tracking-widest mt-3 mb-2">⚡ Impact Sub</label>
+                          <select
+                            value={impactSub}
+                            onChange={(e) => setImpactSub(e.target.value)}
+                            className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 min-h-[44px] appearance-none"
+                          >
+                            <option value="" className="bg-[#0d1424]">-- Select Impact Sub --</option>
+                            {squad.map((player: any) => (
+                              <option key={player.hall_ticket} value={player.name} className="bg-[#0d1424]">{player.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <label className="block text-[10px] md:text-xs font-black text-cricket-400 uppercase tracking-widest mb-2">🏏 {match.team_b?.name} — Playing 11</label>
-                      <textarea
-                        value={matchPlaying11B}
-                        onChange={(e) => setMatchPlaying11B(e.target.value)}
-                        placeholder="Player names, one per line"
-                        rows={6}
-                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-cricket-500/50 placeholder:text-slate-600 resize-none"
-                      />
-                      <label className="block text-[10px] font-black text-orange-400 uppercase tracking-widest mt-3 mb-2">⚡ Impact Sub</label>
-                      <input
-                        type="text"
-                        value={matchImpactSubB}
-                        onChange={(e) => setMatchImpactSubB(e.target.value)}
-                        placeholder="Impact substitute name"
-                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 min-h-[44px] placeholder:text-slate-600"
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 mt-8">
