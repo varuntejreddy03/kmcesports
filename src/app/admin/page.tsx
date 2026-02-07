@@ -46,6 +46,9 @@ export default function AdminPage() {
   // Team Selection State
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set())
 
+  // Mobile Actions Menu State
+  const [showMobileActions, setShowMobileActions] = useState(false)
+
   // Message All Members State
   const [showMessageModal, setShowMessageModal] = useState(false)
   const [messageTeam, setMessageTeam] = useState<any>(null)
@@ -912,33 +915,65 @@ Sreekar: 9063128733`
             </button>
             <button
               onClick={exportTeamsCSV}
-              className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center min-h-[44px]"
+              className="hidden md:flex w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 items-center justify-center min-h-[44px]"
               title="Export CSV"
             >
-              <span className="md:hidden">📥</span>
               <span className="hidden md:inline">📥 CSV</span>
             </button>
             <button
               onClick={exportTeamsPDF}
-              className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center min-h-[44px]"
+              className="hidden md:flex w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 items-center justify-center min-h-[44px]"
               title="Export PDF"
             >
-              <span className="md:hidden">📄</span>
               <span className="hidden md:inline">📄 PDF</span>
             </button>
-            <Link href="/admin/tournament-settings" className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center">
-              <span className="md:hidden">⚙️</span>
+            <Link href="/admin/tournament-settings" className="hidden md:flex w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 items-center justify-center">
               <span className="hidden md:inline">⚙️ Settings</span>
             </Link>
             <button
               onClick={async () => { clearSessionStartTime(); await supabase.auth.signOut(); router.push('/') }}
-              className="px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all min-h-[44px] flex items-center"
+              className="hidden md:flex px-3 md:px-4 py-2 text-xs md:text-sm font-bold text-red-400 hover:text-white hover:bg-red-500/20 rounded-xl transition-all min-h-[44px] items-center"
             >
-              <span className="hidden sm:inline">Logout</span>
-              <span className="sm:hidden">Exit</span>
+              Logout
+            </button>
+            <button
+              onClick={() => setShowMobileActions(!showMobileActions)}
+              className="md:hidden w-10 h-10 bg-white/5 hover:bg-white/10 rounded-xl text-lg font-bold transition-all border border-white/10 flex items-center justify-center min-h-[44px] min-w-[44px]"
+            >
+              ⋮
             </button>
           </div>
         </div>
+        {showMobileActions && (
+          <div className="md:hidden bg-[#0a0f1a] border-b border-white/10 animate-fadeIn">
+            <div className="max-w-7xl mx-auto px-3 py-3 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => { exportTeamsCSV(); setShowMobileActions(false) }}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 min-h-[44px]"
+              >
+                📥 CSV Export
+              </button>
+              <button
+                onClick={() => { exportTeamsPDF(); setShowMobileActions(false) }}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 min-h-[44px]"
+              >
+                📄 PDF Export
+              </button>
+              <Link
+                href="/admin/tournament-settings"
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 min-h-[44px]"
+              >
+                ⚙️ Settings
+              </Link>
+              <button
+                onClick={async () => { clearSessionStartTime(); await supabase.auth.signOut(); router.push('/') }}
+                className="flex items-center justify-center gap-2 px-3 py-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-xs font-bold text-red-400 transition-all border border-red-500/20 min-h-[44px]"
+              >
+                🚪 Logout
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       <main className="max-w-7xl mx-auto px-3 md:px-4 mt-6 md:mt-12">
@@ -1037,9 +1072,9 @@ Sreekar: 9063128733`
           </div>
         )}
 
-        {/* Selection Toolbar */}
+        {/* Selection Toolbar - Desktop */}
         {selectedTeams.size > 0 && (
-          <div className="mb-4 bg-cricket-600/10 border border-cricket-500/20 rounded-2xl p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+          <div className="hidden lg:flex mb-4 bg-cricket-600/10 border border-cricket-500/20 rounded-2xl p-3 md:p-4 flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
             <div className="flex items-center gap-3">
               <span className="text-xs md:text-sm font-black text-cricket-400">{selectedTeams.size} team{selectedTeams.size > 1 ? 's' : ''} selected</span>
               <button onClick={() => setSelectedTeams(new Set())} className="text-[10px] md:text-xs text-slate-500 hover:text-white font-bold uppercase tracking-widest transition-colors">Clear</button>
@@ -1295,87 +1330,79 @@ Sreekar: 9063128733`
             )}
           </div>
           {filteredTeams.map((team) => (
-            <div key={team.id} className={`border rounded-2xl md:rounded-[32px] p-4 md:p-6 space-y-4 md:space-y-6 transition-all ${selectedTeams.has(team.id) ? 'bg-cricket-600/10 border-cricket-500/30' : 'bg-white/5 border-white/10'}`}>
-              <div className="flex justify-between items-start gap-3">
+            <div key={team.id} className={`border rounded-2xl md:rounded-[32px] px-3 py-3 md:p-6 space-y-3 md:space-y-6 transition-all ${selectedTeams.has(team.id) ? 'bg-cricket-600/10 border-cricket-500/30' : 'bg-white/5 border-white/10'}`}>
+              <div className="flex items-center gap-2">
                 <button onClick={() => toggleTeamSelection(team.id)} className="flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
-                  <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${selectedTeams.has(team.id) ? 'bg-cricket-500 border-cricket-500 text-white' : 'border-slate-600'}`}>
-                    {selectedTeams.has(team.id) && <span className="text-sm">✓</span>}
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedTeams.has(team.id) ? 'bg-cricket-500 border-cricket-500 text-white' : 'border-slate-600'}`}>
+                    {selectedTeams.has(team.id) && <span className="text-xs">✓</span>}
                   </div>
                 </button>
                 <div className="min-w-0 flex-1">
-                  <div className="font-black text-base md:text-xl uppercase italic tracking-tight leading-none mb-1 truncate">{team.name || 'UNNAMED SQUAD'}</div>
-                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest italic">{team.playerCount || 0} ATHLETES • {team.sport}</div>
+                  <div className="font-black text-sm md:text-xl uppercase italic tracking-tight leading-none truncate">{team.name || 'UNNAMED SQUAD'}</div>
+                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest italic">{team.playerCount || 0} players</div>
                 </div>
-                <div onClick={() => toggleTeamDetails(team.id)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-base active:scale-95 transition-all text-white flex-shrink-0 min-h-[44px] min-w-[44px]">
+                <button onClick={() => toggleTeamDetails(team.id)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-sm active:scale-95 transition-all text-white flex-shrink-0 min-h-[44px] min-w-[44px]">
                   {expandedTeamId === team.id ? '▲' : '▼'}
-                </div>
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 md:gap-4">
-                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5">
-                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Leader</div>
-                  <div className="text-[11px] md:text-xs font-black uppercase italic truncate">{team.captain?.name}</div>
-                </div>
-                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5">
-                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Decision</div>
-                  <div className={`text-[10px] font-black uppercase tracking-widest ${team.approved ? 'text-green-400' : 'text-yellow-500'}`}>
-                    {team.approved ? 'Approved' : 'Pending'}
-                  </div>
-                </div>
+              <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+                <span className="text-slate-500 font-bold">Captain:</span>
+                <span className="font-black uppercase italic truncate max-w-[120px]">{team.captain?.name || 'N/A'}</span>
+                <span className="text-slate-600">•</span>
+                <span className={`font-black uppercase tracking-wide ${team.approved ? 'text-green-400' : 'text-yellow-500'}`}>
+                  {team.approved ? '✓ Approved' : '⏳ Pending'}
+                </span>
               </div>
 
               {team.payment && (
-                <div className="bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1">Payment</div>
-                      <div className="text-[10px] md:text-xs font-mono font-bold text-slate-400 uppercase tracking-tighter truncate">{team.payment.utr_number}</div>
-                    </div>
-                    <div className={`px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] font-black uppercase tracking-widest border flex-shrink-0 ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' : team.payment.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
-                      {team.payment.status}
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[9px] font-black text-slate-500 uppercase">UTR:</span>
+                  <span className="text-[10px] font-mono font-bold text-slate-400 truncate max-w-[100px]">{team.payment.utr_number}</span>
+                  <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wide border ${team.payment.status === 'approved' ? 'bg-green-500/20 text-green-400 border-green-500/30' : team.payment.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'}`}>
+                    {team.payment.status}
+                  </span>
                   {team.payment.screenshot_url && (
                     <a
                       href={team.payment.screenshot_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full py-3 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-xl text-center text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all"
+                      className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-md text-[8px] font-black uppercase hover:bg-indigo-500 hover:text-white transition-all"
                     >
-                      📷 View Payment Proof
+                      📷 Proof
                     </a>
                   )}
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-white/5">
                 {!team.approved ? (
-                  <button onClick={() => handleAction(team.id, 'approve_team')} className="py-3 bg-green-500/20 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all">APPROVE SQUAD</button>
+                  <button onClick={() => handleAction(team.id, 'approve_team')} className="px-3 py-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all min-h-[44px]">✓ Approve</button>
                 ) : (
-                  <button onClick={() => handleAction(team.id, 'reject_team')} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">REJECT SQUAD</button>
+                  <button onClick={() => handleAction(team.id, 'reject_team')} className="px-3 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all min-h-[44px]">✗ Reject</button>
                 )}
                 {team.payment && team.payment.status === 'pending' && (
-                  <button onClick={() => handleAction(team.id, 'approve_payment')} className="py-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">VERIFY FEE</button>
+                  <button onClick={() => handleAction(team.id, 'approve_payment')} className="px-3 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all min-h-[44px]">💰 Verify</button>
                 )}
                 {team.payment && team.payment.status === 'rejected' && (
-                  <button onClick={() => { if (confirm('Request repayment?')) handleAction(team.id, 'request_repayment') }} className="py-3 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all">REPAY</button>
+                  <button onClick={() => { if (confirm('Request repayment?')) handleAction(team.id, 'request_repayment') }} className="px-3 py-2 bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition-all min-h-[44px]">🔄 Repay</button>
                 )}
                 {team.approved && (
-                  <button onClick={() => sendWhatsApp(team)} className="py-3 bg-green-600/20 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all flex items-center justify-center gap-1">
-                    <span>📱</span> WHATSAPP
+                  <button onClick={() => sendWhatsApp(team)} className="px-3 py-2 bg-green-600/20 text-green-400 border border-green-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-green-600 hover:text-white transition-all min-h-[44px] flex items-center gap-1">
+                    📱 WA
                   </button>
                 )}
-                <button onClick={() => openMessageAllModal(team)} className="py-3 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all flex items-center justify-center gap-1 min-h-[44px]">
-                  <span>📩</span> MSG ALL
+                <button onClick={() => openMessageAllModal(team)} className="px-3 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-purple-600 hover:text-white transition-all min-h-[44px] flex items-center gap-1">
+                  📩 Msg
                 </button>
-                <button onClick={() => { if (confirm('DELETE this team completely?')) handleAction(team.id, 'delete_team') }} className="py-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all col-span-2">DELETE TEAM</button>
+                <button onClick={() => { if (confirm('DELETE this team completely?')) handleAction(team.id, 'delete_team') }} className="px-3 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all min-h-[44px]">🗑️ Delete</button>
               </div>
 
               {expandedTeamId === team.id && (
-                <div className="animate-fadeIn space-y-3 pt-4 border-t border-white/5">
+                <div className="animate-fadeIn space-y-2 pt-3 border-t border-white/5">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">Squad Roster Audit</h4>
                   {teamPlayers.map((p, idx) => (
-                    <div key={idx} className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-2">
+                    <div key={idx} className="bg-white/5 p-2.5 rounded-lg border border-white/5 space-y-2">
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="text-xs font-black uppercase italic">{p.student?.name}</div>
@@ -1739,6 +1766,24 @@ Sreekar: 9063128733`
                 </>
               )
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Selection Toolbar - Sticky Bottom */}
+      {selectedTeams.size > 0 && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0a0f1a]/95 backdrop-blur-md border-t border-white/10 px-4 py-3 animate-fadeIn">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-black text-cricket-400">{selectedTeams.size} selected</span>
+              <button onClick={() => setSelectedTeams(new Set())} className="text-[10px] text-slate-500 hover:text-white font-bold uppercase tracking-widest transition-colors min-h-[44px]">Clear</button>
+            </div>
+            <button
+              onClick={exportSelectedPDF}
+              className="px-4 py-2.5 bg-cricket-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cricket-500 transition-all min-h-[44px] flex items-center gap-1.5"
+            >
+              📄 Export PDF
+            </button>
           </div>
         </div>
       )}
