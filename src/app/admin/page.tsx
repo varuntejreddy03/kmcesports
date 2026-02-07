@@ -569,6 +569,49 @@ Sreekar: 9063128733`
     if (next) fetchAnalyticsData()
   }
 
+  const exportTeamsCSV = async () => {
+    try {
+      const { data: allTeamPlayers } = await supabase
+        .from('team_players')
+        .select('*')
+      const hallTickets = allTeamPlayers?.map(p => p.hall_ticket) || []
+      const { data: studentsData } = await supabase
+        .from('student_data')
+        .select('*')
+        .in('hall_ticket', hallTickets)
+
+      const deptMap: { [key: string]: string } = { '05': 'CSE', '69': 'CSO', '04': 'ECE', '66': 'CSM', '62': 'CSC', '67': 'CSD' }
+
+      let csv = 'Team Name,Status,Captain,Player Name,Hall Ticket,Phone,Department,Role,Is Captain\n'
+      teams.forEach(team => {
+        const teamPlayers = allTeamPlayers?.filter(p => p.team_id === team.id) || []
+        if (teamPlayers.length === 0) {
+          csv += `"${team.name}",${team.approved ? 'Approved' : 'Pending'},"${team.captain?.name || ''}","","","","","",""\n`
+        } else {
+          teamPlayers.forEach(p => {
+            const student = studentsData?.find(s => s.hall_ticket === p.hall_ticket)
+            const deptCode = p.hall_ticket?.substring(6, 8) || ''
+            const dept = deptMap[deptCode] || 'OTHER'
+            csv += `"${team.name}",${team.approved ? 'Approved' : 'Pending'},"${team.captain?.name || ''}","${student?.name || ''}","${p.hall_ticket}","${student?.phone || student?.phone_number || ''}","${dept}","${p.player_role || ''}","${p.is_captain ? 'Yes' : 'No'}"\n`
+          })
+        }
+      })
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `KMCE_Cricket_Teams_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Export error:', err)
+      alert('Failed to export data')
+    }
+  }
+
   const openMessageAllModal = async (team: any) => {
     setMessageTeam(team)
     setCustomMessage(`Hi ${team.name} members! `)
@@ -668,6 +711,13 @@ Sreekar: 9063128733`
             >
               <span className="md:hidden">📊</span>
               <span className="hidden md:inline">📊 Analytics</span>
+            </button>
+            <button
+              onClick={exportTeamsCSV}
+              className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center min-h-[44px]"
+            >
+              <span className="md:hidden">📥</span>
+              <span className="hidden md:inline">📥 Export</span>
             </button>
             <Link href="/admin/tournament-settings" className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center">
               <span className="md:hidden">⚙️</span>

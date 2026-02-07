@@ -130,8 +130,32 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Last Final Call Banner */}
+      {settings?.registration_open !== false && (
+        <div className="fixed top-[88px] md:top-[104px] left-0 right-0 z-30">
+          <div className="relative overflow-hidden bg-gradient-to-r from-red-900/95 via-red-700/95 to-red-900/95 border-b-2 border-red-500/50 backdrop-blur-sm">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-50"></div>
+            <div className="relative max-w-5xl mx-auto px-4 py-3 md:py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+                <span className="text-xs md:text-sm font-black uppercase tracking-widest text-red-200 animate-pulse">Last Final Call</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm md:text-lg font-black text-white">🚨 Registration Closes Today at 9:00 PM! 🚨</span>
+              </div>
+              <Link href="/auth/login" className="px-4 py-1.5 md:px-5 md:py-2 bg-white text-red-700 rounded-full text-xs md:text-sm font-black uppercase tracking-wider hover:bg-red-100 transition-all shadow-lg shadow-red-900/50 animate-bounce min-h-[36px] flex items-center">
+                Register Now →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
-      <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 md:pt-28">
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-36 md:pt-40">
         {/* Background Effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-cricket-600/20 blur-[100px] md:blur-[150px] rounded-full"></div>
