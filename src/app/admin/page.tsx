@@ -617,12 +617,12 @@ export default function AdminPage() {
 
   // Save generated matches to database
   const saveGeneratedMatches = async () => {
+    if (!confirm('Save this bracket to the database? This will replace any existing scheduled matches.')) return
     setSavingMatches(true)
     try {
       await supabase
         .from('matches')
         .delete()
-        .eq('round', 1)
         .eq('status', 'scheduled')
 
       const matchesToInsert = generatedMatches.map((match, index) => ({
@@ -642,6 +642,25 @@ export default function AdminPage() {
     } catch (err) {
       console.error('Error saving matches:', err)
       alert('Failed to save matches. Please try again.')
+    } finally {
+      setSavingMatches(false)
+    }
+  }
+
+  const deleteAllBracketMatches = async () => {
+    if (!confirm('Delete ALL scheduled matches from the database? This cannot be undone.')) return
+    setSavingMatches(true)
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .delete()
+        .eq('status', 'scheduled')
+      if (error) throw error
+      setMatchesSaved(false)
+      fetchMatches()
+    } catch (err) {
+      console.error('Error deleting matches:', err)
+      alert('Failed to delete matches. Please try again.')
     } finally {
       setSavingMatches(false)
     }
@@ -2245,17 +2264,25 @@ Sreekar: 9063128733`
                       </div>
                     )}
 
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
-                      <p className="text-[10px] text-yellow-400 font-bold uppercase tracking-widest">
-                        🧪 Test Mode — Nothing is saved to database. Use Redraw or Reset freely.
-                      </p>
-                    </div>
+                    {matchesSaved ? (
+                      <div className="bg-cricket-500/10 border border-cricket-500/20 rounded-xl p-3 mb-4 text-center">
+                        <p className="text-[10px] text-cricket-400 font-bold uppercase tracking-widest">
+                          ✅ Bracket saved to database
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4 text-center">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                          Not saved yet — use buttons below to save or redraw
+                        </p>
+                      </div>
+                    )}
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-2">
                       {pickPhase === 'idle' && (
                         <button
                           onClick={startPickRandomFromBracket}
-                          className="flex-1 py-3 bg-yellow-500/80 hover:bg-yellow-600 text-black rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse"
+                          className="flex-1 min-w-[120px] py-3 bg-yellow-500/80 hover:bg-yellow-600 text-black rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse"
                         >
                           🎯 Pick First Team
                         </button>
@@ -2263,14 +2290,32 @@ Sreekar: 9063128733`
                       {pickPhase === 'done' && (
                         <button
                           onClick={startPickRandomFromBracket}
-                          className="flex-1 py-3 bg-yellow-500/80 hover:bg-yellow-600 text-black rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
+                          className="flex-1 min-w-[120px] py-3 bg-yellow-500/80 hover:bg-yellow-600 text-black rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
                         >
                           🔄 Re-Pick
                         </button>
                       )}
+                      {!matchesSaved && generatedMatches.length > 0 && (
+                        <button
+                          onClick={saveGeneratedMatches}
+                          disabled={savingMatches}
+                          className="flex-1 min-w-[120px] py-3 bg-cricket-600 hover:bg-cricket-500 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] disabled:opacity-50"
+                        >
+                          {savingMatches ? '⏳ Saving...' : '💾 Save to DB'}
+                        </button>
+                      )}
+                      {matchesSaved && (
+                        <button
+                          onClick={deleteAllBracketMatches}
+                          disabled={savingMatches}
+                          className="flex-1 min-w-[120px] py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] disabled:opacity-50"
+                        >
+                          {savingMatches ? '⏳ Deleting...' : '🗑️ Delete from DB'}
+                        </button>
+                      )}
                       <button
                         onClick={regenerateMatches}
-                        className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
+                        className="flex-1 min-w-[120px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
                       >
                         🔄 Redraw
                       </button>
@@ -2291,7 +2336,7 @@ Sreekar: 9063128733`
                           setShowMatchGenerator(false)
                           broadcastDrawEvent('draw_end', {})
                         }}
-                        className="flex-1 py-3 bg-red-500/80 hover:bg-red-600 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
+                        className="flex-1 min-w-[120px] py-3 bg-red-500/80 hover:bg-red-600 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
                       >
                         ✖ Reset & Close
                       </button>
