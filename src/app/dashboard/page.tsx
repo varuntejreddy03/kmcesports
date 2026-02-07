@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase, checkSessionTimeout, clearSessionStartTime, retrySupabaseQuery, updateLastActivity } from '@/lib/supabase'
 import { StudentData, Team } from '@/types'
+import LiveDrawOverlay from '@/components/LiveDrawOverlay'
 
 
 
@@ -179,6 +180,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1a] text-white pb-24 md:pb-20">
+      <LiveDrawOverlay />
       {/* Top Header - Mobile Optimized */}
       <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0a0f1a]/90">
         <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">

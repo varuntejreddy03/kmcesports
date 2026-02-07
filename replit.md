@@ -58,11 +58,18 @@ Available on the Admin Dashboard (🎲 Random button):
 - **Live Draw Animation**: All approved team names shown, then spin/shuffle visually for 3 seconds
 - **One-by-one Drawing**: Teams are drawn from the pool one at a time (800ms each) and placed into bracket slots
 - **Full Knockout Bracket**: Generates multi-round bracket (Play-in → Quarterfinals → Semifinals → Final)
+- **Pick First Team**: After bracket is shown, "Pick First Team" button runs slot-machine style spin across all teams and selects one randomly
 - **Fair bracket math**: Calculates play-in matches for non-power-of-2 team counts, bye teams advance automatically
 - **Transparency**: All team names visible during shuffle — no bias possible (great for screen-sharing/projector)
 - Uses Fisher-Yates shuffle for true random ordering
-- Save to database stores play-in/first round matches; future rounds scheduled after results
+- **Live broadcast to captains**: All draw events broadcast via Supabase Realtime — captains see the full animation live on their dashboard
 - Redraw button resets and runs the full animation again
+
+## Live Draw Broadcast (Supabase Realtime)
+- Admin draw events broadcast on `live-draw` channel
+- Events: `draw_start`, `draw_shuffle_done`, `team_drawn`, `bracket_complete`, `pick_start`, `pick_result`, `draw_end`
+- `LiveDrawOverlay` component on captain dashboard subscribes and renders full animation in real-time
+- Captains see: spinning teams → one-by-one drawing → bracket → first team pick — all live
 
 ## WhatsApp Notification
 For approved+paid teams, admin can send WhatsApp message to captain:
@@ -72,6 +79,8 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 7, 2026: Added live draw broadcast via Supabase Realtime — captains see full draw animation on their dashboard in real-time
+- February 7, 2026: Added "Pick First Team" random spinner integrated into bracket draw (no separate mode)
 - February 7, 2026: Upgraded Random Match Generator to Live Draw with spinning animation, one-by-one team drawing, and full knockout bracket (Play-in → QF → SF → Final)
 - February 7, 2026: Replaced Guide section on landing page with Registered Teams section showing team names and captain names
 - February 7, 2026: Added year-wise breakdown to analytics (1st/2nd/3rd/4th year based on roll number prefixes)
