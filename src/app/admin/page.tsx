@@ -612,6 +612,85 @@ Sreekar: 9063128733`
     }
   }
 
+  const exportTeamsPDF = async () => {
+    try {
+      const { data: allTeamPlayers } = await supabase
+        .from('team_players')
+        .select('*')
+      const hallTickets = allTeamPlayers?.map(p => p.hall_ticket) || []
+      const { data: studentsData } = await supabase
+        .from('student_data')
+        .select('*')
+        .in('hall_ticket', hallTickets)
+
+      const deptMap: { [key: string]: string } = { '05': 'CSE', '69': 'CSO', '04': 'ECE', '66': 'CSM', '62': 'CSC', '67': 'CSD' }
+
+      let teamsHTML = ''
+      teams.forEach((team, idx) => {
+        const teamPlayers = allTeamPlayers?.filter(p => p.team_id === team.id) || []
+        const playersRows = teamPlayers.map((p, i) => {
+          const student = studentsData?.find(s => s.hall_ticket === p.hall_ticket)
+          const deptCode = p.hall_ticket?.substring(6, 8) || ''
+          const dept = deptMap[deptCode] || 'OTHER'
+          return `<tr style="background:${i % 2 === 0 ? '#f9fafb' : '#fff'}">
+            <td style="padding:8px 12px;border:1px solid #e5e7eb">${i + 1}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:600">${student?.name || '-'}${p.is_captain ? ' ⭐' : ''}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-family:monospace;font-size:12px">${p.hall_ticket}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb">${student?.phone || student?.phone_number || '-'}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb">${dept}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;text-transform:capitalize">${p.player_role || '-'}</td>
+          </tr>`
+        }).join('')
+
+        teamsHTML += `
+          <div style="page-break-inside:avoid;margin-bottom:30px;border:2px solid #1a7a4f;border-radius:12px;overflow:hidden">
+            <div style="background:linear-gradient(135deg,#1a7a4f,#15803d);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:1px">${idx + 1}. ${team.name}</div>
+                <div style="font-size:12px;opacity:0.85;margin-top:2px">Captain: ${team.captain?.name || '-'} | Players: ${teamPlayers.length}</div>
+              </div>
+              <div style="background:${team.approved ? 'rgba(255,255,255,0.25)' : 'rgba(255,200,0,0.3)'};padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">${team.approved ? 'Approved' : 'Pending'}</div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead>
+                <tr style="background:#f0fdf4">
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px;width:40px">#</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Name</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Hall Ticket</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Phone</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Dept</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Role</th>
+                </tr>
+              </thead>
+              <tbody>${playersRows}</tbody>
+            </table>
+          </div>`
+      })
+
+      const htmlContent = `<!DOCTYPE html><html><head><title>KMCE Cricket Teams</title><style>
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:30px;color:#111;background:#fff}
+        @media print{body{padding:15px}@page{margin:15mm;size:A4}}
+      </style></head><body>
+        <div style="text-align:center;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid #1a7a4f">
+          <div style="font-size:28px;font-weight:900;color:#1a7a4f;letter-spacing:2px">🏏 KMCE CRICKET CHAMPIONSHIP 2026</div>
+          <div style="font-size:13px;color:#666;margin-top:6px">Team-wise Player List | Generated: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} | Total Teams: ${teams.length}</div>
+        </div>
+        ${teamsHTML}
+        <div style="text-align:center;margin-top:30px;padding-top:15px;border-top:1px solid #e5e7eb;font-size:11px;color:#999">KMCE Cricket Tournament — Confidential</div>
+      </body></html>`
+
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        setTimeout(() => printWindow.print(), 500)
+      }
+    } catch (err) {
+      console.error('PDF export error:', err)
+      alert('Failed to generate PDF')
+    }
+  }
+
   const openMessageAllModal = async (team: any) => {
     setMessageTeam(team)
     setCustomMessage(`Hi ${team.name} members! `)
@@ -715,9 +794,18 @@ Sreekar: 9063128733`
             <button
               onClick={exportTeamsCSV}
               className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center min-h-[44px]"
+              title="Export CSV"
             >
               <span className="md:hidden">📥</span>
-              <span className="hidden md:inline">📥 Export</span>
+              <span className="hidden md:inline">📥 CSV</span>
+            </button>
+            <button
+              onClick={exportTeamsPDF}
+              className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center min-h-[44px]"
+              title="Export PDF"
+            >
+              <span className="md:hidden">📄</span>
+              <span className="hidden md:inline">📄 PDF</span>
             </button>
             <Link href="/admin/tournament-settings" className="w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center">
               <span className="md:hidden">⚙️</span>
