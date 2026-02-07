@@ -543,47 +543,57 @@ export default function AdminPage() {
     if (!confirm('Save this bracket to the database? This will replace any existing scheduled matches.')) return
     setSavingMatches(true)
     try {
-      await supabase
+      const { error: delError } = await supabase
         .from('matches')
         .delete()
-        .eq('status', 'scheduled')
+        .neq('id', '00000000-0000-0000-0000-000000000000')
 
+      if (delError) console.error('Delete error:', delError)
+
+      const today = new Date().toISOString().split('T')[0]
       const matchesToInsert = generatedMatches.map((match, index) => ({
         team_a_id: match.team_a.id,
         team_b_id: match.team_b.id,
-        match_date: new Date().toISOString(),
-        round: 1,
-        match_number: index + 1,
-        status: 'scheduled'
+        match_date: today,
+        match_time: '09:00',
+        venue: 'Main Stadium Ground'
       }))
 
-      const { error } = await supabase.from('matches').insert(matchesToInsert)
-      if (error) throw error
+      console.log('Inserting matches:', JSON.stringify(matchesToInsert))
+      const { data, error } = await supabase.from('matches').insert(matchesToInsert).select()
+      if (error) {
+        console.error('Insert error details:', JSON.stringify(error))
+        throw error
+      }
+      console.log('Matches saved successfully:', data)
 
       setMatchesSaved(true)
       fetchMatches()
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving matches:', err)
-      alert('Failed to save matches. Please try again.')
+      alert(`Failed to save matches: ${err?.message || 'Unknown error'}`)
     } finally {
       setSavingMatches(false)
     }
   }
 
   const deleteAllBracketMatches = async () => {
-    if (!confirm('Delete ALL scheduled matches from the database? This cannot be undone.')) return
+    if (!confirm('Delete ALL matches from the database? This cannot be undone.')) return
     setSavingMatches(true)
     try {
       const { error } = await supabase
         .from('matches')
         .delete()
-        .eq('status', 'scheduled')
-      if (error) throw error
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+      if (error) {
+        console.error('Delete error:', JSON.stringify(error))
+        throw error
+      }
       setMatchesSaved(false)
       fetchMatches()
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting matches:', err)
-      alert('Failed to delete matches. Please try again.')
+      alert(`Failed to delete matches: ${err?.message || 'Unknown error'}`)
     } finally {
       setSavingMatches(false)
     }
