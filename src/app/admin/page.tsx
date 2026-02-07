@@ -43,6 +43,9 @@ export default function AdminPage() {
   const [allPlayersData, setAllPlayersData] = useState<any[]>([])
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
+  // Team Selection State
+  const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set())
+
   // Message All Members State
   const [showMessageModal, setShowMessageModal] = useState(false)
   const [messageTeam, setMessageTeam] = useState<any>(null)
@@ -563,6 +566,109 @@ Sreekar: 9063128733`
     }
   }
 
+  const toggleTeamSelection = (teamId: string) => {
+    setSelectedTeams(prev => {
+      const next = new Set(prev)
+      if (next.has(teamId)) next.delete(teamId)
+      else next.add(teamId)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedTeams.size === filteredTeams.length) {
+      setSelectedTeams(new Set())
+    } else {
+      setSelectedTeams(new Set(filteredTeams.map(t => t.id)))
+    }
+  }
+
+  const exportSelectedPDF = async () => {
+    const teamsToExport = selectedTeams.size > 0
+      ? teams.filter(t => selectedTeams.has(t.id))
+      : teams
+    if (teamsToExport.length === 0) {
+      alert('No teams selected')
+      return
+    }
+    try {
+      const { data: allTeamPlayers } = await supabase
+        .from('team_players')
+        .select('*')
+      const hallTickets = allTeamPlayers?.map(p => p.hall_ticket) || []
+      const { data: studentsData } = await supabase
+        .from('student_data')
+        .select('*')
+        .in('hall_ticket', hallTickets)
+
+      const deptMap: { [key: string]: string } = { '05': 'CSE', '69': 'CSO', '04': 'ECE', '66': 'CSM', '62': 'CSC', '67': 'CSD' }
+
+      let teamsHTML = ''
+      teamsToExport.forEach((team, idx) => {
+        const tp = allTeamPlayers?.filter(p => p.team_id === team.id) || []
+        const playersRows = tp.map((p, i) => {
+          const student = studentsData?.find(s => s.hall_ticket === p.hall_ticket)
+          const deptCode = p.hall_ticket?.substring(6, 8) || ''
+          const dept = deptMap[deptCode] || 'OTHER'
+          return `<tr style="background:${i % 2 === 0 ? '#f9fafb' : '#fff'}">
+            <td style="padding:8px 12px;border:1px solid #e5e7eb">${i + 1}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:600">${student?.name || '-'}${p.is_captain ? ' ⭐' : ''}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-family:monospace;font-size:12px">${p.hall_ticket}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb">${student?.phone || student?.phone_number || '-'}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb">${dept}</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;text-transform:capitalize">${p.player_role || '-'}</td>
+          </tr>`
+        }).join('')
+
+        teamsHTML += `
+          <div style="page-break-inside:avoid;margin-bottom:30px;border:2px solid #1a7a4f;border-radius:12px;overflow:hidden">
+            <div style="background:linear-gradient(135deg,#1a7a4f,#15803d);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:1px">${idx + 1}. ${team.name}</div>
+                <div style="font-size:12px;opacity:0.85;margin-top:2px">Captain: ${team.captain?.name || '-'} | Players: ${tp.length}</div>
+              </div>
+              <div style="background:${team.approved ? 'rgba(255,255,255,0.25)' : 'rgba(255,200,0,0.3)'};padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">${team.approved ? 'Approved' : 'Pending'}</div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead>
+                <tr style="background:#f0fdf4">
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px;width:40px">#</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Name</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Hall Ticket</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Phone</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Dept</th>
+                  <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left;font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:1px">Role</th>
+                </tr>
+              </thead>
+              <tbody>${playersRows}</tbody>
+            </table>
+          </div>`
+      })
+
+      const htmlContent = `<!DOCTYPE html><html><head><title>KMCE Cricket Teams</title><style>
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:30px;color:#111;background:#fff}
+        @media print{body{padding:15px}@page{margin:15mm;size:A4}}
+      </style></head><body>
+        <div style="text-align:center;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid #1a7a4f">
+          <div style="font-size:28px;font-weight:900;color:#1a7a4f;letter-spacing:2px">🏏 KMCE CRICKET CHAMPIONSHIP 2026</div>
+          <div style="font-size:13px;color:#666;margin-top:6px">Team-wise Player List | Generated: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} | Teams: ${teamsToExport.length}</div>
+        </div>
+        ${teamsHTML}
+        <div style="text-align:center;margin-top:30px;padding-top:15px;border-top:1px solid #e5e7eb;font-size:11px;color:#999">KMCE Cricket Tournament — Confidential</div>
+      </body></html>`
+
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        setTimeout(() => printWindow.print(), 500)
+      }
+    } catch (err) {
+      console.error('PDF export error:', err)
+      alert('Failed to generate PDF')
+    }
+  }
+
   const toggleAnalytics = () => {
     const next = !showAnalytics
     setShowAnalytics(next)
@@ -906,13 +1012,36 @@ Sreekar: 9063128733`
           </div>
         )}
 
+        {/* Selection Toolbar */}
+        {selectedTeams.size > 0 && (
+          <div className="mb-4 bg-cricket-600/10 border border-cricket-500/20 rounded-2xl p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-3">
+              <span className="text-xs md:text-sm font-black text-cricket-400">{selectedTeams.size} team{selectedTeams.size > 1 ? 's' : ''} selected</span>
+              <button onClick={() => setSelectedTeams(new Set())} className="text-[10px] md:text-xs text-slate-500 hover:text-white font-bold uppercase tracking-widest transition-colors">Clear</button>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={exportSelectedPDF}
+                className="flex-1 sm:flex-none px-4 py-2.5 bg-cricket-600 text-white rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-cricket-500 transition-all min-h-[44px] flex items-center justify-center gap-1.5"
+              >
+                📄 Export Selected PDF
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Teams Table - Desktop */}
         <div className="hidden lg:block bg-white/5 backdrop-blur-xl border border-white/10 rounded-[40px] overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/10 bg-white/[0.02]">
-                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Team Identity</th>
+                  <th className="pl-6 pr-2 py-6 w-12">
+                    <button onClick={toggleSelectAll} className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all min-h-[24px] min-w-[24px] ${selectedTeams.size === filteredTeams.length && filteredTeams.length > 0 ? 'bg-cricket-500 border-cricket-500 text-white' : 'border-slate-600 hover:border-cricket-500'}`}>
+                      {selectedTeams.size === filteredTeams.length && filteredTeams.length > 0 && <span className="text-xs">✓</span>}
+                    </button>
+                  </th>
+                  <th className="px-6 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Team Identity</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Captain Details</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Payment Audit</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Decision Status</th>
@@ -922,8 +1051,13 @@ Sreekar: 9063128733`
               <tbody className="divide-y divide-white/[0.05]">
                 {filteredTeams.map((team) => (
                   <React.Fragment key={team.id}>
-                    <tr className="hover:bg-white/[0.02] transition-colors group">
-                      <td className="px-8 py-6">
+                    <tr className={`hover:bg-white/[0.02] transition-colors group ${selectedTeams.has(team.id) ? 'bg-cricket-600/5' : ''}`}>
+                      <td className="pl-6 pr-2 py-6">
+                        <button onClick={() => toggleTeamSelection(team.id)} className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedTeams.has(team.id) ? 'bg-cricket-500 border-cricket-500 text-white' : 'border-slate-600 hover:border-cricket-500'}`}>
+                          {selectedTeams.has(team.id) && <span className="text-xs">✓</span>}
+                        </button>
+                      </td>
+                      <td className="px-6 py-6">
                         <div className="font-black text-xl uppercase italic group-hover:text-cricket-400 transition-colors tracking-tight">{team.name || 'UNNAMED SQUAD'}</div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{team.sport}</span>
@@ -1020,7 +1154,7 @@ Sreekar: 9063128733`
 
                     {expandedTeamId === team.id && (
                       <tr className="bg-white/[0.01]">
-                        <td colSpan={5} className="px-8 py-8">
+                        <td colSpan={6} className="px-8 py-8">
                           <div className="animate-fadeIn bg-white/5 border border-white/5 rounded-[32px] overflow-hidden">
                             <div className="px-6 py-4 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
                               <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Team Roster Audit</h4>
@@ -1123,11 +1257,28 @@ Sreekar: 9063128733`
 
         {/* Teams - Mobile Card View */}
         <div className="lg:hidden space-y-3 md:space-y-4">
+          {/* Mobile Select All */}
+          <div className="flex items-center justify-between px-1">
+            <button onClick={toggleSelectAll} className="flex items-center gap-2.5 min-h-[44px] min-w-[44px] active:scale-95 transition-all">
+              <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${selectedTeams.size === filteredTeams.length && filteredTeams.length > 0 ? 'bg-cricket-500 border-cricket-500 text-white' : 'border-slate-600'}`}>
+                {selectedTeams.size === filteredTeams.length && filteredTeams.length > 0 && <span className="text-sm">✓</span>}
+              </div>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Select All</span>
+            </button>
+            {selectedTeams.size > 0 && (
+              <span className="text-[10px] font-black text-cricket-400 uppercase tracking-widest">{selectedTeams.size} selected</span>
+            )}
+          </div>
           {filteredTeams.map((team) => (
-            <div key={team.id} className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] p-4 md:p-6 space-y-4 md:space-y-6">
+            <div key={team.id} className={`border rounded-2xl md:rounded-[32px] p-4 md:p-6 space-y-4 md:space-y-6 transition-all ${selectedTeams.has(team.id) ? 'bg-cricket-600/10 border-cricket-500/30' : 'bg-white/5 border-white/10'}`}>
               <div className="flex justify-between items-start gap-3">
+                <button onClick={() => toggleTeamSelection(team.id)} className="flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                  <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all ${selectedTeams.has(team.id) ? 'bg-cricket-500 border-cricket-500 text-white' : 'border-slate-600'}`}>
+                    {selectedTeams.has(team.id) && <span className="text-sm">✓</span>}
+                  </div>
+                </button>
                 <div className="min-w-0 flex-1">
-                  <div className="font-black text-base md:text-xl uppercase italic group-hover:text-cricket-400 transition-colors tracking-tight leading-none mb-1 truncate">{team.name || 'UNNAMED SQUAD'}</div>
+                  <div className="font-black text-base md:text-xl uppercase italic tracking-tight leading-none mb-1 truncate">{team.name || 'UNNAMED SQUAD'}</div>
                   <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest italic">{team.playerCount || 0} ATHLETES • {team.sport}</div>
                 </div>
                 <div onClick={() => toggleTeamDetails(team.id)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-base active:scale-95 transition-all text-white flex-shrink-0 min-h-[44px] min-w-[44px]">
