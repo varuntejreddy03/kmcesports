@@ -21,12 +21,11 @@ interface RoundInfo {
   matches: MatchInfo[]
 }
 
-type DrawPhase = 'idle' | 'spinning' | 'drawing' | 'bracket' | 'picking' | 'pick_done'
+type DrawPhase = 'idle' | 'spinning' | 'drawing' | 'bracket'
 
 export default function LiveDrawOverlay() {
   const [active, setActive] = useState(false)
   const [phase, setPhase] = useState<DrawPhase>('idle')
-  const [allTeams, setAllTeams] = useState<TeamInfo[]>([])
   const [spinningTeams, setSpinningTeams] = useState<TeamInfo[]>([])
   const [drawnTeams, setDrawnTeams] = useState<TeamInfo[]>([])
   const [currentDrawIndex, setCurrentDrawIndex] = useState(0)
@@ -34,14 +33,7 @@ export default function LiveDrawOverlay() {
   const [bracketRounds, setBracketRounds] = useState<RoundInfo[]>([])
   const [byeTeams, setByeTeams] = useState<TeamInfo[]>([])
 
-  const [pickTeams, setPickTeams] = useState<TeamInfo[]>([])
-  const [pickHighlightIndex, setPickHighlightIndex] = useState(0)
-  const [pickedTeam, setPickedTeam] = useState<TeamInfo | null>(null)
-  const [pickPhase, setPickPhase] = useState<'idle' | 'spinning' | 'slowing' | 'done'>('idle')
-
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const pickIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const pickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const shuffleArray = (arr: TeamInfo[]) => {
     const a = [...arr]
@@ -54,8 +46,6 @@ export default function LiveDrawOverlay() {
 
   const clearTimers = () => {
     if (spinIntervalRef.current) { clearInterval(spinIntervalRef.current); spinIntervalRef.current = null }
-    if (pickIntervalRef.current) { clearInterval(pickIntervalRef.current); pickIntervalRef.current = null }
-    if (pickTimeoutRef.current) { clearTimeout(pickTimeoutRef.current); pickTimeoutRef.current = null }
   }
 
   useEffect(() => {
@@ -68,16 +58,12 @@ export default function LiveDrawOverlay() {
         clearTimers()
         setActive(true)
         setPhase('spinning')
-        setAllTeams(payload.teams)
         setSpinningTeams(payload.teams)
         setDrawnTeams([])
         setCurrentDrawIndex(0)
         setTotalTeams(payload.totalTeams)
         setBracketRounds([])
         setByeTeams([])
-        setPickTeams([])
-        setPickedTeam(null)
-        setPickPhase('idle')
 
         spinIntervalRef.current = setInterval(() => {
           setSpinningTeams(prev => shuffleArray(prev))
@@ -100,55 +86,6 @@ export default function LiveDrawOverlay() {
         setPhase('bracket')
         setBracketRounds(payload.bracket)
         setByeTeams(payload.byeTeams || [])
-        setPickTeams(payload.allTeams || [])
-      })
-      .on('broadcast', { event: 'pick_start' }, ({ payload }) => {
-        setPhase('picking')
-        setPickPhase('spinning')
-        setPickedTeam(null)
-        setPickHighlightIndex(0)
-        const teams = payload.teams
-        setPickTeams(teams)
-
-        const winnerIndex = payload.winnerIndex
-        const totalSpins = payload.totalSpins
-        let counter = 0
-
-        pickIntervalRef.current = setInterval(() => {
-          setPickHighlightIndex(counter % teams.length)
-          counter++
-
-          if (counter >= totalSpins - teams.length) {
-            if (pickIntervalRef.current) { clearInterval(pickIntervalRef.current); pickIntervalRef.current = null }
-            setPickPhase('slowing')
-
-            let slowCounter = counter
-            const remaining = totalSpins - slowCounter
-            let step = 0
-
-            const slowStep = () => {
-              if (step >= remaining) {
-                setPickPhase('done')
-                setPickHighlightIndex(winnerIndex)
-                return
-              }
-              setPickHighlightIndex((slowCounter + step) % teams.length)
-              step++
-              const delay = 150 + step * 80
-              pickTimeoutRef.current = setTimeout(slowStep, delay)
-            }
-            slowStep()
-          }
-        }, 60)
-      })
-      .on('broadcast', { event: 'pick_result' }, ({ payload }) => {
-        clearTimers()
-        setPhase('pick_done')
-        setPickPhase('done')
-        setPickedTeam(payload.team)
-        if (payload.winnerIndex !== undefined) {
-          setPickHighlightIndex(payload.winnerIndex)
-        }
       })
       .on('broadcast', { event: 'draw_end' }, () => {
         clearTimers()
@@ -179,8 +116,6 @@ export default function LiveDrawOverlay() {
             {phase === 'spinning' && 'SHUFFLING TEAMS...'}
             {phase === 'drawing' && `Drawing Team ${currentDrawIndex} of ${totalTeams}...`}
             {phase === 'bracket' && 'Knockout Bracket'}
-            {phase === 'picking' && '🎯 PICKING FIRST TEAM...'}
-            {phase === 'pick_done' && '🎯 FIRST TEAM SELECTED!'}
           </h2>
         </div>
 
@@ -228,7 +163,7 @@ export default function LiveDrawOverlay() {
           </div>
         )}
 
-        {(phase === 'bracket' || phase === 'picking' || phase === 'pick_done') && (
+        {phase === 'bracket' && (
           <div className="animate-fadeIn">
             <div className="space-y-6 mb-6">
               {bracketRounds.map((round, roundIdx) => (
@@ -292,52 +227,6 @@ export default function LiveDrawOverlay() {
                     <span key={t.id} className="text-xs font-black text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-lg">{t.name}</span>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {(phase === 'picking' || phase === 'pick_done') && (
-              <div className="mt-6 mb-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">🎯 First Team Selection</div>
-                  <div className="flex-1 h-px bg-yellow-500/20"></div>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
-                  {pickTeams.map((team, idx) => {
-                    const isHighlighted = (pickPhase === 'spinning' || pickPhase === 'slowing') && idx === pickHighlightIndex
-                    const isWinner = pickPhase === 'done' && pickedTeam?.id === team.id
-                    const isDimmed = pickPhase === 'done' && pickedTeam?.id !== team.id
-
-                    return (
-                      <div
-                        key={team.id}
-                        className={`border rounded-xl p-3 text-center transition-all duration-150 ${
-                          isWinner
-                            ? 'bg-cricket-500 border-cricket-400 scale-110 shadow-[0_0_30px_rgba(34,197,94,0.5)]'
-                            : isHighlighted
-                            ? 'bg-yellow-500/30 border-yellow-500/60 scale-105'
-                            : isDimmed
-                            ? 'bg-white/[0.02] border-white/5 opacity-30'
-                            : 'bg-white/5 border-white/10'
-                        }`}
-                      >
-                        <div className={`font-black text-xs uppercase tracking-tight truncate ${
-                          isWinner ? 'text-white' : isHighlighted ? 'text-yellow-300' : isDimmed ? 'text-slate-600' : ''
-                        }`}>
-                          {team.name}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {pickPhase === 'done' && pickedTeam && (
-                  <div className="text-center mb-4 animate-fadeIn">
-                    <div className="bg-cricket-500/20 border-2 border-cricket-500 rounded-2xl p-6 inline-block">
-                      <div className="text-[10px] font-black text-cricket-400 uppercase tracking-widest mb-2">First Team</div>
-                      <div className="text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">{pickedTeam.name}</div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>

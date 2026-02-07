@@ -58,12 +58,6 @@ export default function AdminPage() {
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const drawIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Single Team Picker State (integrated into bracket flow)
-  const [pickPhase, setPickPhase] = useState<'idle' | 'spinning' | 'slowing' | 'done'>('idle')
-  const [pickHighlightIndex, setPickHighlightIndex] = useState(0)
-  const [pickedTeam, setPickedTeam] = useState<any | null>(null)
-  const pickIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const pickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Message All Members State
   const [showMessageModal, setShowMessageModal] = useState(false)
@@ -301,9 +295,6 @@ export default function AdminPage() {
     setGeneratedMatches([])
     setByeTeam(null)
     setMatchesSaved(false)
-    setPickPhase('idle')
-    setPickedTeam(null)
-    setPickHighlightIndex(0)
     const approvedTeams = teams.filter(t => t.approved)
     setSpinningTeams(approvedTeams)
   }
@@ -317,9 +308,6 @@ export default function AdminPage() {
     setDrawnTeams([])
     setCurrentDrawIndex(0)
     setBracketRounds([])
-    setPickPhase('idle')
-    setPickedTeam(null)
-
     broadcastDrawEvent('draw_start', {
       teams: approvedTeams.map(t => ({ id: t.id, name: t.name })),
       totalTeams: approvedTeams.length
@@ -548,71 +536,6 @@ export default function AdminPage() {
   const clearAllTimers = () => {
     if (spinIntervalRef.current) { clearInterval(spinIntervalRef.current); spinIntervalRef.current = null }
     if (drawIntervalRef.current) { clearInterval(drawIntervalRef.current); drawIntervalRef.current = null }
-    if (pickIntervalRef.current) { clearInterval(pickIntervalRef.current); pickIntervalRef.current = null }
-    if (pickTimeoutRef.current) { clearTimeout(pickTimeoutRef.current); pickTimeoutRef.current = null }
-  }
-
-  
-
-  // Pick from already-drawn bracket teams
-  const startPickRandomFromBracket = () => {
-    if (pickPhase === 'spinning' || pickPhase === 'slowing') return
-    if (drawnTeams.length < 2) return
-
-    clearAllTimers()
-    setPickPhase('spinning')
-    setPickedTeam(null)
-    setPickHighlightIndex(0)
-
-    const teamsList = [...drawnTeams]
-    const winnerIndex = Math.floor(Math.random() * teamsList.length)
-    let counter = 0
-    const totalSpins = teamsList.length * 3 + winnerIndex
-
-    broadcastDrawEvent('pick_start', {
-      teams: teamsList.map(t => ({ id: t.id, name: t.name })),
-      totalSpins,
-      winnerIndex
-    })
-
-    pickIntervalRef.current = setInterval(() => {
-      setPickHighlightIndex(counter % teamsList.length)
-      counter++
-
-      if (counter >= totalSpins - teamsList.length) {
-        if (pickIntervalRef.current) { clearInterval(pickIntervalRef.current); pickIntervalRef.current = null }
-        setPickPhase('slowing')
-
-        let slowCounter = counter
-        const remaining = totalSpins - slowCounter
-        let step = 0
-
-        const slowStep = () => {
-          if (step >= remaining) {
-            setPickPhase('done')
-            setPickedTeam(teamsList[winnerIndex])
-            setPickHighlightIndex(winnerIndex)
-            broadcastDrawEvent('pick_result', { team: { id: teamsList[winnerIndex].id, name: teamsList[winnerIndex].name }, winnerIndex })
-            pickTimeoutRef.current = null
-            return
-          }
-          setPickHighlightIndex((slowCounter + step) % teamsList.length)
-          step++
-          const delay = 150 + step * 80
-          pickTimeoutRef.current = setTimeout(slowStep, delay)
-        }
-        slowStep()
-      }
-    }, 60)
-  }
-
-  const resetPicker = () => {
-    clearAllTimers()
-    setPickPhase('idle')
-    setPickedTeam(null)
-    setPickHighlightIndex(0)
-    const approvedTeams = teams.filter(t => t.approved)
-    setSpinningTeams(approvedTeams)
   }
 
   // Save generated matches to database
@@ -2028,12 +1951,10 @@ Sreekar: 9063128733`
           <div className="bg-[#0f172a] border border-white/10 rounded-[32px] p-6 md:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-black uppercase italic tracking-tight">
-                {drawPhase === 'idle' && pickPhase === 'idle' && 'Live Draw'}
+                {drawPhase === 'idle' && 'Live Draw'}
                 {drawPhase === 'spinning' && 'SHUFFLING...'}
                 {drawPhase === 'drawing' && `Drawing team ${currentDrawIndex} of ${teams.filter(t => t.approved).length}...`}
-                {drawPhase === 'complete' && pickPhase === 'idle' && 'Knockout Bracket'}
-                {drawPhase === 'complete' && (pickPhase === 'spinning' || pickPhase === 'slowing') && '🎯 PICKING FIRST TEAM...'}
-                {drawPhase === 'complete' && pickPhase === 'done' && '🎯 FIRST TEAM SELECTED!'}
+                {drawPhase === 'complete' && 'Knockout Bracket'}
               </h2>
               <button
                 onClick={() => {
@@ -2218,52 +2139,6 @@ Sreekar: 9063128733`
                       </div>
                     )}
 
-                    {pickPhase !== 'idle' && (
-                      <div className="mt-6 mb-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">🎯 First Team Selection</div>
-                          <div className="flex-1 h-px bg-yellow-500/20"></div>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
-                          {drawnTeams.map((team, idx) => {
-                            const isHighlighted = (pickPhase === 'spinning' || pickPhase === 'slowing') && idx === pickHighlightIndex
-                            const isWinner = pickPhase === 'done' && pickedTeam?.id === team.id
-                            const isDimmed = pickPhase === 'done' && pickedTeam?.id !== team.id
-
-                            return (
-                              <div
-                                key={team.id}
-                                className={`border rounded-xl p-3 text-center transition-all duration-150 ${
-                                  isWinner
-                                    ? 'bg-cricket-500 border-cricket-400 scale-110 shadow-[0_0_30px_rgba(34,197,94,0.5)]'
-                                    : isHighlighted
-                                    ? 'bg-yellow-500/30 border-yellow-500/60 scale-105'
-                                    : isDimmed
-                                    ? 'bg-white/[0.02] border-white/5 opacity-30'
-                                    : 'bg-white/5 border-white/10'
-                                }`}
-                              >
-                                <div className={`font-black text-xs uppercase tracking-tight truncate ${
-                                  isWinner ? 'text-white' : isHighlighted ? 'text-yellow-300' : isDimmed ? 'text-slate-600' : ''
-                                }`}>
-                                  {team.name}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-
-                        {pickPhase === 'done' && pickedTeam && (
-                          <div className="text-center mb-4 animate-fadeIn">
-                            <div className="bg-cricket-500/20 border-2 border-cricket-500 rounded-2xl p-6 inline-block">
-                              <div className="text-[10px] font-black text-cricket-400 uppercase tracking-widest mb-2">First Team</div>
-                              <div className="text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">{pickedTeam.name}</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {matchesSaved ? (
                       <div className="bg-cricket-500/10 border border-cricket-500/20 rounded-xl p-3 mb-4 text-center">
                         <p className="text-[10px] text-cricket-400 font-bold uppercase tracking-widest">
@@ -2279,22 +2154,6 @@ Sreekar: 9063128733`
                     )}
 
                     <div className="flex flex-wrap gap-2">
-                      {pickPhase === 'idle' && (
-                        <button
-                          onClick={startPickRandomFromBracket}
-                          className="flex-1 min-w-[120px] py-3 bg-yellow-500/80 hover:bg-yellow-600 text-black rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse"
-                        >
-                          🎯 Pick First Team
-                        </button>
-                      )}
-                      {pickPhase === 'done' && (
-                        <button
-                          onClick={startPickRandomFromBracket}
-                          className="flex-1 min-w-[120px] py-3 bg-yellow-500/80 hover:bg-yellow-600 text-black rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
-                        >
-                          🔄 Re-Pick
-                        </button>
-                      )}
                       {!matchesSaved && generatedMatches.length > 0 && (
                         <button
                           onClick={saveGeneratedMatches}
@@ -2330,9 +2189,6 @@ Sreekar: 9063128733`
                           setByeTeam(null)
                           setMatchesSaved(false)
                           setSpinningTeams([])
-                          setPickPhase('idle')
-                          setPickedTeam(null)
-                          setPickHighlightIndex(0)
                           setShowMatchGenerator(false)
                           broadcastDrawEvent('draw_end', {})
                         }}
