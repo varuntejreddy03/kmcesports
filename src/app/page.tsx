@@ -12,6 +12,7 @@ export default function Home() {
   const [settings, setSettings] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [matches, setMatches] = useState<any[]>([])
+  const [showBannerPopup, setShowBannerPopup] = useState(false)
 
   useEffect(() => {
     fetchSettings()
@@ -56,6 +57,7 @@ export default function Home() {
       console.error('Error fetching settings:', err)
     } finally {
       setLoading(false)
+      setTimeout(() => setShowBannerPopup(true), 800)
     }
   }
 
@@ -130,32 +132,72 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Last Final Call Banner */}
-      {settings?.registration_open !== false && (
-        <div className="fixed top-[88px] md:top-[104px] left-0 right-0 z-30">
-          <div className="relative overflow-hidden bg-gradient-to-r from-red-900/95 via-red-700/95 to-red-900/95 border-b-2 border-red-500/50 backdrop-blur-sm">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-50"></div>
-            <div className="relative max-w-5xl mx-auto px-4 py-3 md:py-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                </span>
-                <span className="text-xs md:text-sm font-black uppercase tracking-widest text-red-200 animate-pulse">Last Final Call</span>
+      {/* Last Final Call Popup */}
+      {showBannerPopup && settings?.registration_open !== false && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="relative w-full max-w-md animate-[popIn_0.4s_ease-out]">
+            <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 rounded-3xl blur-lg opacity-75 animate-pulse"></div>
+            <div className="relative bg-gradient-to-b from-[#1a0000] to-[#0a0f1a] border-2 border-red-500/50 rounded-3xl p-6 md:p-8 text-center overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-yellow-500 to-red-600"></div>
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-red-600/20 blur-[60px] rounded-full"></div>
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-orange-600/20 blur-[60px] rounded-full"></div>
+
+              <button
+                onClick={() => setShowBannerPopup(false)}
+                className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center text-white/40 hover:text-white text-xl transition-colors"
+              >
+                ✕
+              </button>
+
+              <div className="relative z-10">
+                <div className="text-5xl md:text-6xl mb-4">🚨</div>
+
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-600/20 border border-red-500/30 mb-4">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                  </span>
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-red-400">Live Alert</span>
+                </div>
+
+                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white mb-2 leading-tight">
+                  Last Final Call!
+                </h2>
+
+                <p className="text-base md:text-lg text-red-300 font-bold mb-1">
+                  Registration Closes Today
+                </p>
+                <div className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
+                  at <span className="text-red-500">9:00 PM</span>
+                </div>
+
+                <p className="text-sm text-slate-400 mb-6 max-w-xs mx-auto">
+                  Don&apos;t miss your chance to build your dream team and compete in the KMCE Cricket Championship!
+                </p>
+
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setShowBannerPopup(false)}
+                    className="w-full py-4 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-2xl font-black text-sm md:text-base uppercase tracking-wider hover:from-red-500 hover:to-red-400 transition-all shadow-2xl shadow-red-600/40 min-h-[52px] flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    Register Now 🏏
+                  </Link>
+                  <button
+                    onClick={() => setShowBannerPopup(false)}
+                    className="w-full py-3 text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors min-h-[44px]"
+                  >
+                    I&apos;ll register later
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm md:text-lg font-black text-white">🚨 Registration Closes Today at 9:00 PM! 🚨</span>
-              </div>
-              <Link href="/auth/login" className="px-4 py-1.5 md:px-5 md:py-2 bg-white text-red-700 rounded-full text-xs md:text-sm font-black uppercase tracking-wider hover:bg-red-100 transition-all shadow-lg shadow-red-900/50 animate-bounce min-h-[36px] flex items-center">
-                Register Now →
-              </Link>
             </div>
           </div>
         </div>
       )}
 
       {/* Hero Section */}
-      <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-36 md:pt-40">
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 md:pt-28">
         {/* Background Effects */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-cricket-600/20 blur-[100px] md:blur-[150px] rounded-full"></div>
