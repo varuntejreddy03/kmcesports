@@ -70,6 +70,8 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 7, 2026: Added CSV export button (📥) in admin navbar to download all teams with player details
+- February 7, 2026: Added "Last Final Call" red banner on homepage with "Registration Closes at 9 PM" message
 - February 6, 2026: Added Analytics dashboard to admin panel (total teams, branch breakdown, team overview)
 - February 6, 2026: Added "Message All Members" button to send custom WhatsApp messages to all team players
 - February 5, 2026: Fixed duplicate player bug - players on pending teams now blocked from other teams
