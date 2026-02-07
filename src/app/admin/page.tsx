@@ -2249,7 +2249,15 @@ Sreekar: 9063128733`
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex-1 text-center">
                                     <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-600 italic'}`}>
-                                      {match.team_a ? match.team_a.name : 'TBD'}
+                                      {match.team_a ? match.team_a.name : (() => {
+                                        const prevRound = bracketRounds[roundIdx - 1]
+                                        if (prevRound) {
+                                          const feedIdx = matchIdx * 2
+                                          const feederMatch = prevRound.matches[feedIdx]
+                                          if (feederMatch) return `W${feederMatch.match_num}`
+                                        }
+                                        return 'TBD'
+                                      })()}
                                     </div>
                                     {match.is_bye && match.team_a && (
                                       <span className="inline-block mt-1 text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">BYE</span>
@@ -2258,7 +2266,15 @@ Sreekar: 9063128733`
                                   <div className="px-2 text-slate-600 font-black text-[10px]">VS</div>
                                   <div className="flex-1 text-center">
                                     <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-600 italic'}`}>
-                                      {match.team_b ? match.team_b.name : 'TBD'}
+                                      {match.team_b ? match.team_b.name : (() => {
+                                        const prevRound = bracketRounds[roundIdx - 1]
+                                        if (prevRound) {
+                                          const feedIdx = matchIdx * 2 + 1
+                                          const feederMatch = prevRound.matches[feedIdx]
+                                          if (feederMatch) return `W${feederMatch.match_num}`
+                                        }
+                                        return 'TBD'
+                                      })()}
                                     </div>
                                   </div>
                                 </div>
