@@ -70,6 +70,7 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 7, 2026: Added year-wise breakdown to analytics (1st/2nd/3rd/4th year based on roll number prefixes)
 - February 7, 2026: Added CSV export button (📥) in admin navbar to download all teams with player details
 - February 7, 2026: Added "Last Final Call" red banner on homepage with "Registration Closes at 9 PM" message
 - February 6, 2026: Added Analytics dashboard to admin panel (total teams, branch breakdown, team overview)

@@ -538,11 +538,23 @@ Sreekar: 9063128733`
       setAllPlayersData(playersWithStudents)
 
       const branchCounts: { [key: string]: number } = {}
+      const yearCounts: { [key: string]: number } = { '1st Year': 0, '2nd Year': 0, '3rd Year': 0, '4th Year': 0 }
       playersWithStudents.forEach(p => {
         if (p.hall_ticket && p.hall_ticket.length >= 8) {
           const code = p.hall_ticket.substring(6, 8)
           const branch = deptMap[code] || 'OTHER'
           branchCounts[branch] = (branchCounts[branch] || 0) + 1
+
+          const prefix = p.hall_ticket.substring(0, 4)
+          if (prefix === '25P8' && p.hall_ticket.substring(0, 5) === '25P81') {
+            yearCounts['1st Year']++
+          } else if ((prefix === '24P8' && p.hall_ticket.substring(0, 5) === '24P81') || (prefix === '25P8' && p.hall_ticket.substring(0, 5) === '25P85')) {
+            yearCounts['2nd Year']++
+          } else if ((prefix === '23P8' && p.hall_ticket.substring(0, 5) === '23P81') || (prefix === '24P8' && p.hall_ticket.substring(0, 5) === '24P85')) {
+            yearCounts['3rd Year']++
+          } else if ((prefix === '22P8' && p.hall_ticket.substring(0, 5) === '22P81') || (prefix === '23P8' && p.hall_ticket.substring(0, 5) === '23P85')) {
+            yearCounts['4th Year']++
+          }
         }
       })
 
@@ -557,7 +569,8 @@ Sreekar: 9063128733`
         pendingTeams,
         totalPlayers,
         paidTeams,
-        branchCounts
+        branchCounts,
+        yearCounts
       })
     } catch (err) {
       console.error('Error fetching analytics:', err)
@@ -978,6 +991,18 @@ Sreekar: 9063128733`
                       <div key={branch} className="bg-white/5 border border-white/10 rounded-xl p-3 md:p-4 text-center">
                         <div className="text-lg md:text-2xl font-black text-cricket-400">{count as number}</div>
                         <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{branch}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl md:rounded-[32px] p-4 md:p-6">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Year-wise Breakdown</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {Object.entries(analyticsData.yearCounts || {}).map(([year, count]) => (
+                      <div key={year} className="bg-white/5 border border-white/10 rounded-xl p-3 md:p-4 text-center">
+                        <div className="text-lg md:text-2xl font-black text-indigo-400">{count as number}</div>
+                        <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{year}</div>
                       </div>
                     ))}
                   </div>
