@@ -13,10 +13,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [matches, setMatches] = useState<any[]>([])
   const [showBannerPopup, setShowBannerPopup] = useState(false)
+  const [registeredTeams, setRegisteredTeams] = useState<any[]>([])
 
   useEffect(() => {
     fetchSettings()
     fetchMatches()
+    fetchRegisteredTeams()
 
     const channel = supabase
       .channel('landing-matches')
@@ -58,6 +60,35 @@ export default function Home() {
     } finally {
       setLoading(false)
       setTimeout(() => setShowBannerPopup(true), 800)
+    }
+  }
+
+  const fetchRegisteredTeams = async () => {
+    try {
+      const { data: teamsData } = await supabase
+        .from('teams')
+        .select('id, name, captain_id, sport')
+        .eq('sport', 'cricket')
+        .eq('approved', true)
+        .order('created_at', { ascending: true })
+
+      if (teamsData && teamsData.length > 0) {
+        const captainIds = teamsData.map(t => t.captain_id)
+        const { data: captainData } = await supabase
+          .from('student_data')
+          .select('hall_ticket, name')
+          .in('hall_ticket', captainIds)
+
+        const teamsWithCaptains = teamsData.map(t => ({
+          ...t,
+          captainName: captainData?.find(c => c.hall_ticket === t.captain_id)?.name || 'Unknown'
+        }))
+        setRegisteredTeams(teamsWithCaptains)
+      } else {
+        setRegisteredTeams([])
+      }
+    } catch (err) {
+      console.error('Error fetching registered teams:', err)
     }
   }
 
@@ -105,7 +136,7 @@ export default function Home() {
           </Link>
 
           <div className="flex items-center gap-2 md:gap-8">
-            <a href="#guide" className="px-3 py-1.5 md:px-4 md:py-2 bg-cricket-500/20 border border-cricket-500/30 text-cricket-400 rounded-lg text-xs md:text-sm font-bold hover:bg-cricket-500 hover:text-white transition-all">Guide</a>
+            <a href="#teams" className="px-3 py-1.5 md:px-4 md:py-2 bg-cricket-500/20 border border-cricket-500/30 text-cricket-400 rounded-lg text-xs md:text-sm font-bold hover:bg-cricket-500 hover:text-white transition-all">Teams</a>
             <a href="#rules" className="px-3 py-1.5 md:px-4 md:py-2 bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 rounded-lg text-xs md:text-sm font-bold hover:bg-yellow-500 hover:text-black transition-all">Rules</a>
             <a href="#about" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">About</a>
             <a href="#schedule" className="hidden md:block text-sm font-bold text-slate-400 hover:text-white transition-colors">Schedule</a>
@@ -342,60 +373,53 @@ export default function Home() {
         </div>
       </div>
 
-      {/* How It Works Section */}
-      <div id="guide" className="py-12 md:py-20 bg-gradient-to-b from-[#0a0f1a] to-[#0f172a]">
+      {/* Registered Teams Section */}
+      <div id="teams" className="py-12 md:py-20 bg-gradient-to-b from-[#0a0f1a] to-[#0f172a]">
         <div className="max-w-6xl mx-auto px-3 md:px-4">
           <div className="text-center mb-8 md:mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-cricket-500/20 border border-cricket-500/30 rounded-full text-cricket-400 text-[10px] md:text-xs font-black uppercase tracking-widest mb-4">
-              <span>📖</span>
-              <span>Quick Guide</span>
+              <span>🏏</span>
+              <span>Registered Squads</span>
             </div>
             <h2 className="text-3xl md:text-5xl font-black tracking-tight">
-              How It <span className="text-cricket-500">Works</span>
+              Competing <span className="text-cricket-500">Teams</span>
             </h2>
-            <p className="text-sm md:text-base text-slate-400 mt-3 max-w-xl mx-auto">Follow these simple steps to register your team</p>
+            <p className="text-sm md:text-base text-slate-400 mt-3 max-w-xl mx-auto">
+              {registeredTeams.length > 0
+                ? `${registeredTeams.length} team${registeredTeams.length !== 1 ? 's' : ''} registered and ready to compete`
+                : 'No teams registered yet — be the first to register!'}
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {[
-              { step: 1, icon: '📝', title: 'Register', desc: 'Create your student account with hall ticket number', color: 'from-blue-500 to-cyan-500' },
-              { step: 2, icon: '🔐', title: 'Login', desc: 'Sign in with your credentials', color: 'from-purple-500 to-pink-500' },
-              { step: 3, icon: '👥', title: 'Create Team', desc: 'Form your squad with players from same department', color: 'from-orange-500 to-yellow-500' },
-              { step: 4, icon: '✅', title: 'Finalize', desc: 'Review your squad and complete registration', color: 'from-green-500 to-emerald-500' },
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                className="group relative bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl p-5 md:p-6 hover:bg-white/10 hover:border-white/20 hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden"
-              >
-                <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
-                <div className="absolute -top-10 -right-10 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className={`w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center text-white text-sm md:text-base font-black shadow-lg`}>
-                      {item.step}
-                    </span>
-                    <span className="text-2xl md:text-3xl group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">{item.icon}</span>
+          {registeredTeams.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              {registeredTeams.map((team, idx) => (
+                <div
+                  key={team.id}
+                  className="group relative bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5 hover:bg-white/[0.08] hover:border-cricket-500/30 transition-all duration-300 overflow-hidden"
+                >
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cricket-500 to-cricket-700 rounded-l-2xl"></div>
+                  <div className="pl-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black text-cricket-500/60 uppercase tracking-widest">#{idx + 1}</span>
+                    </div>
+                    <h3 className="text-base md:text-lg font-black uppercase italic tracking-tight group-hover:text-cricket-400 transition-colors leading-tight truncate">
+                      {team.name}
+                    </h3>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-[10px] md:text-xs text-slate-500 font-bold">Captain:</span>
+                      <span className="text-[10px] md:text-xs text-slate-300 font-bold truncate">{team.captainName}</span>
+                    </div>
                   </div>
-
-                  <h3 className="text-lg md:text-xl font-black uppercase tracking-wide mb-2 group-hover:text-cricket-400 transition-colors">{item.title}</h3>
-                  <p className="text-xs md:text-sm text-slate-400 leading-relaxed">{item.desc}</p>
                 </div>
-
-                <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${item.color} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <Link
-              href="/auth/student-register"
-              className="inline-flex items-center gap-2 px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-xl md:rounded-2xl font-black text-sm md:text-base hover:scale-105 transition-all shadow-xl shadow-cricket-600/20"
-            >
-              <span>Start Registration Now</span>
-              <span>→</span>
-            </Link>
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl">
+              <div className="text-4xl mb-3">🏏</div>
+              <p className="text-slate-400 text-sm font-bold">Teams will appear here once registered</p>
+            </div>
+          )}
         </div>
       </div>
 
