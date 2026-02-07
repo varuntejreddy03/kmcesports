@@ -134,58 +134,60 @@ export default function Home() {
 
       {/* Last Final Call Popup */}
       {showBannerPopup && settings?.registration_open !== false && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(10,15,26,0.92)', backdropFilter: 'blur(10px)' }}>
           <div className="relative w-full max-w-md animate-[popIn_0.4s_ease-out]">
-            <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 rounded-3xl blur-lg opacity-75 animate-pulse"></div>
-            <div className="relative bg-gradient-to-b from-[#1a0000] to-[#0a0f1a] border-2 border-red-500/50 rounded-3xl p-6 md:p-8 text-center overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-yellow-500 to-red-600"></div>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-red-600/20 blur-[60px] rounded-full"></div>
-              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-orange-600/20 blur-[60px] rounded-full"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-cricket-600 via-cricket-500 to-cricket-600 rounded-3xl blur-lg opacity-60 animate-pulse"></div>
+            <div className="relative bg-[#0a0f1a] border-2 border-cricket-500/40 rounded-3xl p-6 md:p-8 text-center overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cricket-600 via-yellow-500 to-cricket-600"></div>
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-cricket-600/15 blur-[80px] rounded-full"></div>
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-cricket-500/10 blur-[80px] rounded-full"></div>
 
               <button
                 onClick={() => setShowBannerPopup(false)}
-                className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center text-white/40 hover:text-white text-xl transition-colors"
+                className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center text-slate-500 hover:text-white text-xl transition-colors rounded-full hover:bg-white/10 min-h-[44px] min-w-[44px]"
               >
                 ✕
               </button>
 
               <div className="relative z-10">
-                <div className="text-5xl md:text-6xl mb-4">🚨</div>
+                <div className="text-5xl md:text-6xl mb-3">🏏</div>
 
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-600/20 border border-red-500/30 mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cricket-600/20 border border-cricket-500/30 mb-4">
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cricket-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cricket-500"></span>
                   </span>
-                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-red-400">Live Alert</span>
+                  <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-cricket-400">Live Alert</span>
                 </div>
 
-                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white mb-2 leading-tight">
+                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white mb-3 leading-tight">
                   Last Final Call!
                 </h2>
 
-                <p className="text-base md:text-lg text-red-300 font-bold mb-1">
+                <p className="text-sm md:text-base text-slate-400 font-bold mb-1">
                   Registration Closes Today
                 </p>
-                <div className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
-                  at <span className="text-red-500">9:00 PM</span>
+                <div className="text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">
+                  at <span className="text-cricket-500">9:00 PM</span>
                 </div>
+                <p className="text-xs text-yellow-500/80 font-bold uppercase tracking-widest mb-5">
+                  Hurry up! Limited spots remaining
+                </p>
 
-                <p className="text-sm text-slate-400 mb-6 max-w-xs mx-auto">
-                  Don&apos;t miss your chance to build your dream team and compete in the KMCE Cricket Championship!
+                <p className="text-sm text-slate-500 mb-6 max-w-xs mx-auto leading-relaxed">
+                  Build your dream team and compete in the KMCE Cricket Championship!
                 </p>
 
                 <div className="flex flex-col gap-3">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setShowBannerPopup(false)}
-                    className="w-full py-4 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-2xl font-black text-sm md:text-base uppercase tracking-wider hover:from-red-500 hover:to-red-400 transition-all shadow-2xl shadow-red-600/40 min-h-[52px] flex items-center justify-center gap-2 active:scale-95"
+                  <button
+                    onClick={() => { setShowBannerPopup(false); router.push('/auth/login') }}
+                    className="w-full py-4 bg-gradient-to-r from-cricket-600 to-cricket-500 text-white rounded-2xl font-black text-sm md:text-base uppercase tracking-wider hover:from-cricket-500 hover:to-cricket-400 transition-all shadow-2xl shadow-cricket-600/30 min-h-[52px] flex items-center justify-center gap-2 active:scale-95"
                   >
                     Register Now 🏏
-                  </Link>
+                  </button>
                   <button
                     onClick={() => setShowBannerPopup(false)}
-                    className="w-full py-3 text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors min-h-[44px]"
+                    className="w-full py-3 text-slate-600 hover:text-slate-300 text-xs font-bold uppercase tracking-widest transition-colors min-h-[44px]"
                   >
                     I&apos;ll register later
                   </button>
