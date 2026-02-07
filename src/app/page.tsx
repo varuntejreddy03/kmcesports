@@ -582,6 +582,19 @@ export default function Home() {
                   <div className="text-center text-[10px] md:text-xs font-bold text-slate-500 pt-3 md:pt-4 border-t border-white/5 truncate">
                     📍 {match.venue || 'Main Ground'}
                   </div>
+
+                  {match.score_link && (
+                    <div className="mt-3 pt-3 border-t border-white/5 text-center">
+                      <a
+                        href={match.score_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-cricket-500/20 hover:bg-cricket-500/40 text-cricket-400 hover:text-cricket-300 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all min-h-[40px] animate-pulse"
+                      >
+                        📊 Live Score
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

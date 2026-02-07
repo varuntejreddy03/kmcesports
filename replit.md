@@ -79,6 +79,8 @@ For approved+paid teams, admin can send WhatsApp message to captain:
 - Admin just pastes the message and sends
 
 ## Recent Changes
+- February 7, 2026: Added Playing 11, Impact Subs, and Live Score Link management per match (admin modal with save to DB)
+- February 7, 2026: Live Score link visible on landing page match cards for public viewing (pulse animation)
 - February 7, 2026: Added live draw broadcast via Supabase Realtime — captains see full draw animation on their dashboard in real-time
 - February 7, 2026: Added "Pick First Team" random spinner integrated into bracket draw (no separate mode)
 - February 7, 2026: Upgraded Random Match Generator to Live Draw with spinning animation, one-by-one team drawing, and full knockout bracket (Play-in → QF → SF → Final)

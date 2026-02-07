@@ -32,6 +32,15 @@ export default function AdminPage() {
   const [savingMatches, setSavingMatches] = useState(false)
   const [matchesSaved, setMatchesSaved] = useState(false)
 
+  // Match Detail Modal State
+  const [matchDetailId, setMatchDetailId] = useState<string | null>(null)
+  const [matchScoreLink, setMatchScoreLink] = useState('')
+  const [matchPlaying11A, setMatchPlaying11A] = useState('')
+  const [matchPlaying11B, setMatchPlaying11B] = useState('')
+  const [matchImpactSubA, setMatchImpactSubA] = useState('')
+  const [matchImpactSubB, setMatchImpactSubB] = useState('')
+  const [savingMatchDetail, setSavingMatchDetail] = useState(false)
+
   // Player Edit State
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null)
   const [editPlayerRole, setEditPlayerRole] = useState('')
@@ -238,6 +247,40 @@ export default function AdminPage() {
     if (!confirm('Cancel this match?')) return
     const { error } = await supabase.from('matches').delete().eq('id', id)
     if (!error) fetchMatches()
+  }
+
+  const openMatchDetail = (match: any) => {
+    setMatchDetailId(match.id)
+    setMatchScoreLink(match.score_link || '')
+    setMatchPlaying11A(match.playing_11_a || '')
+    setMatchPlaying11B(match.playing_11_b || '')
+    setMatchImpactSubA(match.impact_sub_a || '')
+    setMatchImpactSubB(match.impact_sub_b || '')
+  }
+
+  const saveMatchDetail = async () => {
+    if (!matchDetailId) return
+    setSavingMatchDetail(true)
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .update({
+          score_link: matchScoreLink || null,
+          playing_11_a: matchPlaying11A || null,
+          playing_11_b: matchPlaying11B || null,
+          impact_sub_a: matchImpactSubA || null,
+          impact_sub_b: matchImpactSubB || null,
+        })
+        .eq('id', matchDetailId)
+      if (error) throw error
+      setMatchDetailId(null)
+      fetchMatches()
+    } catch (err: any) {
+      console.error('Error saving match details:', err)
+      alert(`Failed to save: ${err?.message || 'Unknown error'}`)
+    } finally {
+      setSavingMatchDetail(false)
+    }
   }
 
   // Shuffle array (Fisher-Yates algorithm)
@@ -1858,8 +1901,27 @@ Sreekar: 9063128733`
                 </div>
 
                 <div className="flex items-center justify-between pt-4 md:pt-6 border-t border-white/5 gap-2">
-                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">🕒 {match.match_time.slice(0, 5)}</div>
+                  <div className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest">🕒 {match.match_time?.slice(0, 5)}</div>
                   <div className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">📍 {match.venue}</div>
+                </div>
+
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+                  <button
+                    onClick={() => openMatchDetail(match)}
+                    className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all min-h-[44px]"
+                  >
+                    ⚙️ Playing 11 & Details
+                  </button>
+                  {match.score_link && (
+                    <a
+                      href={match.score_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="py-2 px-3 bg-cricket-500/20 hover:bg-cricket-500/40 text-cricket-400 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all min-h-[44px] flex items-center"
+                    >
+                      📊 Live
+                    </a>
+                  )}
                 </div>
               </div>
             ))}
@@ -2216,6 +2278,97 @@ Sreekar: 9063128733`
           </div>
         </div>
       )}
+
+      {/* Match Detail Modal */}
+      {matchDetailId && (() => {
+        const match = matches.find((m: any) => m.id === matchDetailId)
+        if (!match) return null
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-4 overflow-y-auto">
+            <div className="bg-[#0d1424] border border-white/10 rounded-2xl md:rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="p-5 md:p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-widest">Match Details</h3>
+                  <button onClick={() => setMatchDetailId(null)} className="text-slate-500 hover:text-white text-xl transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">✕</button>
+                </div>
+
+                <div className="text-center mb-6 pb-4 border-b border-white/10">
+                  <div className="text-sm md:text-base font-black text-white uppercase">{match.team_a?.name} <span className="text-cricket-500 mx-2">vs</span> {match.team_b?.name}</div>
+                  <div className="text-[10px] text-slate-500 mt-1">{match.match_date} • {match.match_time?.slice(0, 5)} • {match.venue}</div>
+                </div>
+
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-2">📊 Live Score Link</label>
+                    <input
+                      type="url"
+                      value={matchScoreLink}
+                      onChange={(e) => setMatchScoreLink(e.target.value)}
+                      placeholder="https://cricclubs.com/..."
+                      className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cricket-500/50 min-h-[48px] placeholder:text-slate-600"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] md:text-xs font-black text-cricket-400 uppercase tracking-widest mb-2">🏏 {match.team_a?.name} — Playing 11</label>
+                      <textarea
+                        value={matchPlaying11A}
+                        onChange={(e) => setMatchPlaying11A(e.target.value)}
+                        placeholder="Player names, one per line"
+                        rows={6}
+                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-cricket-500/50 placeholder:text-slate-600 resize-none"
+                      />
+                      <label className="block text-[10px] font-black text-orange-400 uppercase tracking-widest mt-3 mb-2">⚡ Impact Sub</label>
+                      <input
+                        type="text"
+                        value={matchImpactSubA}
+                        onChange={(e) => setMatchImpactSubA(e.target.value)}
+                        placeholder="Impact substitute name"
+                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 min-h-[44px] placeholder:text-slate-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] md:text-xs font-black text-cricket-400 uppercase tracking-widest mb-2">🏏 {match.team_b?.name} — Playing 11</label>
+                      <textarea
+                        value={matchPlaying11B}
+                        onChange={(e) => setMatchPlaying11B(e.target.value)}
+                        placeholder="Player names, one per line"
+                        rows={6}
+                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-cricket-500/50 placeholder:text-slate-600 resize-none"
+                      />
+                      <label className="block text-[10px] font-black text-orange-400 uppercase tracking-widest mt-3 mb-2">⚡ Impact Sub</label>
+                      <input
+                        type="text"
+                        value={matchImpactSubB}
+                        onChange={(e) => setMatchImpactSubB(e.target.value)}
+                        placeholder="Impact substitute name"
+                        className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/50 min-h-[44px] placeholder:text-slate-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <button
+                    onClick={() => setMatchDetailId(null)}
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl text-xs font-black uppercase tracking-widest transition-all min-h-[48px]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveMatchDetail}
+                    disabled={savingMatchDetail}
+                    className="flex-1 py-3 bg-cricket-500 hover:bg-cricket-600 text-black rounded-xl text-xs font-black uppercase tracking-widest transition-all min-h-[48px] disabled:opacity-50"
+                  >
+                    {savingMatchDetail ? 'Saving...' : 'Save Details'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Mobile Selection Toolbar - Sticky Bottom */}
       {selectedTeams.size > 0 && (
