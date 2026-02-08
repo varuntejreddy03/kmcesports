@@ -12,15 +12,15 @@ echo [1/4] Scanning for new features and fixes...
 git add .
 
 :: Default commit message reflecting recent major updates
-set "DEFAULT_MSG=feat: dark mode lock, streamline admin approval (remove whatsapp) and ui polish"
+set "DEFAULT_MSG=feat: inter-dept draw logic, live draw tabs, public bracket ui polish"
 
 :: Ask for custom message
 echo.
 echo Recent Updates: 
-echo - Fixed to Dark Mode (Premium Aesthetic)
-echo - Streamlined Admin Approval (WhatsApp Removed)
-echo - Resilient Database Schema Matching
-echo - Mobile Management UI Refinements
+echo - Added Inter-Department Draw Logic (CSM/CSE/ECE Brackets)
+echo - Enhanced Live Draw Overlay with Tabs & Match Numbers
+echo - Fixed Public Bracket View & Explainer Modal
+echo - Database Schema Updates for Match Linking
 echo.
 set /p "commit_msg=Enter your commit message (Leave blank for default): "
 

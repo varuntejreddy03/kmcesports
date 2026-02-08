@@ -155,3 +155,35 @@
     transform: scale(1) translateY(0);
   }
 }
+
+@keyframes vortex {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.8); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.2); opacity: 0; }
+}
+
+@keyframes slotMachine {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(3deg); }
+}
+
+.animate-vortex {
+  animation: vortex 3s linear infinite;
+}
+
+.animate-slot {
+  animation: slotMachine 0.15s linear infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pop-in {
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}

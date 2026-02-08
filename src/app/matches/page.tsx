@@ -108,11 +108,10 @@ export default function MatchesPage() {
                 return (
                   <div key={round}>
                     <div className="flex items-center gap-3 mb-6">
-                      <div className={`px-4 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest ${
-                        isFinal ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                      <div className={`px-4 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest ${isFinal ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
                         round === 0 ? 'bg-slate-500/20 text-slate-400 border border-slate-500/30' :
-                        'bg-cricket-500/20 text-cricket-400 border border-cricket-500/30'
-                      }`}>
+                          'bg-cricket-500/20 text-cricket-400 border border-cricket-500/30'
+                        }`}>
                         {roundName}
                       </div>
                       <div className="flex-1 h-px bg-white/5"></div>
@@ -126,11 +125,10 @@ export default function MatchesPage() {
                         const winnerIsB = match.winner_id && match.winner_id === match.team_b?.id
 
                         return (
-                          <div key={match.id} className={`relative border rounded-2xl md:rounded-3xl p-5 md:p-6 transition-all ${
-                            isCompleted ? 'bg-white/[0.03] border-white/10' :
+                          <div key={match.id} className={`relative border rounded-2xl md:rounded-3xl p-5 md:p-6 transition-all ${isCompleted ? 'bg-white/[0.03] border-white/10' :
                             isFinal ? 'bg-yellow-500/5 border-yellow-500/20' :
-                            'bg-white/5 border-white/10 hover:bg-white/[0.08]'
-                          }`}>
+                              'bg-white/5 border-white/10 hover:bg-white/[0.08]'
+                            }`}>
                             {isCompleted && (
                               <div className="absolute top-3 right-3 px-2 py-0.5 bg-green-500/20 text-green-400 text-[9px] font-black uppercase tracking-widest rounded-full">
                                 Completed
@@ -143,8 +141,13 @@ export default function MatchesPage() {
                             )}
 
                             <div className="flex justify-between items-center mb-4 md:mb-5">
-                              <div className="text-[10px] md:text-xs font-black text-cricket-400 bg-cricket-500/10 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full">
-                                {match.match_date ? new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBD'}
+                              <div className="flex flex-col gap-1">
+                                <div className="text-[10px] md:text-xs font-black text-cricket-400 bg-cricket-500/10 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full inline-block w-fit">
+                                  {match.match_date ? new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBD'}
+                                </div>
+                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">
+                                  Match Pair
+                                </div>
                               </div>
                               <div className="text-[10px] md:text-xs font-bold text-slate-500">
                                 {match.match_time ? `${match.match_time.slice(0, 5)} IST` : ''}
@@ -153,22 +156,19 @@ export default function MatchesPage() {
 
                             <div className="flex items-center justify-between gap-2 md:gap-4 mb-3">
                               <div className={`flex-1 text-center min-w-0 py-2 px-2 rounded-xl ${winnerIsA ? 'bg-cricket-500/10 border border-cricket-500/20' : ''}`}>
-                                <div className={`text-sm md:text-lg font-black uppercase truncate ${
-                                  winnerIsA ? 'text-cricket-400' : winnerIsB ? 'text-slate-600' : 'text-white'
-                                }`}>
+                                <div className={`text-sm md:text-lg font-black uppercase truncate ${winnerIsA ? 'text-cricket-400' : winnerIsB ? 'text-slate-600' : 'text-white'
+                                  }`}>
                                   {match.team_a?.name || 'TBA'}
                                 </div>
                                 {winnerIsA && <div className="text-[9px] text-cricket-500 font-black mt-1">🏆 WINNER</div>}
                               </div>
-                              <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full text-[10px] md:text-xs font-black flex-shrink-0 ${
-                                isCompleted ? 'bg-green-500/20 text-green-400' : 'bg-cricket-600/20 text-cricket-500'
-                              }`}>
+                              <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full text-[10px] md:text-xs font-black flex-shrink-0 ${isCompleted ? 'bg-green-500/20 text-green-400' : 'bg-cricket-600/20 text-cricket-500'
+                                }`}>
                                 {isCompleted ? '✓' : 'VS'}
                               </div>
                               <div className={`flex-1 text-center min-w-0 py-2 px-2 rounded-xl ${winnerIsB ? 'bg-cricket-500/10 border border-cricket-500/20' : ''}`}>
-                                <div className={`text-sm md:text-lg font-black uppercase truncate ${
-                                  winnerIsB ? 'text-cricket-400' : winnerIsA ? 'text-slate-600' : 'text-white'
-                                }`}>
+                                <div className={`text-sm md:text-lg font-black uppercase truncate ${winnerIsB ? 'text-cricket-400' : winnerIsA ? 'text-slate-600' : 'text-white'
+                                  }`}>
                                   {match.team_b?.name || 'TBA'}
                                 </div>
                                 {winnerIsB && <div className="text-[9px] text-cricket-500 font-black mt-1">🏆 WINNER</div>}

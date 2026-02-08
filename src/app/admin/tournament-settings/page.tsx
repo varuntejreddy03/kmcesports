@@ -130,98 +130,116 @@ export default function TournamentSettingsPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white selection:bg-cricket-500/30 pb-20">
-      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#020617]/80">
+    <div className="min-h-screen bg-[#0a0f1a] text-white selection:bg-cricket-500/30 pb-20 relative overflow-hidden">
+      {/* Premium Background Decorations */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cricket-500/10 blur-[150px] rounded-full pointer-events-none animate-pulse-slow"></div>
+      <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none animate-float"></div>
+
+      <nav className="border-b border-white/10 backdrop-blur-xl sticky top-0 z-50 bg-[#0a0f1a]/80 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/admin" className="text-slate-400 font-bold flex items-center gap-2"><span>←</span> Dashboard</Link>
-          <div className="font-black text-xl tracking-tighter uppercase italic">Control<span className="text-cricket-500">Panel</span></div>
+          <Link href="/admin" className="text-slate-400 hover:text-white font-bold text-sm flex items-center gap-2 transition-colors"><span>←</span> <span className="hidden sm:inline">Back to Dashboard</span><span className="sm:hidden">Dashboard</span></Link>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚙️</span>
+            <span className="font-black text-xl tracking-tight uppercase italic">Settings<span className="text-cricket-500">Forge</span></span>
+          </div>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-4 mt-12">
-        <div className="mb-12">
-          <div className="text-cricket-500 font-black text-xs uppercase tracking-[0.3em] mb-2">Global Settings</div>
-          <h1 className="text-5xl font-black tracking-tight uppercase italic leading-none">Tournament <span className="text-cricket-500">Forge</span></h1>
-          <p className="text-slate-500 font-medium mt-4">Configure tournament rules, fees, and schedule for the cricket championship.</p>
+      <main className="max-w-5xl mx-auto px-4 mt-6 md:mt-12 relative z-10">
+        <div className="mb-12 md:mb-16 animate-fadeIn">
+          <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.4em] mb-4 bg-cricket-500/10 inline-block px-3 py-1 rounded-full border border-cricket-500/20">System Configuration</div>
+          <h1 className="text-4xl md:text-7xl font-black tracking-tighter uppercase italic leading-none bg-gradient-to-br from-white via-white to-white/40 bg-clip-text text-transparent">Tournament <span className="text-cricket-500">Core</span></h1>
+          <p className="text-slate-500 font-black uppercase tracking-widest text-[10px] mt-4 flex items-center gap-2">
+            <span className="w-8 h-[1px] bg-slate-800"></span> Control Global Logic & Aesthetics
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
           {/* Primary Controls */}
-          <div className="lg:col-span-2 space-y-8">
-            <section className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-8">
-              <div className="flex items-center gap-2 text-cricket-400 font-black text-xs uppercase tracking-widest border-b border-white/5 pb-4">
-                <span>⚡</span> Identity & Location
+          <div className="lg:col-span-2 space-y-8 md:space-y-12">
+            <section className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[40px] md:rounded-[48px] p-6 md:p-10 space-y-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-fadeIn">
+              <div className="flex items-center gap-3 text-cricket-400 font-black text-xs uppercase tracking-widest border-b border-white/5 pb-6">
+                <span className="w-8 h-8 rounded-full bg-cricket-500/10 flex items-center justify-center text-sm">📍</span>
+                Identity & Location
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tournament Display Name</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Tournament Display Title</label>
                   <input
                     type="text"
                     value={formData.tournament_name}
                     onChange={(e) => setFormData({ ...formData, tournament_name: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 md:py-5 font-black uppercase italic tracking-tight text-white focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800 hover:border-white/20"
+                    placeholder="e.g. KMCE PREMIER LEAGUE"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target Venue</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Host Venue</label>
                   <input
                     type="text"
                     value={formData.venue}
                     onChange={(e) => setFormData({ ...formData, venue: e.target.value, ground_name: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 md:py-5 font-black uppercase italic tracking-tight text-white focus:ring-2 focus:ring-cricket-500 outline-none transition-all placeholder:text-slate-800 hover:border-white/20"
+                    placeholder="e.g. MAIN STADIUM"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tournament Start Date</label>
-                  <input
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 font-bold focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
-                  />
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest px-1">Leave blank for "TBA"</div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Kickoff Date</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 md:py-5 font-black text-white focus:ring-2 focus:ring-cricket-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="text-[9px] text-slate-600 font-black uppercase tracking-widest px-1">Leave empty to show as "TBA"</div>
                 </div>
               </div>
             </section>
 
-            <section className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-8">
-              <div className="flex items-center gap-2 text-cricket-400 font-black text-xs uppercase tracking-widest border-b border-white/5 pb-4">
-                <span>📜</span> Rules & Communication
+            <section className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[40px] md:rounded-[48px] p-6 md:p-10 space-y-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-fadeIn">
+              <div className="flex items-center gap-3 text-indigo-400 font-black text-xs uppercase tracking-widest border-b border-white/5 pb-6">
+                <span className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-sm">📜</span>
+                Mandates & Guidelines
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Public Guidelines</label>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Official Rules (Markdown Supported)</label>
                 <textarea
                   value={formData.rules_text}
                   onChange={(e) => setFormData({ ...formData, rules_text: e.target.value })}
-                  rows={6}
-                  className="w-full bg-white/5 border border-white/10 rounded-3xl px-6 py-5 font-medium focus:ring-2 focus:ring-cricket-500 outline-none transition-all leading-relaxed"
-                  placeholder="Enter rules displayed to athletes..."
+                  rows={8}
+                  className="w-full bg-white/5 border border-white/10 rounded-[32px] px-8 py-6 font-medium text-slate-300 focus:ring-2 focus:ring-cricket-500 outline-none transition-all leading-relaxed hover:border-white/20"
+                  placeholder="Enter detailed tournament rules..."
                 />
               </div>
             </section>
 
-            <section className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-8">
-              <div className="flex items-center gap-2 text-cricket-400 font-black text-xs uppercase tracking-widest border-b border-white/5 pb-4">
-                <span>💰</span> Financial Configuration
+            <section className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[40px] md:rounded-[48px] p-6 md:p-10 space-y-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] animate-fadeIn">
+              <div className="flex items-center gap-3 text-emerald-400 font-black text-xs uppercase tracking-widest border-b border-white/5 pb-6">
+                <span className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-sm">💰</span>
+                Financial Gateway
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Payment UPI ID</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Merchant UPI ID</label>
                   <input
                     type="text"
                     value={formData.upi_id}
                     onChange={(e) => setFormData({ ...formData, upi_id: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 font-black uppercase tracking-widest text-cricket-400 focus:ring-2 focus:ring-cricket-500 outline-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 md:py-5 font-black uppercase tracking-[0.2em] text-cricket-400 focus:ring-2 focus:ring-cricket-500 outline-none hover:border-white/20"
+                    placeholder="VPA@UPI"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Reg. Instructions</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Onboarding Notes</label>
                   <textarea
                     value={formData.payment_instructions}
                     onChange={(e) => setFormData({ ...formData, payment_instructions: e.target.value })}
                     rows={2}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3 font-medium focus:ring-2 focus:ring-cricket-500 outline-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-medium text-slate-400 focus:ring-2 focus:ring-cricket-500 outline-none hover:border-white/20"
+                    placeholder="Instructions for team captains..."
                   />
                 </div>
               </div>
@@ -229,46 +247,55 @@ export default function TournamentSettingsPage() {
           </div>
 
           {/* Metrics Sidebar */}
-          <div className="space-y-6">
-            <aside className="bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-widest">Squad Dynamics</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <div className="text-[9px] font-black text-slate-600 uppercase mb-1">Min Players</div>
-                  <input type="number" value={formData.min_players} onChange={(e) => setFormData({ ...formData, min_players: parseInt(e.target.value) })} className="bg-transparent font-black text-xl outline-none w-full" />
+          <div className="space-y-8 sticky top-24 h-fit">
+            <aside className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[40px] p-8 space-y-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 border-b border-white/5 pb-4 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-cricket-500 animate-pulse"></span>
+                Squad Constraints
+              </h4>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-white/5 p-5 rounded-3xl border border-white/5 group hover:border-cricket-500/30 transition-all">
+                  <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Lower Bound</div>
+                  <div className="flex items-end gap-2 text-white">
+                    <input type="number" value={formData.min_players} onChange={(e) => setFormData({ ...formData, min_players: parseInt(e.target.value) })} className="bg-transparent font-black text-3xl outline-none w-20" />
+                    <span className="text-[10px] font-black text-slate-700 uppercase mb-2">Athletes</span>
+                  </div>
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <div className="text-[9px] font-black text-slate-600 uppercase mb-1">Max Players</div>
-                  <input type="number" value={formData.max_players} onChange={(e) => setFormData({ ...formData, max_players: parseInt(e.target.value) })} className="bg-transparent font-black text-xl outline-none w-full" />
+                <div className="bg-white/5 p-5 rounded-3xl border border-white/5 group hover:border-cricket-500/30 transition-all">
+                  <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Upper Bound</div>
+                  <div className="flex items-end gap-2 text-white">
+                    <input type="number" value={formData.max_players} onChange={(e) => setFormData({ ...formData, max_players: parseInt(e.target.value) })} className="bg-transparent font-black text-3xl outline-none w-20" />
+                    <span className="text-[10px] font-black text-slate-700 uppercase mb-2">Athletes</span>
+                  </div>
                 </div>
               </div>
             </aside>
 
-
-
-            <div className="px-6 py-4 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-between">
+            <div className="px-8 py-6 bg-white/5 backdrop-blur-3xl rounded-[32px] border border-white/10 flex items-center justify-between group cursor-pointer hover:bg-white/10 transition-all" onClick={() => setFormData({ ...formData, registration_open: !formData.registration_open })}>
               <div>
-                <div className="text-[10px] font-black uppercase text-slate-500">Public Status</div>
-                <div className="font-black text-xs">{formData.registration_open ? 'ACCEPTING ENTRIES' : 'FROZEN'}</div>
+                <div className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1">Public Portal</div>
+                <div className={`font-black text-xs tracking-widest ${formData.registration_open ? 'text-green-400' : 'text-red-400'}`}>
+                  {formData.registration_open ? 'OPEN FOR ENTRIES' : 'FROZEN / MANUAL ONLY'}
+                </div>
               </div>
               <button
-                onClick={() => setFormData({ ...formData, registration_open: !formData.registration_open })}
-                className={`w-12 h-6 rounded-full p-1 transition-all ${formData.registration_open ? 'bg-cricket-600' : 'bg-slate-700'}`}
+                className={`w-14 h-7 rounded-full p-1.5 transition-all duration-500 ${formData.registration_open ? 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'bg-slate-700'}`}
               >
-                <div className={`w-4 h-4 bg-white rounded-full transition-all ${formData.registration_open ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                <div className={`w-4 h-4 bg-white rounded-full shadow-lg transition-all duration-500 ${formData.registration_open ? 'translate-x-7' : 'translate-x-0'}`}></div>
               </button>
             </div>
 
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-6 bg-gradient-to-r from-cricket-600 to-indigo-600 text-white font-black text-xl rounded-[24px] hover:scale-[1.02] shadow-2xl shadow-cricket-600/30 transition-all active:scale-95 disabled:opacity-30"
+              className="w-full py-8 bg-gradient-to-br from-cricket-500 via-cricket-600 to-indigo-700 text-white font-black text-xl md:text-2xl rounded-[32px] hover:scale-[1.02] shadow-[0_20px_60px_rgba(22,101,52,0.4)] transition-all active:scale-95 disabled:opacity-30 disabled:grayscale group relative overflow-hidden"
             >
-              {saving ? 'UPDATING...' : 'PUBLISH LIVE 🚀'}
+              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+              <span className="relative">{saving ? 'FORGING...' : 'PUBLISH CHANGES 🚀'}</span>
             </button>
 
             {message && (
-              <div className={`p-4 rounded-2xl text-[10px] font-black uppercase text-center border animate-fadeIn ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+              <div className={`p-6 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] text-center border animate-pop-in ${message.type === 'success' ? 'bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.1)]' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                 {message.text}
               </div>
             )}

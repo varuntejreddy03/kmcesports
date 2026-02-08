@@ -6,6 +6,25 @@ import { supabase, checkSessionTimeout, clearSessionStartTime } from '@/lib/supa
 import { TeamWithDetails } from '@/types'
 import Link from 'next/link'
 
+const DEPARTMENT_CODES: Record<string, string> = {
+  '05': 'CSE',
+  '69': 'CSO',
+  '04': 'ECE',
+  '66': 'CSM',
+  '62': 'CSM', // CSC under CSM
+  '67': 'CSM', // CSD under CSM
+  '12': 'IT',
+  '03': 'MECH',
+  '01': 'CIVIL',
+  '02': 'EEE',
+}
+
+function getDepartmentFromHallTicket(hallTicket: string): string {
+  if (!hallTicket || hallTicket.length < 8) return 'Unknown'
+  const code = hallTicket.substring(6, 8)
+  return DEPARTMENT_CODES[code] || 'Unknown'
+}
+
 export default function AdminPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -64,6 +83,11 @@ export default function AdminPage() {
 
   // Team Selection State
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set())
+  const [searchTerm, setSearchTerm] = useState('')
+  const [departmentFilter, setDepartmentFilter] = useState('all')
+
+  // Draw State
+  const [drawMode, setDrawMode] = useState<'random' | 'inter_dept'>('random')
 
   // Mobile Actions Menu State
   const [showMobileActions, setShowMobileActions] = useState(false)
@@ -84,6 +108,16 @@ export default function AdminPage() {
   const [customMessage, setCustomMessage] = useState('')
   const [messageMembers, setMessageMembers] = useState<any[]>([])
   const [messageSending, setMessageSending] = useState(false)
+
+  // Student Inventory State
+  const [showStudentInventory, setShowStudentInventory] = useState(false)
+  const [studentInventory, setStudentInventory] = useState<any[]>([])
+  const [loadingInventory, setLoadingInventory] = useState(false)
+
+  // Renaming State
+  const [renamingTeamId, setRenamingTeamId] = useState<string | null>(null)
+  const [newTeamName, setNewTeamName] = useState('')
+  const [savingRename, setSavingRename] = useState(false)
 
   useEffect(() => {
     checkAdmin()
@@ -231,6 +265,71 @@ export default function AdminPage() {
     } catch (error: any) {
       console.error('Action error:', error)
       alert(`Action failed: ${error.message}`)
+    }
+  }
+
+  const handleBulkAction = async (action: 'approve_team' | 'reject_team' | 'delete_team') => {
+    if (selectedTeams.size === 0) return
+    if (action === 'delete_team' && !confirm(`Delete ${selectedTeams.size} teams? This cannot be undone!`)) return
+
+    setLoading(true)
+    try {
+      const response = await fetch('/api/admin/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamIds: Array.from(selectedTeams), action })
+      })
+
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Bulk action failed')
+
+      alert(`${selectedTeams.size} teams processed successfully`)
+      setSelectedTeams(new Set())
+      await fetchTeams()
+    } catch (error: any) {
+      console.error('Bulk action error:', error)
+      alert(`Bulk action failed: ${error.message}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchStudentInventory = async () => {
+    setLoadingInventory(true)
+    setShowStudentInventory(true)
+    try {
+      const { data, error } = await supabase
+        .from('student_data')
+        .select('*')
+        .order('hall_ticket', { ascending: true })
+
+      if (error) throw error
+      setStudentInventory(data || [])
+    } catch (err: any) {
+      console.error('Inventory error:', err)
+      alert('Failed to fetch student inventory')
+    } finally {
+      setLoadingInventory(false)
+    }
+  }
+
+  const handleRenameTeam = async (id: string) => {
+    if (!newTeamName.trim()) return
+    setSavingRename(true)
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .update({ name: newTeamName })
+        .eq('id', id)
+
+      if (error) throw error
+      setRenamingTeamId(null)
+      fetchTeams()
+    } catch (err: any) {
+      console.error('Rename error:', err)
+      alert('Failed to rename team')
+    } finally {
+      setSavingRename(false)
     }
   }
 
@@ -472,6 +571,37 @@ export default function AdminPage() {
     setSpinningTeams(approvedTeams)
   }
 
+  // Sort teams by department (Inter-Dept Mode)
+  const sortTeamsByDept = (teams: any[]) => {
+    // Group by department
+    const groups: Record<string, any[]> = {}
+
+    teams.forEach(team => {
+      let dept = 'Unknown'
+      if (team.department) {
+        dept = team.department
+      } else if (team.captain?.hall_ticket) {
+        dept = getDepartmentFromHallTicket(team.captain.hall_ticket)
+      }
+
+      if (!groups[dept]) groups[dept] = []
+      groups[dept].push(team)
+    })
+
+    // Shuffle within groups and combine
+    let sorted: any[] = []
+    // Shuffle the order of departments themselves so it's not always the same dept first
+    const deptKeys = shuffleArray(Object.keys(groups))
+
+    deptKeys.forEach(key => {
+      // Shuffle teams within the department
+      const groupTeams = shuffleArray(groups[key])
+      sorted = [...sorted, ...groupTeams]
+    })
+
+    return sorted
+  }
+
   // Start the live draw animation
   const startLiveDraw = () => {
     const approvedTeams = teams.filter(t => t.approved)
@@ -489,11 +619,20 @@ export default function AdminPage() {
     let shuffleCount = 0
     const maxShuffles = 30
     spinIntervalRef.current = setInterval(() => {
+      // Visual shuffle only
       setSpinningTeams(prev => shuffleArray([...prev]))
       shuffleCount++
       if (shuffleCount >= maxShuffles) {
         if (spinIntervalRef.current) clearInterval(spinIntervalRef.current)
-        const finalOrder = shuffleArray([...approvedTeams])
+
+        // Determine final order based on mode
+        let finalOrder: any[] = []
+        if (drawMode === 'inter_dept') {
+          finalOrder = sortTeamsByDept([...approvedTeams])
+        } else {
+          finalOrder = shuffleArray([...approvedTeams])
+        }
+
         setSpinningTeams(finalOrder)
         setTimeout(() => startDrawingPhase(finalOrder), 500)
       }
@@ -523,7 +662,18 @@ export default function AdminPage() {
       } else {
         if (drawIntervalRef.current) clearInterval(drawIntervalRef.current)
         setTimeout(() => {
-          const bracket = generateKnockoutBracket(orderedTeams)
+          let bracket: any[] = []
+          let byeTeamsList: any[] = []
+
+          if (drawMode === 'inter_dept') {
+            const { rounds, byes } = generateInterDeptBracket(orderedTeams)
+            bracket = rounds
+            byeTeamsList = byes
+          } else {
+            bracket = generateKnockoutBracket(orderedTeams)
+            byeTeamsList = byeTeam ? (Array.isArray(byeTeam) ? byeTeam : []) : []
+          }
+
           setBracketRounds(bracket)
           setDrawPhase('complete')
           broadcastDrawEvent('bracket_complete', {
@@ -534,10 +684,15 @@ export default function AdminPage() {
                 team_a: m.team_a ? { id: m.team_a.id, name: m.team_a.name } : null,
                 team_b: m.team_b ? { id: m.team_b.id, name: m.team_b.name } : null,
                 round_name: m.round_name,
-                is_bye: m.is_bye
+                is_bye: m.is_bye,
+                source_match_a: m.source_match_a,
+                source_match_b: m.source_match_b,
+                team_a_label: m.team_a_label,
+                team_b_label: m.team_b_label,
+                group: m.group
               }))
             })),
-            byeTeams: byeTeam ? (Array.isArray(byeTeam) ? byeTeam.map((t: any) => ({ id: t.id, name: t.name })) : []) : [],
+            byeTeams: byeTeamsList.map((t: any) => ({ id: t.id, name: t.name })),
             allTeams: orderedTeams.map(t => ({ id: t.id, name: t.name }))
           })
         }, 600)
@@ -565,6 +720,7 @@ export default function AdminPage() {
 
     const rounds: any[] = []
     let matchCounter = 1
+    const today = new Date().toISOString().split('T')[0]
 
     if (isPowerOf2) {
       const firstRoundMatches: any[] = []
@@ -574,7 +730,10 @@ export default function AdminPage() {
           team_a: shuffledTeams[i],
           team_b: shuffledTeams[i + 1],
           round: 1,
-          round_name: getRoundName(total)
+          round_name: getRoundName(total),
+          match_date: today,
+          match_time: '09:00',
+          venue: 'Main Stadium Ground'
         })
       }
       rounds.push({ name: getRoundName(total), matches: firstRoundMatches })
@@ -594,7 +753,10 @@ export default function AdminPage() {
             team_a: null,
             team_b: null,
             round: roundIdx,
-            round_name: roundName
+            round_name: roundName,
+            match_date: today,
+            match_time: '09:00',
+            venue: 'Main Stadium Ground'
           })
         }
         rounds.push({ name: roundName, matches: roundMatches })
@@ -614,7 +776,10 @@ export default function AdminPage() {
           team_a: playInTeamsList[i],
           team_b: playInTeamsList[i + 1],
           round: 0,
-          round_name: 'Play-in Round'
+          round_name: 'Play-in Round',
+          match_date: today,
+          match_time: '09:00',
+          venue: 'Main Stadium Ground'
         })
       }
       rounds.push({ name: 'Play-in Round', matches: playInMatches })
@@ -640,7 +805,10 @@ export default function AdminPage() {
           team_b: teamB,
           round: 1,
           round_name: nextRoundName,
-          is_bye: teamA !== null && teamB === null
+          is_bye: teamA !== null && teamB === null,
+          match_date: today,
+          match_time: '09:00',
+          venue: 'Main Stadium Ground'
         })
       }
       rounds.push({ name: nextRoundName, matches: nextRoundMatches })
@@ -657,7 +825,10 @@ export default function AdminPage() {
             team_a: null,
             team_b: null,
             round: roundIdx,
-            round_name: roundName
+            round_name: roundName,
+            match_date: today,
+            match_time: '09:00',
+            venue: 'Main Stadium Ground'
           })
         }
         rounds.push({ name: roundName, matches: roundMatches })
@@ -667,6 +838,262 @@ export default function AdminPage() {
     }
 
     return rounds
+  }
+
+  // Generate Inter-Department Bracket with specific rules
+  const generateInterDeptBracket = (orderedTeams: any[]) => {
+    // 1. Group teams by Dept
+    const groups: Record<string, any[]> = {}
+    orderedTeams.forEach(team => {
+      let dept = 'Unknown'
+      if (team.department) dept = team.department
+      else if (team.captain?.hall_ticket) dept = getDepartmentFromHallTicket(team.captain.hall_ticket)
+      if (!groups[dept]) groups[dept] = []
+      groups[dept].push(team)
+    })
+
+    // Explicitly shuffle teams within each department to ensure randomness
+    Object.keys(groups).forEach(key => {
+      groups[key] = shuffleArray(groups[key])
+    })
+
+    const today = new Date().toISOString().split('T')[0]
+    let matchCounter = 1
+    const allRounds: Record<string, any[]> = {} // map round name to matches
+    const finalWinners: any[] = [] // Tracking department winners (virtual)
+
+    // Helper to add matches to a specific round name
+    const addMatchesToRound = (roundName: string, matches: any[]) => {
+      if (!allRounds[roundName]) allRounds[roundName] = []
+      allRounds[roundName].push(...matches)
+    }
+
+    // --- STAGE 1: DEPARTMENT QUALIFIERS ---
+
+    // 1. CSM Bracket (8 teams -> 1 winner)
+    // Quarterfinals (4 matches) -> Semis (2) -> Final (1)
+    if (groups['CSM'] && groups['CSM'].length > 0) {
+      const csmTeams = groups['CSM']
+      // Pad to 8 if needed or trim? Assuming strict 8 or fill as much as possible.
+      // Logic: Simple knockout for CSM pool.
+      // QF
+      const csmQF: any[] = []
+      for (let i = 0; i < csmTeams.length; i += 2) {
+        if (i + 1 < csmTeams.length) {
+          csmQF.push({
+            match_num: matchCounter++,
+            team_a: csmTeams[i],
+            team_b: csmTeams[i + 1],
+            round: 1,
+            round_name: 'CSM Quarterfinals',
+            group: 'CSM',
+            match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+          })
+        } else {
+          // Odd team out in QF? Just give bye.
+          // For 8 teams, loop runs 4 times (0,2,4,6). Perfect.
+        }
+      }
+      addMatchesToRound('CSM Quarterfinals', csmQF)
+
+      // Semis (virtual placeholders to link winner)
+      const csmSF: any[] = []
+      const qfStart = matchCounter - csmQF.length
+      for (let i = 0; i < csmQF.length / 2; i++) {
+        csmSF.push({
+          match_num: matchCounter++,
+          team_a: null, team_b: null,
+          source_match_a: qfStart + (i * 2),
+          source_match_b: qfStart + (i * 2) + 1,
+          round: 2,
+          round_name: 'CSM Semifinals',
+          group: 'CSM',
+          match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+        })
+      }
+      addMatchesToRound('CSM Semifinals', csmSF)
+
+      // Final
+      const sfStart = matchCounter - csmSF.length
+      const csmFinalMatchNum = matchCounter
+      const csmFinal = {
+        match_num: matchCounter++,
+        team_a: null, team_b: null,
+        source_match_a: sfStart,
+        source_match_b: sfStart + 1,
+        round: 3,
+        round_name: 'CSM Final',
+        group: 'CSM',
+        is_dept_final: true,
+        dept_winner_label: 'CSM Winner',
+        match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+      }
+      addMatchesToRound('CSM Final', [csmFinal])
+      finalWinners.push({ dept: 'CSM', source_match: csmFinalMatchNum, label: 'CSM Winner' })
+    }
+
+    // 2. CSE Bracket (5 teams -> 1 winner)
+    // Eliminator (4 vs 5) -> Semis (4 teams) -> Final
+    if (groups['CSE'] && groups['CSE'].length > 0) {
+      const cseTeams = groups['CSE']
+      // assumed sorted/shuffled: team 0,1,2 get bye to semis?
+      // Eliminator: Team 3 vs Team 4
+      let cseElim: any = null
+      let elimMatchNum = 0
+
+      if (cseTeams.length >= 5) {
+        elimMatchNum = matchCounter++
+        cseElim = {
+          match_num: elimMatchNum,
+          team_a: cseTeams[3],
+          team_b: cseTeams[4],
+          round: 1,
+          round_name: 'CSE Eliminator',
+          group: 'CSE',
+          match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+        }
+        addMatchesToRound('CSE Eliminator', [cseElim])
+      }
+
+      // CSE Semis
+      // Semi 1: Team 0 vs Team 1
+      // Semi 2: Team 2 vs Winner(Elim)
+      const cseSF: any[] = []
+      if (cseTeams.length >= 2) {
+        const sf1 = {
+          match_num: matchCounter++,
+          team_a: cseTeams[0],
+          team_b: cseTeams[1],
+          round: 2, round_name: 'CSE Semifinals', group: 'CSE',
+          match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+        }
+        const sf2 = {
+          match_num: matchCounter++,
+          team_a: cseTeams[2] || null,
+          team_b: null,
+          source_match_b: elimMatchNum || null, // Winner of eliminator
+          team_b_label: elimMatchNum ? `Winner M${elimMatchNum}` : 'TBD',
+          round: 2, round_name: 'CSE Semifinals', group: 'CSE',
+          match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+        }
+        cseSF.push(sf1, sf2)
+        addMatchesToRound('CSE Semifinals', cseSF)
+      }
+
+      // CSE Final
+      const sfStart = matchCounter - cseSF.length
+      const cseFinalMatchNum = matchCounter
+      const cseFinal = {
+        match_num: matchCounter++,
+        team_a: null, team_b: null,
+        source_match_a: sfStart,
+        source_match_b: sfStart + 1,
+        round: 3,
+        round_name: 'CSE Final',
+        group: 'CSE',
+        is_dept_final: true,
+        dept_winner_label: 'CSE Winner',
+        match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+      }
+      addMatchesToRound('CSE Final', [cseFinal])
+      finalWinners.push({ dept: 'CSE', source_match: cseFinalMatchNum, label: 'CSE Winner' })
+    }
+
+    // 3. ECE Bracket (2 teams -> 1 winner)
+    // Direct Final
+    if (groups['ECE'] && groups['ECE'].length > 0) {
+      const eceTeams = groups['ECE']
+      if (eceTeams.length >= 2) {
+        const eceFinalMatchNum = matchCounter++
+        const eceFinal = {
+          match_num: eceFinalMatchNum,
+          team_a: eceTeams[0],
+          team_b: eceTeams[1],
+          round: 3,
+          round_name: 'ECE Final',
+          group: 'ECE',
+          is_dept_final: true,
+          dept_winner_label: 'ECE Winner',
+          match_date: today, match_time: '09:00', venue: 'Main Stadium Ground'
+        }
+        addMatchesToRound('ECE Final', [eceFinal])
+        finalWinners.push({ dept: 'ECE', source_match: eceFinalMatchNum, label: 'ECE Winner' })
+      } else {
+        // Auto qualify if only 1?
+        finalWinners.push({ dept: 'ECE', team: eceTeams[0], label: 'ECE Winner' })
+      }
+    }
+
+    // --- STAGE 2: INTER-DEPT FINALS ---
+    // 3 Winners (CSM, CSE, ECE)
+    // Random draw: 2 play Semifinal, 1 waits in Final.
+
+    // Shuffle the 3 winners virtually
+    const shuffledWinners = shuffleArray(finalWinners)
+
+    // Semifinal: Winner 1 vs Winner 2
+    let interDeptSemiMatchNum = 0
+    if (shuffledWinners.length >= 2) {
+      interDeptSemiMatchNum = matchCounter++
+      const semi = {
+        match_num: interDeptSemiMatchNum,
+        team_a: shuffledWinners[0].team || null,
+        team_b: shuffledWinners[1].team || null,
+        source_match_a: shuffledWinners[0].source_match,
+        source_match_b: shuffledWinners[1].source_match,
+        team_a_label: shuffledWinners[0].label,
+        team_b_label: shuffledWinners[1].label,
+        round: 4,
+        round_name: 'Inter-Dept Semifinal',
+        match_date: today, match_time: '14:00', venue: 'Main Stadium Ground'
+      }
+      addMatchesToRound('Inter-Dept Semifinal', [semi])
+    }
+
+    // Grand Final: Winner of Semi vs Winner 3
+    if (shuffledWinners.length >= 3) {
+      const grandFinal = {
+        match_num: matchCounter++,
+        team_a: null,
+        team_b: shuffledWinners[2].team || null,
+        source_match_a: interDeptSemiMatchNum,
+        source_match_b: shuffledWinners[2].source_match,
+        team_b_label: shuffledWinners[2].label,
+        round: 5,
+        round_name: 'Grand Final',
+        match_date: today, match_time: '18:00', venue: 'Main Stadium Ground'
+      }
+      addMatchesToRound('Grand Final', [grandFinal])
+    }
+
+    // Format for display: Array of { name: string, matches: [] }
+    // Format for display: Array of { name: string, matches: [] }
+    const displayRounds: any[] = []
+
+    // Explicit round order to separate by Department
+    const roundOrder = [
+      'CSM Quarterfinals', 'CSM Semifinals', 'CSM Final',
+      'CSE Eliminator', 'CSE Semifinals', 'CSE Final',
+      'ECE Final',
+      'Inter-Dept Semifinal', 'Grand Final'
+    ]
+
+    roundOrder.forEach(rName => {
+      if (allRounds[rName] && allRounds[rName].length > 0) {
+        displayRounds.push({ name: rName, matches: allRounds[rName] })
+      }
+    })
+
+    // Also populate generatedMatches for saving
+    const flatMatches = Object.values(allRounds).flat()
+    setGeneratedMatches(flatMatches.map((m: any) => ({
+      ...m,
+      team_a: m.team_a || { name: m.team_a_label || 'TBD' }, // Placeholder for view
+      team_b: m.team_b || { name: m.team_b_label || 'TBD' }
+    })))
+    setByeTeam(null)
+
+    return { rounds: displayRounds, byes: [] }
   }
 
   // Regenerate matches (reset draw)
@@ -696,6 +1123,25 @@ export default function AdminPage() {
     }
   }, [])
 
+  const updateRemoteDrawState = async (updates: any) => {
+    try {
+      const { data: currentSettings } = await supabase
+        .from('tournament_settings')
+        .select('draw_state')
+        .eq('sport', 'cricket')
+        .maybeSingle();
+
+      const newState = { ...(currentSettings?.draw_state || {}), ...updates };
+
+      await supabase
+        .from('tournament_settings')
+        .update({ draw_state: newState })
+        .eq('sport', 'cricket');
+    } catch (err) {
+      console.error('Error updating remote draw state:', err);
+    }
+  };
+
   const broadcastDrawEvent = (event: string, payload: any) => {
     if (drawChannelRef.current) {
       drawChannelRef.current.send({
@@ -703,6 +1149,19 @@ export default function AdminPage() {
         event,
         payload
       })
+    }
+    // Persist to DB for reloads
+    if (event === 'draw_start') {
+      updateRemoteDrawState({ active: true, phase: 'spinning', teams: payload.teams, totalTeams: payload.totalTeams, drawnTeams: [], bracket: [], byeTeams: [] });
+    } else if (event === 'draw_shuffle_done') {
+      updateRemoteDrawState({ phase: 'drawing', orderedTeams: payload.orderedTeams, drawnTeams: [] });
+    } else if (event === 'team_drawn') {
+      // Get current drawn teams from state to be sure
+      updateRemoteDrawState({ drawnTeams: [...drawnTeams, payload.team], currentDrawIndex: payload.index + 1 });
+    } else if (event === 'bracket_complete') {
+      updateRemoteDrawState({ phase: 'bracket', bracket: payload.bracket, byeTeams: payload.byeTeams || [] });
+    } else if (event === 'draw_end') {
+      updateRemoteDrawState({ active: false, phase: 'idle', draw_state: null });
     }
   }
 
@@ -732,12 +1191,17 @@ export default function AdminPage() {
             matchesToInsert.push({
               team_a_id: match.team_a?.id || null,
               team_b_id: match.team_b?.id || null,
-              match_date: today,
-              match_time: '09:00',
-              venue: 'Main Stadium Ground',
+              match_date: match.match_date || today,
+              match_time: match.match_time || '09:00',
+              venue: match.venue || 'Main Stadium Ground',
               round: match.round ?? 0,
-              match_number: match.match_num ?? 1,
-              status: 'scheduled'
+              match_number: match.match_num || 1,
+              status: 'scheduled',
+              source_match_a: match.source_match_a || null,
+              source_match_b: match.source_match_b || null,
+              team_a_label: match.team_a_label || null,
+              team_b_label: match.team_b_label || null,
+              is_dept_final: match.is_dept_final || false
             })
           })
         })
@@ -746,11 +1210,11 @@ export default function AdminPage() {
           matchesToInsert.push({
             team_a_id: match.team_a.id,
             team_b_id: match.team_b.id,
-            match_date: today,
-            match_time: '09:00',
-            venue: 'Main Stadium Ground',
+            match_date: (match as any).match_date || today,
+            match_time: (match as any).match_time || '09:00',
+            venue: (match as any).venue || 'Main Stadium Ground',
             round: 1,
-            match_number: index + 1,
+            match_number: (match as any).match_number || index + 1,
             status: 'scheduled'
           })
         })
@@ -1173,19 +1637,20 @@ Sreekar: 9063128733`
         .select('*')
         .in('hall_ticket', hallTickets)
 
-      const deptMap: { [key: string]: string } = { '05': 'CSE', '69': 'CSO', '04': 'ECE', '66': 'CSM', '62': 'CSC', '67': 'CSD' }
+      let csv = 'Team Name,Status,Captain,Player Name,Hall Ticket,Phone,Department,Batch,Role,Is Captain\n'
 
-      let csv = 'Team Name,Status,Captain,Player Name,Hall Ticket,Phone,Department,Role,Is Captain\n'
-      teams.forEach(team => {
+      const sortedTeams = [...teams].sort((a, b) => (String(a.approved) === String(b.approved) ? 0 : a.approved ? -1 : 1))
+
+      sortedTeams.forEach(team => {
         const teamPlayers = allTeamPlayers?.filter(p => p.team_id === team.id) || []
         if (teamPlayers.length === 0) {
-          csv += `"${team.name}",${team.approved ? 'Approved' : 'Pending'},"${team.captain?.name || ''}","","","","","",""\n`
+          csv += `"${team.name}",${team.approved ? 'Approved' : 'Pending'},"${team.captain?.name || ''}","","","","","","",""\n`
         } else {
           teamPlayers.forEach(p => {
             const student = studentsData?.find(s => s.hall_ticket === p.hall_ticket)
-            const deptCode = p.hall_ticket?.substring(6, 8) || ''
-            const dept = deptMap[deptCode] || 'OTHER'
-            csv += `"${team.name}",${team.approved ? 'Approved' : 'Pending'},"${team.captain?.name || ''}","${student?.name || ''}","${p.hall_ticket}","${student?.phone || student?.phone_number || ''}","${dept}","${p.player_role || ''}","${p.is_captain ? 'Yes' : 'No'}"\n`
+            const dept = student?.hall_ticket ? getDepartmentFromHallTicket(student.hall_ticket) : 'Unknown'
+            const batch = student?.year || 'N/A'
+            csv += `"${team.name}",${team.approved ? 'Approved' : 'Pending'},"${team.captain?.name || ''}","${student?.name || ''}","${p.hall_ticket}","${student?.phone || student?.phone_number || ''}","${dept}","${batch}","${p.player_role || ''}","${p.is_captain ? 'Yes' : 'No'}"\n`
           })
         }
       })
@@ -1194,7 +1659,7 @@ Sreekar: 9063128733`
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `KMCE_Cricket_Teams_${new Date().toISOString().split('T')[0]}.csv`
+      link.download = `KMCE_Export_${new Date().toISOString().split('T')[0]}.csv`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -1349,9 +1814,27 @@ Sreekar: 9063128733`
   }
 
   const filteredTeams = teams.filter(t => {
-    if (filter === 'all') return true
-    if (filter === 'approved') return t.approved
-    if (filter === 'pending') return !t.approved
+    // Phase Filter
+    if (filter === 'approved' && !t.approved) return false
+    if (filter === 'pending' && t.approved) return false
+
+    // Search Filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      const matchesName = t.name.toLowerCase().includes(searchLower)
+      const matchesID = t.id.toLowerCase().includes(searchLower)
+      const matchesCaptain = t.captain?.name?.toLowerCase().includes(searchLower)
+      const matchesHallTicket = t.captain?.hall_ticket?.toLowerCase().includes(searchLower)
+
+      if (!matchesName && !matchesID && !matchesCaptain && !matchesHallTicket) return false
+    }
+
+    // Department Filter
+    if (departmentFilter !== 'all') {
+      const captainDept = t.captain?.hall_ticket ? getDepartmentFromHallTicket(t.captain.hall_ticket) : ''
+      if (captainDept !== departmentFilter) return false
+    }
+
     return true
   })
 
@@ -1362,9 +1845,14 @@ Sreekar: 9063128733`
   )
 
   return (
-    <div className="min-h-screen bg-[#0a0f1a] text-white selection:bg-cricket-500/30 pb-24 md:pb-20">
+    <div className="min-h-screen bg-[#0a0f1a] text-white selection:bg-cricket-500/30 pb-24 md:pb-20 relative overflow-hidden">
+      {/* Premium Background Decorations */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cricket-500/10 blur-[150px] rounded-full pointer-events-none animate-pulse-slow"></div>
+      <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none animate-float"></div>
+      <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none"></div>
+
       {/* Admin Navbar */}
-      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50 bg-[#0a0f1a]/90">
+      <nav className="border-b border-white/10 backdrop-blur-xl sticky top-0 z-50 bg-[#0a0f1a]/80 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <div className="max-w-7xl mx-auto px-3 md:px-4 h-14 md:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-6">
             <Link href="/" className="text-slate-400 hover:text-white font-bold text-xs md:text-sm flex items-center gap-1.5 transition-colors min-h-[44px]">
@@ -1386,17 +1874,24 @@ Sreekar: 9063128733`
             </button>
             <button
               onClick={exportTeamsCSV}
-              className="hidden md:flex w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 items-center justify-center min-h-[44px]"
+              className="hidden md:flex px-4 py-2 bg-[#1a1f35] hover:bg-[#252a45] rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/10 items-center justify-center min-h-[44px] shadow-lg shadow-black/20"
               title="Export CSV"
             >
               <span className="hidden md:inline">📥 CSV</span>
             </button>
             <button
               onClick={exportTeamsPDF}
-              className="hidden md:flex w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 items-center justify-center min-h-[44px]"
+              className="hidden md:flex px-4 py-2 bg-[#1a1f35] hover:bg-[#252a45] rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-white/10 items-center justify-center min-h-[44px] shadow-lg shadow-black/20"
               title="Export PDF"
             >
               <span className="hidden md:inline">📄 PDF</span>
+            </button>
+            <button
+              onClick={fetchStudentInventory}
+              className={`w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 rounded-xl text-xs font-bold transition-all border flex items-center justify-center min-h-[44px] bg-indigo-500/10 border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20`}
+            >
+              <span className="md:hidden">📋</span>
+              <span className="hidden md:inline">📋 Inventory</span>
             </button>
             <Link href="/admin/tournament-settings" className="hidden md:flex w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all border border-white/10 items-center justify-center">
               <span className="hidden md:inline">⚙️ Settings</span>
@@ -1448,22 +1943,58 @@ Sreekar: 9063128733`
       </nav>
 
       <main className="max-w-7xl mx-auto px-3 md:px-4 mt-6 md:mt-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 md:mb-12 gap-4 md:gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 md:mb-16 gap-4 md:gap-6 animate-fadeIn">
           <div>
-            <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.3em] mb-1 md:mb-2">Governance Console</div>
-            <h1 className="text-2xl md:text-5xl font-black tracking-tighter uppercase italic leading-none">Management Center</h1>
+            <div className="text-cricket-500 font-black text-[10px] md:text-xs uppercase tracking-[0.4em] mb-2 md:mb-4 bg-cricket-500/10 inline-block px-3 py-1 rounded-full border border-cricket-500/20">Governance Console</div>
+            <h1 className="text-3xl md:text-7xl font-black tracking-tighter uppercase italic leading-none bg-gradient-to-br from-white via-white to-white/40 bg-clip-text text-transparent">Management Center</h1>
           </div>
 
-          <div className="flex bg-white/5 border border-white/10 p-0.5 md:p-1 rounded-xl md:rounded-2xl overflow-hidden backdrop-blur-xl w-full md:w-auto">
+          <div className="flex bg-white/5 border border-white/10 p-1 md:p-1.5 rounded-2xl md:rounded-[24px] overflow-hidden backdrop-blur-2xl w-full md:w-auto shadow-2xl shadow-black/40">
             {['pending', 'approved', 'all'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f as any)}
-                className={`flex-1 md:flex-none px-4 md:px-6 py-2.5 md:py-2.5 rounded-lg md:rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all min-h-[44px] ${filter === f ? 'bg-cricket-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                className={`flex-1 md:flex-none px-6 md:px-8 py-3 md:py-3.5 rounded-xl md:rounded-[20px] text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-500 min-h-[44px] ${filter === f ? 'bg-gradient-to-br from-cricket-500 to-cricket-700 text-white shadow-[0_8px_30px_rgba(22,101,52,0.4)]' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
               >
                 {f}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Search and Filters Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 animate-fadeIn">
+          <div className="md:col-span-2 relative group">
+            <input
+              type="text"
+              placeholder="Search by team, captain or hall ticket..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl px-6 py-4 md:py-5 text-sm md:text-base focus:ring-2 focus:ring-cricket-500 transition-all backdrop-blur-3xl outline-none placeholder:text-slate-500 group-hover:border-white/20"
+            />
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500">
+              🔍
+            </div>
+          </div>
+          <div className="relative group">
+            <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl md:rounded-3xl px-6 py-4 md:py-5 text-sm appearance-none focus:ring-2 focus:ring-cricket-500 transition-all backdrop-blur-3xl outline-none text-white group-hover:border-white/20 cursor-pointer"
+            >
+              <option value="all">All Departments</option>
+              {Object.values(DEPARTMENT_CODES).filter((v, i, a) => a.indexOf(v) === i).map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+              ▼
+            </div>
+          </div>
+          <div className="flex items-center justify-end">
+            <div className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">
+              Showing {filteredTeams.length} of {teams.length} teams
+            </div>
           </div>
         </div>
 
@@ -1545,24 +2076,41 @@ Sreekar: 9063128733`
 
         {/* Selection Toolbar - Desktop */}
         {selectedTeams.size > 0 && (
-          <div className="hidden lg:flex mb-4 bg-cricket-600/10 border border-cricket-500/20 rounded-2xl p-3 md:p-4 flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
-            <div className="flex items-center gap-3">
-              <span className="text-xs md:text-sm font-black text-cricket-400">{selectedTeams.size} team{selectedTeams.size > 1 ? 's' : ''} selected</span>
-              <button onClick={() => setSelectedTeams(new Set())} className="text-[10px] md:text-xs text-slate-500 hover:text-white font-bold uppercase tracking-widest transition-colors">Clear</button>
+          <div className="hidden lg:flex mb-6 bg-cricket-600/10 border border-cricket-500/30 rounded-[32px] p-4 md:p-5 flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pop-in backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] sticky top-20 z-40">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-cricket-500/20 flex items-center justify-center font-black text-cricket-400">
+                {selectedTeams.size}
+              </div>
+              <div>
+                <span className="text-sm font-black text-white uppercase tracking-widest">Squads Targeted</span>
+                <button onClick={() => setSelectedTeams(new Set())} className="block text-[10px] text-cricket-500 hover:text-cricket-400 font-bold uppercase tracking-widest transition-colors">Deselect All</button>
+              </div>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-3 w-full sm:w-auto">
               <button
                 onClick={exportSelectedPDF}
-                className="flex-1 sm:flex-none px-4 py-2.5 bg-cricket-600 text-white rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-cricket-500 transition-all min-h-[44px] flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-none px-8 py-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
               >
-                📄 Export Selected PDF
+                📄 PDF Roster
+              </button>
+              <button
+                onClick={() => handleBulkAction('approve_team')}
+                className="flex-1 sm:flex-none px-8 py-3 bg-cricket-600 hover:bg-cricket-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cricket-900/40 border border-cricket-400/30"
+              >
+                🚀 Bulk Register
+              </button>
+              <button
+                onClick={() => handleBulkAction('delete_team')}
+                className="flex-1 sm:flex-none px-8 py-3 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+              >
+                🗑️ Bulk Delete
               </button>
             </div>
           </div>
         )}
 
         {/* Teams Table - Desktop */}
-        <div className="hidden lg:block bg-white/5 backdrop-blur-xl border border-white/10 rounded-[40px] overflow-hidden shadow-2xl">
+        <div className="hidden lg:block bg-[#0a111f]/40 backdrop-blur-3xl border border-white/10 rounded-[48px] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.6)] animate-fadeIn">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -1589,7 +2137,34 @@ Sreekar: 9063128733`
                         </button>
                       </td>
                       <td className="px-6 py-6">
-                        <div className="font-black text-xl uppercase italic group-hover:text-cricket-400 transition-colors tracking-tight">{team.name || 'UNNAMED SQUAD'}</div>
+                        {renamingTeamId === team.id ? (
+                          <div className="flex items-center gap-2 animate-fadeIn">
+                            <input
+                              type="text"
+                              value={newTeamName}
+                              onChange={(e) => setNewTeamName(e.target.value)}
+                              className="bg-[#1e293b] border border-cricket-500/50 rounded-xl px-4 py-2 text-sm font-black text-white focus:ring-2 focus:ring-cricket-500 outline-none w-full max-w-[200px]"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleRenameTeam(team.id)
+                                if (e.key === 'Escape') setRenamingTeamId(null)
+                              }}
+                            />
+                            <button onClick={() => handleRenameTeam(team.id)} disabled={savingRename} className="w-8 h-8 rounded-lg bg-green-500/20 text-green-400 flex items-center justify-center hover:bg-green-500 hover:text-white transition-all">✓</button>
+                            <button onClick={() => setRenamingTeamId(null)} className="w-8 h-8 rounded-lg bg-white/5 text-slate-400 flex items-center justify-center hover:bg-white/10 transition-all">✗</button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 group/name">
+                            <div className="font-black text-xl uppercase italic group-hover/name:text-cricket-400 transition-colors tracking-tight">{team.name || 'UNNAMED SQUAD'}</div>
+                            <button
+                              onClick={() => { setRenamingTeamId(team.id); setNewTeamName(team.name) }}
+                              className="opacity-0 group-hover/name:opacity-100 p-1.5 hover:bg-white/10 rounded-lg transition-all text-slate-500 hover:text-white text-xs"
+                              title="Rename Team"
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{team.sport}</span>
                           <span className="w-1 h-1 rounded-full bg-slate-700"></span>
@@ -2029,9 +2604,8 @@ Sreekar: 9063128733`
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mt-8 md:mt-12">
             {matches.map((match) => (
-              <div key={match.id} className={`border p-5 md:p-8 rounded-2xl md:rounded-[40px] relative overflow-hidden group transition-all ${
-                match.status === 'completed' ? 'bg-green-500/5 border-green-500/20' : 'bg-white/5 border-white/10 hover:bg-white/[0.08]'
-              }`}>
+              <div key={match.id} className={`border p-5 md:p-8 rounded-2xl md:rounded-[40px] relative overflow-hidden group transition-all ${match.status === 'completed' ? 'bg-green-500/5 border-green-500/20' : 'bg-white/5 border-white/10 hover:bg-white/[0.08]'
+                }`}>
                 <div className="flex justify-between items-start mb-5 md:mb-8">
                   <div className="flex items-center gap-2">
                     <div className="text-[9px] md:text-[10px] font-black text-cricket-400 uppercase tracking-widest bg-cricket-500/10 px-3 md:px-4 py-1.5 md:py-2 rounded-full border border-cricket-500/20">
@@ -2059,19 +2633,16 @@ Sreekar: 9063128733`
                 <div className="flex items-center justify-between gap-3 md:gap-6 mb-3">
                   <div className={`flex-1 text-center min-w-0 py-2 px-2 rounded-xl ${match.winner_id === match.team_a_id ? 'bg-cricket-500/10 border border-cricket-500/20' : ''}`}>
                     <div className="text-[9px] md:text-[10px] text-white/40 font-black uppercase tracking-widest mb-0.5 md:mb-1">Home</div>
-                    <div className={`text-sm md:text-xl font-black uppercase italic leading-tight truncate ${
-                      match.winner_id === match.team_a_id ? 'text-cricket-400' : match.winner_id === match.team_b_id ? 'text-slate-600' : 'text-white'
-                    }`}>{match.team_a?.name || 'TBA'}</div>
+                    <div className={`text-sm md:text-xl font-black uppercase italic leading-tight truncate ${match.winner_id === match.team_a_id ? 'text-cricket-400' : match.winner_id === match.team_b_id ? 'text-slate-600' : 'text-white'
+                      }`}>{match.team_a?.name || 'TBA'}</div>
                     {match.winner_id === match.team_a_id && <div className="text-[9px] text-cricket-500 font-black mt-1">🏆 WINNER</div>}
                   </div>
-                  <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full border text-[8px] md:text-[9px] font-black italic flex-shrink-0 ${
-                    match.status === 'completed' ? 'bg-green-500/20 border-green-500/20 text-green-400' : 'bg-white/5 border-white/10 text-cricket-500'
-                  }`}>{match.status === 'completed' ? '✓' : 'VS'}</div>
+                  <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full border text-[8px] md:text-[9px] font-black italic flex-shrink-0 ${match.status === 'completed' ? 'bg-green-500/20 border-green-500/20 text-green-400' : 'bg-white/5 border-white/10 text-cricket-500'
+                    }`}>{match.status === 'completed' ? '✓' : 'VS'}</div>
                   <div className={`flex-1 text-center min-w-0 py-2 px-2 rounded-xl ${match.winner_id === match.team_b_id ? 'bg-cricket-500/10 border border-cricket-500/20' : ''}`}>
                     <div className="text-[9px] md:text-[10px] text-white/40 font-black uppercase tracking-widest mb-0.5 md:mb-1">Away</div>
-                    <div className={`text-sm md:text-xl font-black uppercase italic leading-tight truncate ${
-                      match.winner_id === match.team_b_id ? 'text-cricket-400' : match.winner_id === match.team_a_id ? 'text-slate-600' : 'text-white'
-                    }`}>{match.team_b?.name || 'TBA'}</div>
+                    <div className={`text-sm md:text-xl font-black uppercase italic leading-tight truncate ${match.winner_id === match.team_b_id ? 'text-cricket-400' : match.winner_id === match.team_a_id ? 'text-slate-600' : 'text-white'
+                      }`}>{match.team_b?.name || 'TBA'}</div>
                     {match.winner_id === match.team_b_id && <div className="text-[9px] text-cricket-500 font-black mt-1">🏆 WINNER</div>}
                   </div>
                 </div>
@@ -2097,11 +2668,10 @@ Sreekar: 9063128733`
                   {match.team_a_id && match.team_b_id && (
                     <button
                       onClick={() => openResultModal(match)}
-                      className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all min-h-[44px] ${
-                        match.status === 'completed'
-                          ? 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
-                          : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400'
-                      }`}
+                      className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all min-h-[44px] ${match.status === 'completed'
+                        ? 'bg-green-500/10 hover:bg-green-500/20 text-green-400'
+                        : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400'
+                        }`}
                     >
                       {match.status === 'completed' ? '✏️ Edit Result' : '🏆 Result'}
                     </button>
@@ -2255,18 +2825,38 @@ Sreekar: 9063128733`
                         {approvedTeams.length} Teams in the Pool
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-6">
+
+                    {/* Draw Mode Toggle */}
+                    <div className="flex bg-white/5 p-1 rounded-xl mb-6 border border-white/10">
+                      <button
+                        onClick={() => setDrawMode('random')}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${drawMode === 'random' ? 'bg-cricket-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        🎲 Random Draw
+                      </button>
+                      <button
+                        onClick={() => setDrawMode('inter_dept')}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${drawMode === 'inter_dept' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+                      >
+                        🏢 Inter-Department
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-6 max-h-[40vh] overflow-y-auto">
                       {spinningTeams.map((team) => (
                         <div key={team.id} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center transition-all">
                           <div className="font-black text-xs uppercase tracking-tight truncate">{team.name}</div>
+                          <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                            {team.department || (team.captain?.hall_ticket ? getDepartmentFromHallTicket(team.captain.hall_ticket).split(' ')[0] : 'N/A')}
+                          </div>
                         </div>
                       ))}
                     </div>
                     <button
                       onClick={startLiveDraw}
-                      className="w-full py-4 bg-cricket-500 hover:bg-cricket-600 text-white rounded-2xl font-black text-lg uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse"
+                      className={`w-full py-4 text-white rounded-2xl font-black text-lg uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse ${drawMode === 'inter_dept' ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-cricket-500 hover:bg-cricket-600'}`}
                     >
-                      🎲 START DRAW
+                      {drawMode === 'inter_dept' ? '🏢 START DEPT DRAW' : '🎲 START RANDOM DRAW'}
                     </button>
                   </div>
                 )
@@ -2318,11 +2908,10 @@ Sreekar: 9063128733`
                           {drawnTeams.map((team, idx) => (
                             <div
                               key={team.id}
-                              className={`border rounded-lg p-2.5 text-center transition-all ${
-                                idx === drawnTeams.length - 1
-                                  ? 'bg-cricket-500/20 border-cricket-500/50 scale-[1.02]'
-                                  : 'bg-white/5 border-white/10'
-                              }`}
+                              className={`border rounded-lg p-2.5 text-center transition-all ${idx === drawnTeams.length - 1
+                                ? 'bg-cricket-500/20 border-cricket-500/50 scale-[1.02]'
+                                : 'bg-white/5 border-white/10'
+                                }`}
                             >
                               <div className="flex items-center gap-2 justify-center">
                                 <span className="text-[10px] font-black text-slate-500 w-5">{idx + 1}</span>
@@ -2344,44 +2933,107 @@ Sreekar: 9063128733`
                       {bracketRounds.map((round, roundIdx) => (
                         <div key={roundIdx}>
                           <div className="flex items-center gap-2 mb-3">
-                            <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest">{round.name}</div>
+                            <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest">
+                              {round.matches[0]?.group ? <span className="text-white/80 mr-2">{round.matches[0].group}</span> : null}
+                              {round.name}
+                            </div>
                             <div className="flex-1 h-px bg-white/10"></div>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 gap-3">
                             {round.matches.map((match: any, matchIdx: number) => (
-                              <div key={matchIdx} className="bg-white/5 border border-white/10 rounded-xl p-3">
-                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                                  Match {match.match_num}
-                                </div>
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex-1 text-center">
-                                    <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-600 italic'}`}>
-                                      {match.team_a ? match.team_a.name : (() => {
-                                        const prevRound = bracketRounds[roundIdx - 1]
-                                        if (prevRound) {
-                                          const feedIdx = matchIdx * 2
-                                          const feederMatch = prevRound.matches[feedIdx]
-                                          if (feederMatch) return `W${feederMatch.match_num}`
-                                        }
-                                        return 'TBD'
-                                      })()}
+                              <div key={matchIdx} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                  <div className="flex-1">
+                                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                      Match Pair
                                     </div>
-                                    {match.is_bye && match.team_a && (
-                                      <span className="inline-block mt-1 text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">BYE</span>
-                                    )}
+                                    <div className="flex items-center justify-between gap-4">
+                                      <div className="flex-1 text-center">
+                                        <div className={`font-black text-xs md:text-sm uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-600 italic'}`}>
+                                          {match.team_a?.name || match.team_a_label || (match.source_match_a ? `Winner of Match ${match.source_match_a}` : (() => {
+                                            const prevRound = bracketRounds[roundIdx - 1]
+                                            if (prevRound) {
+                                              const feedIdx = matchIdx * 2
+                                              const feederMatch = prevRound.matches[feedIdx]
+                                              if (feederMatch) return `W${feederMatch.match_num}`
+                                            }
+                                            return 'TBD'
+                                          })())}
+                                        </div>
+                                        {match.is_bye && (
+                                          <span className="inline-block mt-1 text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">BYE</span>
+                                        )}
+                                      </div>
+                                      <div className="px-2 text-slate-600 font-black text-[10px]">VS</div>
+                                      <div className="flex-1 text-center">
+                                        <div className={`font-black text-xs md:text-sm uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-600 italic'}`}>
+                                          {match.team_b?.name || match.team_b_label || (match.source_match_b ? `Winner of Match ${match.source_match_b}` : (() => {
+                                            const prevRound = bracketRounds[roundIdx - 1]
+                                            if (prevRound) {
+                                              const feedIdx = matchIdx * 2 + 1
+                                              const feederMatch = prevRound.matches[feedIdx]
+                                              if (feederMatch) return `W${feederMatch.match_num}`
+                                            }
+                                            return 'TBD'
+                                          })())}
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="px-2 text-slate-600 font-black text-[10px]">VS</div>
-                                  <div className="flex-1 text-center">
-                                    <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-600 italic'}`}>
-                                      {match.team_b ? match.team_b.name : (() => {
-                                        const prevRound = bracketRounds[roundIdx - 1]
-                                        if (prevRound) {
-                                          const feedIdx = matchIdx * 2 + 1
-                                          const feederMatch = prevRound.matches[feedIdx]
-                                          if (feederMatch) return `W${feederMatch.match_num}`
-                                        }
-                                        return 'TBD'
-                                      })()}
+
+                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-[1.5]">
+                                    <div>
+                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Match #</label>
+                                      <input
+                                        type="number"
+                                        value={match.match_num}
+                                        onChange={(e) => {
+                                          const newRounds = [...bracketRounds];
+                                          newRounds[roundIdx].matches[matchIdx].match_num = parseInt(e.target.value);
+                                          setBracketRounds(newRounds);
+                                        }}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Date</label>
+                                      <input
+                                        type="date"
+                                        value={match.match_date}
+                                        onChange={(e) => {
+                                          const newRounds = [...bracketRounds];
+                                          newRounds[roundIdx].matches[matchIdx].match_date = e.target.value;
+                                          setBracketRounds(newRounds);
+                                        }}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Time</label>
+                                      <input
+                                        type="time"
+                                        value={match.match_time}
+                                        onChange={(e) => {
+                                          const newRounds = [...bracketRounds];
+                                          newRounds[roundIdx].matches[matchIdx].match_time = e.target.value;
+                                          setBracketRounds(newRounds);
+                                        }}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Venue</label>
+                                      <input
+                                        type="text"
+                                        value={match.venue}
+                                        onChange={(e) => {
+                                          const newRounds = [...bracketRounds];
+                                          newRounds[roundIdx].matches[matchIdx].venue = e.target.value;
+                                          setBracketRounds(newRounds);
+                                        }}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                        placeholder="Venue"
+                                      />
                                     </div>
                                   </div>
                                 </div>
@@ -2496,21 +3148,19 @@ Sreekar: 9063128733`
                     <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => setResultWinnerId(match.team_a_id)}
-                        className={`py-4 px-3 rounded-xl text-xs font-black uppercase transition-all min-h-[60px] border ${
-                          resultWinnerId === match.team_a_id
-                            ? 'bg-cricket-500/20 border-cricket-500/50 text-cricket-400'
-                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
-                        }`}
+                        className={`py-4 px-3 rounded-xl text-xs font-black uppercase transition-all min-h-[60px] border ${resultWinnerId === match.team_a_id
+                          ? 'bg-cricket-500/20 border-cricket-500/50 text-cricket-400'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                          }`}
                       >
                         {resultWinnerId === match.team_a_id && '🏆 '}{match.team_a?.name || 'Team A'}
                       </button>
                       <button
                         onClick={() => setResultWinnerId(match.team_b_id)}
-                        className={`py-4 px-3 rounded-xl text-xs font-black uppercase transition-all min-h-[60px] border ${
-                          resultWinnerId === match.team_b_id
-                            ? 'bg-cricket-500/20 border-cricket-500/50 text-cricket-400'
-                            : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
-                        }`}
+                        className={`py-4 px-3 rounded-xl text-xs font-black uppercase transition-all min-h-[60px] border ${resultWinnerId === match.team_b_id
+                          ? 'bg-cricket-500/20 border-cricket-500/50 text-cricket-400'
+                          : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                          }`}
                       >
                         {resultWinnerId === match.team_b_id && '🏆 '}{match.team_b?.name || 'Team B'}
                       </button>
@@ -2681,6 +3331,63 @@ Sreekar: 9063128733`
             >
               📄 Export PDF
             </button>
+          </div>
+        </div>
+      )}
+      {/* Student Inventory Modal */}
+      {showStudentInventory && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-[#0a0f1a] border border-white/10 rounded-[40px] p-6 md:p-10 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>
+
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tight text-white">Student Inventory</h2>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Total Registered: {studentInventory.length}</p>
+              </div>
+              <button
+                onClick={() => setShowStudentInventory(false)}
+                className="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-xl transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              {loadingInventory ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Scanning Database...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {studentInventory.map((student, idx) => {
+                    const dept = getDepartmentFromHallTicket(student.hall_ticket)
+                    return (
+                      <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-indigo-500/30 transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-indigo-500/20 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+                        <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">{dept}</div>
+                        <div className="font-black text-sm md:text-base uppercase italic tracking-tight text-white mb-2">{student.name}</div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-slate-500 uppercase">Hall Ticket</span>
+                            <span className="text-slate-300">{student.hall_ticket}</span>
+                          </div>
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-slate-500 uppercase">Phone</span>
+                            <span className="text-slate-300">{student.phone || student.phone_number || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-slate-500 uppercase">Role</span>
+                            <span className="text-indigo-400 uppercase">{student.player_role || 'Not set'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
