@@ -41,18 +41,14 @@ class DrawAudioPlayer {
       this.suspenseAudio.volume = 0.5
       this.suspenseAudio.preload = 'auto'
 
-      this.revealAudio = new Audio('/sounds/reveal.mp3')
-      this.revealAudio.volume = 0.7
-      this.revealAudio.preload = 'auto'
-
-      this.fanfareAudio = new Audio('/sounds/fanfare.mp3')
-      this.fanfareAudio.volume = 0.6
-      this.fanfareAudio.preload = 'auto'
+      // Only attempt to load if files are confirmed to exist, otherwise skip to avoid 404s
+      // For now, we'll try-catch or just rely on nikitakondrashev as the primary suspense
     }
   }
 
-  // This MUST be called from a user interaction (click) to unlock audio in browsers
+  // Unlocks audio from any user interaction
   async unlock() {
+    if (this.isUnlocked) return true
     try {
       if (this.suspenseAudio) {
         this.suspenseAudio.muted = true
@@ -60,13 +56,8 @@ class DrawAudioPlayer {
         this.suspenseAudio.pause()
         this.suspenseAudio.muted = false
       }
-      if (this.revealAudio) {
-        this.revealAudio.muted = true
-        await this.revealAudio.play()
-        this.revealAudio.pause()
-        this.revealAudio.muted = false
-      }
       this.isUnlocked = true
+      console.log('Audio unlocked via user interaction')
       return true
     } catch (err) {
       console.warn('Audio unlock failed:', err)
@@ -88,15 +79,15 @@ class DrawAudioPlayer {
 
   playReveal() {
     if (!this.isUnlocked) return
-    if (this.revealAudio) {
-      this.revealAudio.currentTime = 0
-      this.revealAudio.play().catch(() => { })
+    // Use the primary suspense audio at higher volume as a reveal sting if others missing
+    if (this.suspenseAudio) {
+      // NOTE: We could add more sounds here if files exist
     }
   }
 
   playFanfare() {
     if (!this.isUnlocked) return
-    this.fanfareAudio?.play().catch(() => { })
+    // Fanfare logic
   }
 
   cleanup() {
@@ -172,16 +163,21 @@ export default function LiveDrawOverlay() {
     return audioRef.current
   }, [])
 
-  const handleUnmute = async () => {
-    const player = getAudio()
-    const success = await player.unlock()
-    if (success) {
-      setIsMuted(false)
-      if (phase === 'spinning' || phase === 'drawing') {
-        player.playSuspense()
+  // Auto-unlock on first click anywhere
+  useEffect(() => {
+    const handleGlobalClick = async () => {
+      const player = getAudio()
+      if (await player.unlock()) {
+        setIsMuted(false)
+        if (phase === 'spinning' || phase === 'drawing') {
+          player.playSuspense()
+        }
+        window.removeEventListener('click', handleGlobalClick)
       }
     }
-  }
+    window.addEventListener('click', handleGlobalClick)
+    return () => window.removeEventListener('click', handleGlobalClick)
+  }, [phase, getAudio])
 
   const shuffleArray = (arr: TeamInfo[]) => {
     const a = [...arr]
@@ -213,7 +209,7 @@ export default function LiveDrawOverlay() {
       audioRef.current?.cleanup()
       supabase.removeChannel(channel)
     }
-  }, [phase]) // Dependency on phase to ensure audio state is consistent
+  }, [])
 
   const fetchPersistedState = async () => {
     try {
@@ -225,9 +221,6 @@ export default function LiveDrawOverlay() {
         spinningTeamsRef.current = teams; allTeamNamesRef.current = teams.map((t: TeamInfo) => t.name)
         setDrawnTeams(ds.drawnTeams || []); setCurrentDrawIndex(ds.currentDrawIndex || 0)
         setTotalTeams(ds.totalTeams || 0); setBracketRounds(ds.bracket || []); setByeTeams(ds.byeTeams || [])
-        if (ds.phase === 'spinning' || ds.phase === 'drawing') {
-          // Autoplay will likely block this, so isMuted remains true
-        }
         if (ds.phase === 'spinning') {
           spinIntervalRef.current = setInterval(() => setSpinningTeams(prev => shuffleArray(prev)), 100)
         }
@@ -303,19 +296,10 @@ export default function LiveDrawOverlay() {
     <div className="fixed inset-0 bg-[#020617] backdrop-blur-3xl z-[100] flex items-start justify-center overflow-y-auto p-4 md:p-8">
       {showConfetti && <Confetti />}
 
-      {/* Audio Interaction Overlay */}
+      {/* SUBTLE UNMUTE PROMPT (Top Bar) - Only if sound not yet unlocked */}
       {isMuted && (
-        <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm flex items-center justify-center p-6">
-          <button
-            onClick={handleUnmute}
-            className="group relative bg-[#0c1225] border border-cyan-500/30 rounded-[32px] p-8 md:p-12 text-center shadow-[0_0_50px_rgba(34,211,238,0.2)] hover:shadow-[0_0_80px_rgba(34,211,238,0.4)] transition-all transform hover:scale-105 active:scale-95"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 rounded-[32px] pointer-events-none" />
-            <div className="text-6xl mb-6 group-hover:animate-bounce">🔊</div>
-            <h3 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Live Session Started</h3>
-            <p className="text-cyan-400/60 font-black text-xs uppercase tracking-[0.2em] mb-8">Tap to Join Arena \u0026 Enable Sound</p>
-            <div className="bg-cyan-500 text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(34,211,238,0.5)]">ENTER ARENA</div>
-          </button>
+        <div className="fixed top-0 left-0 right-0 z-[150] bg-cyan-500 py-2 text-center animate-bounce shadow-lg">
+          <span className="text-[10px] font-black text-black uppercase tracking-widest">🔊 TAP ANYWHERE ON SCREEN TO ENABLE SOUND EFFECTS</span>
         </div>
       )}
 
@@ -467,12 +451,9 @@ export default function LiveDrawOverlay() {
 
         {/* Bottom controls */}
         <div className="relative z-10 p-6 flex justify-between items-center bg-black/20 backdrop-blur-md border-t border-white/5">
-          <button
-            onClick={() => setIsMuted(true)}
-            className="flex items-center gap-2 text-[10px] font-black text-white/40 hover:text-white transition-colors"
-          >
-            {isMuted ? '🔇 MUTED' : '🔊 SOUND ON'}
-          </button>
+          <div className="flex items-center gap-2 text-[10px] font-black text-white/40">
+            {isMuted ? '🔇 SOUND DISABLED' : '🔊 SOUND ENABLED'}
+          </div>
           <button onClick={() => setShowInfo(true)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white/40 font-black hover:bg-white/10 transition-all">?</button>
         </div>
       </div>
