@@ -62,6 +62,11 @@ export default function AdminPage() {
   const [squadA, setSquadA] = useState<any[]>([])
   const [squadB, setSquadB] = useState<any[]>([])
   const [loadingSquads, setLoadingSquads] = useState(false)
+  const [editMatchNumber, setEditMatchNumber] = useState<number>(0)
+  const [editMatchDate, setEditMatchDate] = useState('')
+  const [editMatchTime, setEditMatchTime] = useState('')
+  const [editMatchVenue, setEditMatchVenue] = useState('')
+  const [editMatchData, setEditMatchData] = useState<any>(null)
 
   // Match Result State
   const [resultMatchId, setResultMatchId] = useState<string | null>(null)
@@ -87,7 +92,7 @@ export default function AdminPage() {
   const [departmentFilter, setDepartmentFilter] = useState('all')
 
   // Draw State
-  const [drawMode, setDrawMode] = useState<'random' | 'inter_dept'>('random')
+
 
   // Mobile Actions Menu State
   const [showMobileActions, setShowMobileActions] = useState(false)
@@ -375,6 +380,11 @@ export default function AdminPage() {
     setMatchScoreLink(match.score_link || '')
     setMatchImpactSubA(match.impact_sub_a || '')
     setMatchImpactSubB(match.impact_sub_b || '')
+    setEditMatchNumber(match.match_number || 0)
+    setEditMatchDate(match.match_date || '')
+    setEditMatchTime(match.match_time || '')
+    setEditMatchVenue(match.venue || '')
+    setEditMatchData(match)
     setLoadingSquads(true)
     setSquadA([])
     setSquadB([])
@@ -420,6 +430,10 @@ export default function AdminPage() {
       const { error } = await supabase
         .from('matches')
         .update({
+          match_number: editMatchNumber,
+          match_date: editMatchDate,
+          match_time: editMatchTime,
+          venue: editMatchVenue,
           score_link: matchScoreLink || null,
           playing_11_a: matchPlaying11A.length > 0 ? JSON.stringify(matchPlaying11A) : null,
           playing_11_b: matchPlaying11B.length > 0 ? JSON.stringify(matchPlaying11B) : null,
@@ -429,6 +443,7 @@ export default function AdminPage() {
         .eq('id', matchDetailId)
       if (error) throw error
       setMatchDetailId(null)
+      setEditMatchData(null)
       fetchMatches()
     } catch (err: any) {
       console.error('Error saving match details:', err)
@@ -588,12 +603,22 @@ export default function AdminPage() {
       groups[dept].push(team)
     })
 
-    // Shuffle within groups and combine
-    let sorted: any[] = []
-    // Shuffle the order of departments themselves so it's not always the same dept first
-    const deptKeys = shuffleArray(Object.keys(groups))
+    // Custom order: CSM first, then CSE, then the rest
+    // ECE teams (if only one) will appear at the end or as part of others
+    const priorityOrder = ['CSM', 'CSE']
+    const sortedDeptKeys: string[] = []
 
-    deptKeys.forEach(key => {
+    // 1. Add priority departments in order
+    priorityOrder.forEach(dept => {
+      if (groups[dept]) sortedDeptKeys.push(dept)
+    })
+
+    // 2. Add remaining departments randomly
+    const remainingDepts = Object.keys(groups).filter(d => !priorityOrder.includes(d))
+    sortedDeptKeys.push(...shuffleArray(remainingDepts))
+
+    let sorted: any[] = []
+    sortedDeptKeys.forEach(key => {
       // Shuffle teams within the department
       const groupTeams = shuffleArray(groups[key])
       sorted = [...sorted, ...groupTeams]
@@ -625,13 +650,8 @@ export default function AdminPage() {
       if (shuffleCount >= maxShuffles) {
         if (spinIntervalRef.current) clearInterval(spinIntervalRef.current)
 
-        // Determine final order based on mode
-        let finalOrder: any[] = []
-        if (drawMode === 'inter_dept') {
-          finalOrder = sortTeamsByDept([...approvedTeams])
-        } else {
-          finalOrder = shuffleArray([...approvedTeams])
-        }
+        // Always use department-sorted order
+        const finalOrder = sortTeamsByDept([...approvedTeams])
 
         setSpinningTeams(finalOrder)
         setTimeout(() => startDrawingPhase(finalOrder), 500)
@@ -639,40 +659,22 @@ export default function AdminPage() {
     }, 100)
   }
 
-  // Drawing phase - one by one
+  // Drawing phase - one by one with proper delays for suspense
   const startDrawingPhase = (orderedTeams: any[]) => {
     setDrawPhase('drawing')
     broadcastDrawEvent('draw_shuffle_done', {
       orderedTeams: orderedTeams.map(t => ({ id: t.id, name: t.name }))
     })
 
-    let idx = 0
-    drawIntervalRef.current = setInterval(() => {
-      if (idx < orderedTeams.length) {
-        const team = orderedTeams[idx]
-        setDrawnTeams(prev => [...prev, team])
-        setSpinningTeams(prev => prev.filter(t => t.id !== team.id))
-        setCurrentDrawIndex(idx + 1)
-        broadcastDrawEvent('team_drawn', {
-          team: { id: team.id, name: team.name },
-          index: idx,
-          total: orderedTeams.length
-        })
-        idx++
-      } else {
-        if (drawIntervalRef.current) clearInterval(drawIntervalRef.current)
-        setTimeout(() => {
-          let bracket: any[] = []
-          let byeTeamsList: any[] = []
+    // Reveal teams one-by-one with enough delay for the overlay slot animation
+    // Overlay needs: ~1200ms slot spin + ~1800ms reveal display = ~3000ms per team
+    const DELAY_PER_TEAM = 3200 // ms between each team broadcast
 
-          if (drawMode === 'inter_dept') {
-            const { rounds, byes } = generateInterDeptBracket(orderedTeams)
-            bracket = rounds
-            byeTeamsList = byes
-          } else {
-            bracket = generateKnockoutBracket(orderedTeams)
-            byeTeamsList = byeTeam ? (Array.isArray(byeTeam) ? byeTeam : []) : []
-          }
+    const drawTeamAtIndex = (idx: number) => {
+      if (idx >= orderedTeams.length) {
+        // All teams drawn — show bracket after a brief pause
+        setTimeout(() => {
+          const { rounds: bracket, byes: byeTeamsList } = generateInterDeptBracket(orderedTeams)
 
           setBracketRounds(bracket)
           setDrawPhase('complete')
@@ -695,9 +697,30 @@ export default function AdminPage() {
             byeTeams: byeTeamsList.map((t: any) => ({ id: t.id, name: t.name })),
             allTeams: orderedTeams.map(t => ({ id: t.id, name: t.name }))
           })
-        }, 600)
+        }, 1500)
+        return
       }
-    }, 800)
+
+      const team = orderedTeams[idx]
+      setDrawnTeams(prev => [...prev, team])
+      setSpinningTeams(prev => prev.filter(t => t.id !== team.id))
+      setCurrentDrawIndex(idx + 1)
+      broadcastDrawEvent('team_drawn', {
+        team: { id: team.id, name: team.name },
+        index: idx,
+        total: orderedTeams.length
+      })
+
+      // Schedule the next team after the overlay has time to animate
+      drawIntervalRef.current = setTimeout(() => {
+        drawTeamAtIndex(idx + 1)
+      }, DELAY_PER_TEAM) as any
+    }
+
+    // Start drawing the first team after a brief intro pause
+    drawIntervalRef.current = setTimeout(() => {
+      drawTeamAtIndex(0)
+    }, 1000) as any
   }
 
   // Generate knockout bracket from shuffled teams
@@ -1025,40 +1048,59 @@ export default function AdminPage() {
     }
 
     // --- STAGE 2: INTER-DEPT FINALS ---
-    // 3 Winners (CSM, CSE, ECE)
-    // Random draw: 2 play Semifinal, 1 waits in Final.
+    // Fixed bracket: CSE vs CSM first, loser plays ECE, then final
+    const cseWinner = finalWinners.find(w => w.dept === 'CSE')
+    const csmWinner = finalWinners.find(w => w.dept === 'CSM')
+    const eceWinner = finalWinners.find(w => w.dept === 'ECE')
 
-    // Shuffle the 3 winners virtually
-    const shuffledWinners = shuffleArray(finalWinners)
-
-    // Semifinal: Winner 1 vs Winner 2
-    let interDeptSemiMatchNum = 0
-    if (shuffledWinners.length >= 2) {
-      interDeptSemiMatchNum = matchCounter++
-      const semi = {
-        match_num: interDeptSemiMatchNum,
-        team_a: shuffledWinners[0].team || null,
-        team_b: shuffledWinners[1].team || null,
-        source_match_a: shuffledWinners[0].source_match,
-        source_match_b: shuffledWinners[1].source_match,
-        team_a_label: shuffledWinners[0].label,
-        team_b_label: shuffledWinners[1].label,
+    // Match 1: CSE Winner vs CSM Winner
+    let match1Num = 0
+    if (cseWinner && csmWinner) {
+      match1Num = matchCounter++
+      const match1 = {
+        match_num: match1Num,
+        team_a: cseWinner.team || null,
+        team_b: csmWinner.team || null,
+        source_match_a: cseWinner.source_match,
+        source_match_b: csmWinner.source_match,
+        team_a_label: cseWinner.label,
+        team_b_label: csmWinner.label,
         round: 4,
-        round_name: 'Inter-Dept Semifinal',
+        round_name: 'Inter-Dept Match 1',
         match_date: today, match_time: '14:00', venue: 'Main Stadium Ground'
       }
-      addMatchesToRound('Inter-Dept Semifinal', [semi])
+      addMatchesToRound('Inter-Dept Match 1', [match1])
     }
 
-    // Grand Final: Winner of Semi vs Winner 3
-    if (shuffledWinners.length >= 3) {
+    // Match 2: Loser of Match 1 vs ECE Winner
+    let match2Num = 0
+    if (match1Num && eceWinner) {
+      match2Num = matchCounter++
+      const match2 = {
+        match_num: match2Num,
+        team_a: null,
+        team_b: eceWinner.team || null,
+        source_match_a: match1Num,
+        source_match_b: eceWinner.source_match,
+        team_a_label: `Loser of Match ${match1Num}`,
+        team_b_label: eceWinner.label,
+        round: 4,
+        round_name: 'Inter-Dept Match 2',
+        match_date: today, match_time: '16:00', venue: 'Main Stadium Ground'
+      }
+      addMatchesToRound('Inter-Dept Match 2', [match2])
+    }
+
+    // Match 3 (Grand Final): Winner of Match 1 vs Winner of Match 2
+    if (match1Num && match2Num) {
       const grandFinal = {
         match_num: matchCounter++,
         team_a: null,
-        team_b: shuffledWinners[2].team || null,
-        source_match_a: interDeptSemiMatchNum,
-        source_match_b: shuffledWinners[2].source_match,
-        team_b_label: shuffledWinners[2].label,
+        team_b: null,
+        source_match_a: match1Num,
+        source_match_b: match2Num,
+        team_a_label: `Winner of Match ${match1Num}`,
+        team_b_label: `Winner of Match ${match2Num}`,
         round: 5,
         round_name: 'Grand Final',
         match_date: today, match_time: '18:00', venue: 'Main Stadium Ground'
@@ -1075,7 +1117,7 @@ export default function AdminPage() {
       'CSM Quarterfinals', 'CSM Semifinals', 'CSM Final',
       'CSE Eliminator', 'CSE Semifinals', 'CSE Final',
       'ECE Final',
-      'Inter-Dept Semifinal', 'Grand Final'
+      'Inter-Dept Match 1', 'Inter-Dept Match 2', 'Grand Final'
     ]
 
     roundOrder.forEach(rName => {
@@ -1167,12 +1209,11 @@ export default function AdminPage() {
 
   const clearAllTimers = () => {
     if (spinIntervalRef.current) { clearInterval(spinIntervalRef.current); spinIntervalRef.current = null }
-    if (drawIntervalRef.current) { clearInterval(drawIntervalRef.current); drawIntervalRef.current = null }
+    if (drawIntervalRef.current) { clearTimeout(drawIntervalRef.current); drawIntervalRef.current = null }
   }
 
   // Save generated matches to database
   const saveGeneratedMatches = async () => {
-    if (!confirm('Save this bracket to the database? This will replace any existing scheduled matches.')) return
     setSavingMatches(true)
     try {
       const { error: delError } = await supabase
@@ -1255,6 +1296,54 @@ export default function AdminPage() {
     } catch (err: any) {
       console.error('Error deleting matches:', err)
       alert(`Failed to delete matches: ${err?.message || 'Unknown error'}`)
+    } finally {
+      setSavingMatches(false)
+    }
+  }
+
+  // Update saved matches with edited details (match #, date, time, venue)
+  const updateSavedMatches = async () => {
+    setSavingMatches(true)
+    try {
+      // Delete existing matches first
+      const { error: delError } = await supabase
+        .from('matches')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+
+      if (delError) console.error('Delete error:', delError)
+
+      const today = new Date().toISOString().split('T')[0]
+      const matchesToInsert: any[] = []
+
+      bracketRounds.forEach((round: any) => {
+        round.matches.forEach((match: any) => {
+          matchesToInsert.push({
+            team_a_id: match.team_a?.id || null,
+            team_b_id: match.team_b?.id || null,
+            match_date: match.match_date || today,
+            match_time: match.match_time || '09:00',
+            venue: match.venue || 'Main Stadium Ground',
+            round: match.round ?? 0,
+            match_number: match.match_num || 1,
+            status: 'scheduled',
+            source_match_a: match.source_match_a || null,
+            source_match_b: match.source_match_b || null,
+            team_a_label: match.team_a_label || null,
+            team_b_label: match.team_b_label || null,
+            is_dept_final: match.is_dept_final || false
+          })
+        })
+      })
+
+      const { error } = await supabase.from('matches').insert(matchesToInsert).select()
+      if (error) throw error
+
+      fetchMatches()
+      alert('✅ Match details updated successfully!')
+    } catch (err: any) {
+      console.error('Error updating matches:', err)
+      alert(`Failed to update: ${err?.message || 'Unknown error'}`)
     } finally {
       setSavingMatches(false)
     }
@@ -2826,20 +2915,11 @@ Sreekar: 9063128733`
                       </span>
                     </div>
 
-                    {/* Draw Mode Toggle */}
-                    <div className="flex bg-white/5 p-1 rounded-xl mb-6 border border-white/10">
-                      <button
-                        onClick={() => setDrawMode('random')}
-                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${drawMode === 'random' ? 'bg-cricket-500 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-                      >
-                        🎲 Random Draw
-                      </button>
-                      <button
-                        onClick={() => setDrawMode('inter_dept')}
-                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${drawMode === 'inter_dept' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
-                      >
-                        🏢 Inter-Department
-                      </button>
+                    {/* Inter-Department Mode Label */}
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                      <div className="bg-indigo-600/20 border border-indigo-500/30 px-4 py-2 rounded-xl">
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">🏢 Inter-Department Draw</span>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-6 max-h-[40vh] overflow-y-auto">
@@ -2854,9 +2934,9 @@ Sreekar: 9063128733`
                     </div>
                     <button
                       onClick={startLiveDraw}
-                      className={`w-full py-4 text-white rounded-2xl font-black text-lg uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse ${drawMode === 'inter_dept' ? 'bg-indigo-600 hover:bg-indigo-500' : 'bg-cricket-500 hover:bg-cricket-600'}`}
+                      className="w-full py-4 text-white rounded-2xl font-black text-lg uppercase italic tracking-tight transition-all min-h-[44px] animate-pulse bg-indigo-600 hover:bg-indigo-500"
                     >
-                      {drawMode === 'inter_dept' ? '🏢 START DEPT DRAW' : '🎲 START RANDOM DRAW'}
+                      🏢 START DEPT DRAW
                     </button>
                   </div>
                 )
@@ -2929,192 +3009,269 @@ Sreekar: 9063128733`
               if (drawPhase === 'complete') {
                 return (
                   <div className="animate-fadeIn">
-                    <div className="space-y-6 mb-6">
-                      {bracketRounds.map((round, roundIdx) => (
-                        <div key={roundIdx}>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest">
-                              {round.matches[0]?.group ? <span className="text-white/80 mr-2">{round.matches[0].group}</span> : null}
-                              {round.name}
-                            </div>
-                            <div className="flex-1 h-px bg-white/10"></div>
-                          </div>
-                          <div className="grid grid-cols-1 gap-3">
-                            {round.matches.map((match: any, matchIdx: number) => (
-                              <div key={matchIdx} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                  <div className="flex-1">
-                                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                                      Match Pair
-                                    </div>
-                                    <div className="flex items-center justify-between gap-4">
-                                      <div className="flex-1 text-center">
-                                        <div className={`font-black text-xs md:text-sm uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-600 italic'}`}>
-                                          {match.team_a?.name || match.team_a_label || (match.source_match_a ? `Winner of Match ${match.source_match_a}` : (() => {
-                                            const prevRound = bracketRounds[roundIdx - 1]
-                                            if (prevRound) {
-                                              const feedIdx = matchIdx * 2
-                                              const feederMatch = prevRound.matches[feedIdx]
-                                              if (feederMatch) return `W${feederMatch.match_num}`
-                                            }
-                                            return 'TBD'
-                                          })())}
-                                        </div>
-                                        {match.is_bye && (
-                                          <span className="inline-block mt-1 text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">BYE</span>
-                                        )}
-                                      </div>
-                                      <div className="px-2 text-slate-600 font-black text-[10px]">VS</div>
-                                      <div className="flex-1 text-center">
-                                        <div className={`font-black text-xs md:text-sm uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-600 italic'}`}>
-                                          {match.team_b?.name || match.team_b_label || (match.source_match_b ? `Winner of Match ${match.source_match_b}` : (() => {
-                                            const prevRound = bracketRounds[roundIdx - 1]
-                                            if (prevRound) {
-                                              const feedIdx = matchIdx * 2 + 1
-                                              const feederMatch = prevRound.matches[feedIdx]
-                                              if (feederMatch) return `W${feederMatch.match_num}`
-                                            }
-                                            return 'TBD'
-                                          })())}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
+                    {/* STEP 1: Save bracket first — show clean matchup overview */}
+                    {!matchesSaved && (
+                      <>
+                        <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-xl p-4 mb-6 text-center">
+                          <div className="text-lg mb-1">🏏</div>
+                          <p className="text-xs text-indigo-300 font-black uppercase tracking-widest mb-1">
+                            Bracket Ready
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-bold">
+                            Save the bracket first. You can update match numbers, dates & venues later.
+                          </p>
+                        </div>
 
-                                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-[1.5]">
-                                    <div>
-                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Match #</label>
-                                      <input
-                                        type="number"
-                                        value={match.match_num}
-                                        onChange={(e) => {
-                                          const newRounds = [...bracketRounds];
-                                          newRounds[roundIdx].matches[matchIdx].match_num = parseInt(e.target.value);
-                                          setBracketRounds(newRounds);
-                                        }}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Date</label>
-                                      <input
-                                        type="date"
-                                        value={match.match_date}
-                                        onChange={(e) => {
-                                          const newRounds = [...bracketRounds];
-                                          newRounds[roundIdx].matches[matchIdx].match_date = e.target.value;
-                                          setBracketRounds(newRounds);
-                                        }}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Time</label>
-                                      <input
-                                        type="time"
-                                        value={match.match_time}
-                                        onChange={(e) => {
-                                          const newRounds = [...bracketRounds];
-                                          newRounds[roundIdx].matches[matchIdx].match_time = e.target.value;
-                                          setBracketRounds(newRounds);
-                                        }}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Venue</label>
-                                      <input
-                                        type="text"
-                                        value={match.venue}
-                                        onChange={(e) => {
-                                          const newRounds = [...bracketRounds];
-                                          newRounds[roundIdx].matches[matchIdx].venue = e.target.value;
-                                          setBracketRounds(newRounds);
-                                        }}
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
-                                        placeholder="Venue"
-                                      />
-                                    </div>
-                                  </div>
+                        <div className="space-y-4 mb-6">
+                          {bracketRounds.map((round, roundIdx) => (
+                            <div key={roundIdx}>
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest">
+                                  {round.matches[0]?.group ? <span className="text-white/80 mr-2">{round.matches[0].group}</span> : null}
+                                  {round.name}
                                 </div>
+                                <div className="flex-1 h-px bg-white/10"></div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {byeTeam && Array.isArray(byeTeam) && byeTeam.length > 0 && (
-                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
-                        <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
-                          Teams with Bye (Advance to Next Round)
-                        </div>
-                        <div className="flex flex-wrap gap-1.5 justify-center mt-2">
-                          {byeTeam.map((t: any) => (
-                            <span key={t.id} className="text-xs font-black text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-lg">{t.name}</span>
+                              <div className="grid grid-cols-1 gap-2">
+                                {round.matches.map((match: any, matchIdx: number) => (
+                                  <div key={matchIdx} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-[8px] font-black text-slate-600 bg-white/5 px-2 py-0.5 rounded">M{match.match_num}</span>
+                                      {match.is_bye && <span className="text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase">BYE</span>}
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex-1 text-center">
+                                        <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-500 italic'}`}>
+                                          {match.team_a?.name || match.team_a_label || (match.source_match_a ? `Winner M${match.source_match_a}` : 'TBD')}
+                                        </div>
+                                      </div>
+                                      <div className="px-2 text-indigo-500 font-black text-[10px]">VS</div>
+                                      <div className="flex-1 text-center">
+                                        <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-500 italic'}`}>
+                                          {match.team_b?.name || match.team_b_label || (match.source_match_b ? `Winner M${match.source_match_b}` : 'TBD')}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
-                      </div>
+
+                        {byeTeam && Array.isArray(byeTeam) && byeTeam.length > 0 && (
+                          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
+                            <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
+                              Teams with Bye (Advance to Next Round)
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+                              {byeTeam.map((t: any) => (
+                                <span key={t.id} className="text-xs font-black text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-lg">{t.name}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={saveGeneratedMatches}
+                            disabled={savingMatches}
+                            className="flex-[2] py-4 bg-gradient-to-r from-cricket-600 to-green-600 hover:from-cricket-500 hover:to-green-500 text-white rounded-2xl font-black text-base uppercase italic tracking-tight transition-all min-h-[52px] disabled:opacity-50 shadow-lg shadow-cricket-600/30 animate-pulse"
+                          >
+                            {savingMatches ? '⏳ Saving...' : '💾 SAVE BRACKET'}
+                          </button>
+                          <button
+                            onClick={regenerateMatches}
+                            className="flex-1 py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[52px]"
+                          >
+                            🔄 Redraw
+                          </button>
+                          <button
+                            onClick={() => {
+                              clearAllTimers()
+                              setDrawPhase('idle')
+                              setDrawnTeams([])
+                              setCurrentDrawIndex(0)
+                              setBracketRounds([])
+                              setGeneratedMatches([])
+                              setByeTeam(null)
+                              setMatchesSaved(false)
+                              setSpinningTeams([])
+                              setShowMatchGenerator(false)
+                              broadcastDrawEvent('draw_end', {})
+                            }}
+                            className="flex-1 py-4 bg-red-500/80 hover:bg-red-600 text-white rounded-2xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[52px]"
+                          >
+                            ✖ Reset
+                          </button>
+                        </div>
+                      </>
                     )}
 
-                    {matchesSaved ? (
-                      <div className="bg-cricket-500/10 border border-cricket-500/20 rounded-xl p-3 mb-4 text-center">
-                        <p className="text-[10px] text-cricket-400 font-bold uppercase tracking-widest">
-                          ✅ Bracket saved to database
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="bg-white/5 border border-white/10 rounded-xl p-3 mb-4 text-center">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                          Not saved yet — use buttons below to save or redraw
-                        </p>
-                      </div>
-                    )}
+                    {/* STEP 2: After saving — show editable match details */}
+                    {matchesSaved && (
+                      <>
+                        <div className="bg-cricket-500/10 border border-cricket-500/20 rounded-xl p-4 mb-6 text-center">
+                          <div className="text-lg mb-1">✅</div>
+                          <p className="text-xs text-cricket-400 font-black uppercase tracking-widest mb-1">
+                            Bracket Saved Successfully
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-bold">
+                            Now update match numbers, dates, times & venues below. Changes save to the match schedule.
+                          </p>
+                        </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {!matchesSaved && generatedMatches.length > 0 && (
-                        <button
-                          onClick={saveGeneratedMatches}
-                          disabled={savingMatches}
-                          className="flex-1 min-w-[120px] py-3 bg-cricket-600 hover:bg-cricket-500 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] disabled:opacity-50"
-                        >
-                          {savingMatches ? '⏳ Saving...' : '💾 Save to DB'}
-                        </button>
-                      )}
-                      {matchesSaved && (
-                        <button
-                          onClick={deleteAllBracketMatches}
-                          disabled={savingMatches}
-                          className="flex-1 min-w-[120px] py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] disabled:opacity-50"
-                        >
-                          {savingMatches ? '⏳ Deleting...' : '🗑️ Delete from DB'}
-                        </button>
-                      )}
-                      <button
-                        onClick={regenerateMatches}
-                        className="flex-1 min-w-[120px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
-                      >
-                        🔄 Redraw
-                      </button>
-                      <button
-                        onClick={() => {
-                          clearAllTimers()
-                          setDrawPhase('idle')
-                          setDrawnTeams([])
-                          setCurrentDrawIndex(0)
-                          setBracketRounds([])
-                          setGeneratedMatches([])
-                          setByeTeam(null)
-                          setMatchesSaved(false)
-                          setSpinningTeams([])
-                          setShowMatchGenerator(false)
-                          broadcastDrawEvent('draw_end', {})
-                        }}
-                        className="flex-1 min-w-[120px] py-3 bg-red-500/80 hover:bg-red-600 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
-                      >
-                        ✖ Reset & Close
-                      </button>
-                    </div>
+                        <div className="space-y-6 mb-6">
+                          {bracketRounds.map((round, roundIdx) => (
+                            <div key={roundIdx}>
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest">
+                                  {round.matches[0]?.group ? <span className="text-white/80 mr-2">{round.matches[0].group}</span> : null}
+                                  {round.name}
+                                </div>
+                                <div className="flex-1 h-px bg-white/10"></div>
+                              </div>
+                              <div className="grid grid-cols-1 gap-3">
+                                {round.matches.map((match: any, matchIdx: number) => (
+                                  <div key={matchIdx} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                      <div className="flex-1">
+                                        <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                                          Match Pair
+                                        </div>
+                                        <div className="flex items-center justify-between gap-4">
+                                          <div className="flex-1 text-center">
+                                            <div className={`font-black text-xs md:text-sm uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-600 italic'}`}>
+                                              {match.team_a?.name || match.team_a_label || (match.source_match_a ? `Winner of Match ${match.source_match_a}` : (() => {
+                                                const prevRound = bracketRounds[roundIdx - 1]
+                                                if (prevRound) {
+                                                  const feedIdx = matchIdx * 2
+                                                  const feederMatch = prevRound.matches[feedIdx]
+                                                  if (feederMatch) return `W${feederMatch.match_num}`
+                                                }
+                                                return 'TBD'
+                                              })())}
+                                            </div>
+                                            {match.is_bye && (
+                                              <span className="inline-block mt-1 text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">BYE</span>
+                                            )}
+                                          </div>
+                                          <div className="px-2 text-slate-600 font-black text-[10px]">VS</div>
+                                          <div className="flex-1 text-center">
+                                            <div className={`font-black text-xs md:text-sm uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-600 italic'}`}>
+                                              {match.team_b?.name || match.team_b_label || (match.source_match_b ? `Winner of Match ${match.source_match_b}` : (() => {
+                                                const prevRound = bracketRounds[roundIdx - 1]
+                                                if (prevRound) {
+                                                  const feedIdx = matchIdx * 2 + 1
+                                                  const feederMatch = prevRound.matches[feedIdx]
+                                                  if (feederMatch) return `W${feederMatch.match_num}`
+                                                }
+                                                return 'TBD'
+                                              })())}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-[1.5]">
+                                        <div>
+                                          <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Match #</label>
+                                          <input
+                                            type="number"
+                                            value={match.match_num}
+                                            onChange={(e) => {
+                                              const newRounds = [...bracketRounds];
+                                              newRounds[roundIdx].matches[matchIdx].match_num = parseInt(e.target.value);
+                                              setBracketRounds(newRounds);
+                                            }}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Date</label>
+                                          <input
+                                            type="date"
+                                            value={match.match_date}
+                                            onChange={(e) => {
+                                              const newRounds = [...bracketRounds];
+                                              newRounds[roundIdx].matches[matchIdx].match_date = e.target.value;
+                                              setBracketRounds(newRounds);
+                                            }}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Time</label>
+                                          <input
+                                            type="time"
+                                            value={match.match_time}
+                                            onChange={(e) => {
+                                              const newRounds = [...bracketRounds];
+                                              newRounds[roundIdx].matches[matchIdx].match_time = e.target.value;
+                                              setBracketRounds(newRounds);
+                                            }}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Venue</label>
+                                          <input
+                                            type="text"
+                                            value={match.venue}
+                                            onChange={(e) => {
+                                              const newRounds = [...bracketRounds];
+                                              newRounds[roundIdx].matches[matchIdx].venue = e.target.value;
+                                              setBracketRounds(newRounds);
+                                            }}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-cricket-500 transition-colors"
+                                            placeholder="Venue"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={updateSavedMatches}
+                            disabled={savingMatches}
+                            className="flex-1 min-w-[120px] py-3 bg-gradient-to-r from-cricket-600 to-green-600 hover:from-cricket-500 hover:to-green-500 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] disabled:opacity-50 shadow-lg"
+                          >
+                            {savingMatches ? '⏳ Saving...' : '💾 Update Details'}
+                          </button>
+                          <button
+                            onClick={deleteAllBracketMatches}
+                            disabled={savingMatches}
+                            className="flex-1 min-w-[120px] py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px] disabled:opacity-50"
+                          >
+                            {savingMatches ? '⏳ Deleting...' : '🗑️ Delete from DB'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              clearAllTimers()
+                              setDrawPhase('idle')
+                              setDrawnTeams([])
+                              setCurrentDrawIndex(0)
+                              setBracketRounds([])
+                              setGeneratedMatches([])
+                              setByeTeam(null)
+                              setMatchesSaved(false)
+                              setSpinningTeams([])
+                              setShowMatchGenerator(false)
+                              broadcastDrawEvent('draw_end', {})
+                            }}
+                            className="flex-1 min-w-[120px] py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-black text-sm uppercase italic tracking-tight transition-all min-h-[44px]"
+                          >
+                            ✖ Close
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )
               }
@@ -3226,8 +3383,47 @@ Sreekar: 9063128733`
                 </div>
 
                 <div className="text-center mb-6 pb-4 border-b border-white/10">
-                  <div className="text-sm md:text-base font-black text-white uppercase">{match.team_a?.name} <span className="text-cricket-500 mx-2">vs</span> {match.team_b?.name}</div>
-                  <div className="text-[10px] text-slate-500 mt-1">{match.match_date} • {match.match_time?.slice(0, 5)} • {match.venue}</div>
+                  <div className="text-sm md:text-base font-black text-white uppercase">{match.team_a?.name || match.team_a_label || 'TBA'} <span className="text-cricket-500 mx-2">vs</span> {match.team_b?.name || match.team_b_label || 'TBA'}</div>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6 pb-4 border-b border-white/10">
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Match #</label>
+                    <input
+                      type="number"
+                      value={editMatchNumber}
+                      onChange={(e) => setEditMatchNumber(parseInt(e.target.value) || 0)}
+                      className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cricket-500/50 min-h-[44px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Date</label>
+                    <input
+                      type="date"
+                      value={editMatchDate}
+                      onChange={(e) => setEditMatchDate(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cricket-500/50 min-h-[44px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Time</label>
+                    <input
+                      type="time"
+                      value={editMatchTime}
+                      onChange={(e) => setEditMatchTime(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cricket-500/50 min-h-[44px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Venue</label>
+                    <input
+                      type="text"
+                      value={editMatchVenue}
+                      onChange={(e) => setEditMatchVenue(e.target.value)}
+                      placeholder="Venue"
+                      className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-cricket-500/50 min-h-[44px] placeholder:text-slate-600"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-5">

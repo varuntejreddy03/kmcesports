@@ -62,12 +62,6 @@ module.exports = {
         'premium': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'button': '0 4px 14px 0 rgba(0, 118, 255, 0.39)',
       },
-      animation: {
-        'fade-in': 'fadeIn 0.5s ease-out',
-        'slide-up': 'slideUp 0.4s ease-out',
-        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
-        'scale-in': 'scaleIn 0.3s ease-out',
-      },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
@@ -87,6 +81,55 @@ module.exports = {
           '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
           '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
         },
+        vortex: {
+          '0%': { transform: 'rotate(0deg) scale(1)', opacity: '0.8' },
+          '50%': { transform: 'rotate(180deg) scale(0.6)', opacity: '0.4' },
+          '100%': { transform: 'rotate(360deg) scale(1)', opacity: '0.8' },
+        },
+        confettiFall: {
+          '0%': { transform: 'translateY(-100vh) rotate(0deg)', opacity: '1' },
+          '100%': { transform: 'translateY(100vh) rotate(720deg)', opacity: '0' },
+        },
+        popIn: {
+          '0%': { transform: 'scale(0.5)', opacity: '0' },
+          '70%': { transform: 'scale(1.05)', opacity: '1' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        glowPulse: {
+          '0%, 100%': { boxShadow: '0 0 5px rgba(14, 165, 233, 0.3)' },
+          '50%': { boxShadow: '0 0 25px rgba(14, 165, 233, 0.6), 0 0 50px rgba(14, 165, 233, 0.2)' },
+        },
+        slotSpin: {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(-50%)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        floatUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        tilt: {
+          '0%, 100%': { transform: 'rotateX(0deg) rotateY(0deg)' },
+          '25%': { transform: 'rotateX(5deg) rotateY(5deg)' },
+          '75%': { transform: 'rotateX(-5deg) rotateY(-5deg)' },
+        }
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'slide-up': 'slideUp 0.4s ease-out',
+        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+        'scale-in': 'scaleIn 0.3s ease-out',
+        'vortex': 'vortex 3s linear infinite',
+        'confetti-fall': 'confettiFall 3s ease-in forwards',
+        'pop-in': 'popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+        'glow-pulse': 'glowPulse 2s ease-in-out infinite',
+        'slot-spin': 'slotSpin 0.8s linear infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+        'float-up': 'floatUp 0.6s ease-out forwards',
+        'holographic': 'tilt 4s ease-in-out infinite',
       },
     },
   },

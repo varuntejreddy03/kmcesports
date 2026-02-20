@@ -145,9 +145,6 @@ export default function MatchesPage() {
                                 <div className="text-[10px] md:text-xs font-black text-cricket-400 bg-cricket-500/10 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full inline-block w-fit">
                                   {match.match_date ? new Date(match.match_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'TBD'}
                                 </div>
-                                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">
-                                  Match Pair
-                                </div>
                               </div>
                               <div className="text-[10px] md:text-xs font-bold text-slate-500">
                                 {match.match_time ? `${match.match_time.slice(0, 5)} IST` : ''}
@@ -181,9 +178,7 @@ export default function MatchesPage() {
                               </div>
                             )}
 
-                            <div className="text-center text-[10px] md:text-xs font-bold text-slate-500 pt-3 border-t border-white/5 truncate">
-                              📍 {match.venue || 'Main Ground'}
-                            </div>
+
 
                             {match.score_link && (
                               <div className="mt-3 pt-3 border-t border-white/5 text-center">

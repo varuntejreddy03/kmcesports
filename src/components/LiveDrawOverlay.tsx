@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface TeamInfo {
@@ -14,6 +14,10 @@ interface MatchInfo {
   team_b: TeamInfo | null
   round_name: string
   is_bye?: boolean
+  team_a_label?: string
+  team_b_label?: string
+  source_match_a?: number
+  source_match_b?: number
 }
 
 interface RoundInfo {
@@ -23,24 +27,90 @@ interface RoundInfo {
 
 type DrawPhase = 'idle' | 'spinning' | 'drawing' | 'bracket'
 
-const Confetti = () => {
-  return (
-    <div className="fixed inset-0 pointer-events-none z-[110] overflow-hidden">
-      {[...Array(20)].map((_, i) => (
-        <div
-          key={i}
-          className="confetti-piece"
-          style={{
-            left: `${Math.random() * 100}%`,
-            backgroundColor: ['#ffd700', '#ff0000', '#00ff00', '#0000ff', '#ff00ff'][Math.floor(Math.random() * 5)],
-            animationDelay: `${Math.random() * 2}s`,
-            animationDuration: `${2 + Math.random() * 2}s`
-          }}
-        />
-      ))}
-    </div>
-  )
+/* ───── Audio Player ───── */
+class DrawAudioPlayer {
+  private suspenseAudio: HTMLAudioElement | null = null
+  private revealAudio: HTMLAudioElement | null = null
+  private fanfareAudio: HTMLAudioElement | null = null
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      this.suspenseAudio = new Audio('/sounds/nikitakondrashev-suspense-248067.mp3')
+      this.suspenseAudio.loop = true
+      this.suspenseAudio.volume = 0.5
+
+      this.revealAudio = new Audio('/sounds/reveal.mp3')
+      this.revealAudio.volume = 0.7
+
+      this.fanfareAudio = new Audio('/sounds/fanfare.mp3')
+      this.fanfareAudio.volume = 0.6
+    }
+  }
+
+  playSuspense() {
+    this.suspenseAudio?.play().catch(() => { })
+  }
+
+  stopSuspense() {
+    if (this.suspenseAudio) {
+      this.suspenseAudio.pause()
+      this.suspenseAudio.currentTime = 0
+    }
+  }
+
+  playReveal() {
+    if (this.revealAudio) {
+      this.revealAudio.currentTime = 0
+      this.revealAudio.play().catch(() => { })
+    }
+  }
+
+  playFanfare() {
+    this.fanfareAudio?.play().catch(() => { })
+  }
+
+  cleanup() {
+    this.stopSuspense()
+    this.suspenseAudio = null
+    this.revealAudio = null
+    this.fanfareAudio = null
+  }
 }
+
+/* ───── UI Components ───── */
+const CyberBackground = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+    <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+  </div>
+)
+
+const Confetti = () => (
+  <div className="fixed inset-0 pointer-events-none z-[110] overflow-hidden">
+    {[...Array(50)].map((_, i) => (
+      <div
+        key={i}
+        className="absolute animate-confetti-fall"
+        style={{
+          left: `${Math.random() * 100}%`,
+          top: '-20px',
+          width: `${5 + Math.random() * 10}px`,
+          height: `${10 + Math.random() * 10}px`,
+          backgroundColor: ['#ffd700', '#ff6b6b', '#48dbfb', '#0ea5e9', '#a855f7'][Math.floor(Math.random() * 5)],
+          borderRadius: '2px',
+          animationDelay: `${Math.random() * 2}s`,
+          animationDuration: `${2 + Math.random() * 2}s`,
+        }}
+      />
+    ))}
+  </div>
+)
+
+const GlowingOrbs = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="absolute -top-40 -left-40 w-80 h-80 bg-cricket-500/20 rounded-full blur-[120px] animate-pulse" />
+    <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-purple-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+  </div>
+)
 
 export default function LiveDrawOverlay() {
   const [active, setActive] = useState(false)
@@ -52,10 +122,24 @@ export default function LiveDrawOverlay() {
   const [bracketRounds, setBracketRounds] = useState<RoundInfo[]>([])
   const [byeTeams, setByeTeams] = useState<TeamInfo[]>([])
   const [showConfetti, setShowConfetti] = useState(false)
-  const [activeTab, setActiveTab] = useState('CSM') // Default to CSM
+  const [activeTab, setActiveTab] = useState('CSM')
   const [showInfo, setShowInfo] = useState(false)
+  const [latestTeam, setLatestTeam] = useState<TeamInfo | null>(null)
+  const [slotName, setSlotName] = useState('')
+  const [isRevealing, setIsRevealing] = useState(false)
 
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const slotIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const revealingRef = useRef(false)
+  const audioRef = useRef<DrawAudioPlayer | null>(null)
+  const spinningTeamsRef = useRef<TeamInfo[]>([])
+  const allTeamNamesRef = useRef<string[]>([])
+  const drawQueueRef = useRef<any[]>([])
+
+  const getAudio = useCallback(() => {
+    if (!audioRef.current) audioRef.current = new DrawAudioPlayer()
+    return audioRef.current
+  }, [])
 
   const shuffleArray = (arr: TeamInfo[]) => {
     const a = [...arr]
@@ -68,394 +152,296 @@ export default function LiveDrawOverlay() {
 
   const clearTimers = () => {
     if (spinIntervalRef.current) { clearInterval(spinIntervalRef.current); spinIntervalRef.current = null }
+    if (slotIntervalRef.current) { clearInterval(slotIntervalRef.current); slotIntervalRef.current = null }
+    revealingRef.current = false
   }
 
   useEffect(() => {
     fetchPersistedState()
-
-    const channel = supabase.channel('live-draw', {
-      config: { broadcast: { self: false } }
-    })
-
+    const channel = supabase.channel('live-draw', { config: { broadcast: { self: false } } })
     channel
-      .on('broadcast', { event: 'draw_start' }, ({ payload }) => {
-        handleDrawStart(payload)
-      })
-      .on('broadcast', { event: 'draw_shuffle_done' }, ({ payload }) => {
-        handleShuffleDone(payload)
-      })
-      .on('broadcast', { event: 'team_drawn' }, ({ payload }) => {
-        handleTeamDrawn(payload)
-      })
-      .on('broadcast', { event: 'bracket_complete' }, ({ payload }) => {
-        handleBracketComplete(payload)
-      })
-      .on('broadcast', { event: 'draw_end' }, () => {
-        handleDrawEnd()
-      })
-
+      .on('broadcast', { event: 'draw_start' }, ({ payload }) => handleDrawStart(payload))
+      .on('broadcast', { event: 'draw_shuffle_done' }, ({ payload }) => handleShuffleDone(payload))
+      .on('broadcast', { event: 'team_drawn' }, ({ payload }) => handleTeamDrawn(payload))
+      .on('broadcast', { event: 'bracket_complete' }, ({ payload }) => handleBracketComplete(payload))
+      .on('broadcast', { event: 'draw_end' }, () => handleDrawEnd())
     channel.subscribe()
-
     return () => {
       clearTimers()
+      audioRef.current?.cleanup()
       supabase.removeChannel(channel)
     }
   }, [])
 
   const fetchPersistedState = async () => {
     try {
-      const { data } = await supabase
-        .from('tournament_settings')
-        .select('draw_state')
-        .eq('sport', 'cricket')
-        .maybeSingle()
-
+      const { data } = await supabase.from('tournament_settings').select('draw_state').eq('sport', 'cricket').maybeSingle()
       if (data?.draw_state?.active) {
         const ds = data.draw_state
-        setActive(true)
-        setPhase(ds.phase || 'idle')
-        setSpinningTeams(ds.teams || [])
-        setDrawnTeams(ds.drawnTeams || [])
-        setCurrentDrawIndex(ds.currentDrawIndex || 0)
-        setTotalTeams(ds.totalTeams || 0)
-        setBracketRounds(ds.bracket || [])
-        setByeTeams(ds.byeTeams || [])
-
+        const teams = ds.teams || []
+        setActive(true); setPhase(ds.phase || 'idle'); setSpinningTeams(teams)
+        spinningTeamsRef.current = teams; allTeamNamesRef.current = teams.map((t: TeamInfo) => t.name)
+        setDrawnTeams(ds.drawnTeams || []); setCurrentDrawIndex(ds.currentDrawIndex || 0)
+        setTotalTeams(ds.totalTeams || 0); setBracketRounds(ds.bracket || []); setByeTeams(ds.byeTeams || [])
+        if (ds.phase === 'spinning' || ds.phase === 'drawing') getAudio().playSuspense()
         if (ds.phase === 'spinning') {
-          spinIntervalRef.current = setInterval(() => {
-            setSpinningTeams(prev => shuffleArray(prev))
-          }, 100)
+          spinIntervalRef.current = setInterval(() => setSpinningTeams(prev => shuffleArray(prev)), 100)
         }
       }
-    } catch (err) {
-      console.error('Error fetching persisted draw state:', err)
-    }
+    } catch (err) { console.error('Error fetching state:', err) }
   }
 
   const handleDrawStart = (payload: any) => {
-    clearTimers()
-    setActive(true)
-    setPhase('spinning')
-    setSpinningTeams(payload.teams)
-    setDrawnTeams([])
-    setCurrentDrawIndex(0)
-    setTotalTeams(payload.totalTeams)
-    setBracketRounds([])
-    setByeTeams([])
-
-    spinIntervalRef.current = setInterval(() => {
-      setSpinningTeams(prev => shuffleArray(prev))
-    }, 100)
+    clearTimers(); setActive(true); setPhase('spinning'); setSpinningTeams(payload.teams || [])
+    spinningTeamsRef.current = payload.teams || []; allTeamNamesRef.current = (payload.teams || []).map((t: any) => t.name)
+    setDrawnTeams([]); setCurrentDrawIndex(0); setTotalTeams(payload.totalTeams); setBracketRounds([]); setByeTeams([]); setLatestTeam(null); setIsRevealing(false); setSlotName('')
+    getAudio().playSuspense()
+    spinIntervalRef.current = setInterval(() => setSpinningTeams(prev => shuffleArray(prev)), 100)
   }
 
   const handleShuffleDone = (payload: any) => {
     if (spinIntervalRef.current) { clearInterval(spinIntervalRef.current); spinIntervalRef.current = null }
-    setPhase('drawing')
-    setSpinningTeams(payload.orderedTeams)
-    setDrawnTeams([])
-    setCurrentDrawIndex(0)
+    setPhase('drawing'); setSpinningTeams(payload.orderedTeams || [])
+    spinningTeamsRef.current = payload.orderedTeams || []; setDrawnTeams([]); setCurrentDrawIndex(0)
+  }
+
+  const processQueue = () => {
+    if (drawQueueRef.current.length === 0) { revealingRef.current = false; return }
+    const payload = drawQueueRef.current.shift()!; revealingRef.current = true
+    setIsRevealing(true); setLatestTeam(null)
+    const namePool = allTeamNamesRef.current.length > 0 ? [...allTeamNamesRef.current] : spinningTeamsRef.current.map(t => t.name)
+    let count = 0; const maxCycles = 14
+    slotIntervalRef.current = setInterval(() => {
+      count++; setSlotName(namePool[Math.floor(Math.random() * namePool.length)])
+      if (count >= maxCycles) {
+        clearInterval(slotIntervalRef.current!); slotIntervalRef.current = null
+        setSlotName(payload.team.name); setLatestTeam(payload.team); setIsRevealing(false)
+        getAudio().playReveal(); setShowConfetti(true)
+        setDrawnTeams(prev => prev.some(t => t.id === payload.team.id) ? prev : [...prev, payload.team])
+        setSpinningTeams(prev => {
+          const filtered = prev.filter((t: TeamInfo) => t.id !== payload.team.id)
+          spinningTeamsRef.current = filtered; return filtered
+        })
+        setCurrentDrawIndex(payload.index + 1); setTotalTeams(payload.total)
+        setTimeout(() => setShowConfetti(false), 3000)
+        setTimeout(() => { setLatestTeam(null); processQueue() }, 2000)
+      }
+    }, 80)
   }
 
   const handleTeamDrawn = (payload: any) => {
-    setDrawnTeams(prev => [...prev, payload.team])
-    setSpinningTeams(prev => prev.filter((t: TeamInfo) => t.id !== payload.team.id))
-    setCurrentDrawIndex(payload.index + 1)
-    setTotalTeams(payload.total)
-    setShowConfetti(true)
-    setTimeout(() => setShowConfetti(false), 3000)
+    drawQueueRef.current.push(payload)
+    if (!revealingRef.current) processQueue()
   }
 
   const handleBracketComplete = (payload: any) => {
-    setPhase('bracket')
-    setBracketRounds(payload.bracket)
-    setByeTeams(payload.byeTeams || [])
+    clearTimers(); drawQueueRef.current = []; setIsRevealing(false); setPhase('bracket')
+    setBracketRounds(payload.bracket); setByeTeams(payload.byeTeams || [])
+    getAudio().playFanfare()
   }
 
   const handleDrawEnd = () => {
-    clearTimers()
-    setActive(false)
-    setPhase('idle')
+    clearTimers(); getAudio().stopSuspense(); setActive(false); setPhase('idle')
   }
 
   if (!active) return null
 
+  const progressPercent = totalTeams > 0 ? (currentDrawIndex / totalTeams) * 100 : 0
+
+  const getDeptIcon = (name: string) => {
+    if (name.includes('CSM')) return '💻'
+    if (name.includes('CSE')) return '⚙️'
+    if (name.includes('ECE')) return '📡'
+    return '🏆'
+  }
+
+  const getDeptColor = (name: string) => {
+    if (name.includes('CSM')) return 'from-blue-600/30 to-cyan-600/20 text-blue-400 border-blue-500/30'
+    if (name.includes('CSE')) return 'from-emerald-600/30 to-green-600/20 text-emerald-400 border-emerald-500/30'
+    if (name.includes('ECE')) return 'from-orange-600/30 to-amber-600/20 text-orange-400 border-orange-500/30'
+    return 'from-yellow-600/30 to-amber-600/20 text-yellow-400 border-yellow-500/40'
+  }
+
   return (
-    <div className="fixed inset-0 bg-[#020617]/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-fadeIn">
+    <div className="fixed inset-0 bg-[#020617] backdrop-blur-3xl z-[100] flex items-start justify-center overflow-y-auto p-4 md:p-8">
       {showConfetti && <Confetti />}
-      <div className="bg-[#0a0f1a] border border-white/10 rounded-[40px] p-6 md:p-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-[0_0_50px_rgba(0,0,0,0.5)] relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cricket-500 to-transparent opacity-50"></div>
-        <div className="text-center mb-6 relative">
-          <div className="inline-block bg-cricket-500/20 border border-cricket-500/40 rounded-full px-4 py-1.5 mb-3">
-            <span className="text-[10px] font-black text-cricket-400 uppercase tracking-widest animate-pulse">
-              🔴 LIVE
-            </span>
+
+      <div className="relative bg-[#020617] border border-white/10 rounded-[32px] md:rounded-[48px] w-full max-w-5xl min-h-[80vh] overflow-hidden shadow-2xl flex flex-col">
+        <GlowingOrbs />
+        <CyberBackground />
+
+        {/* Header Section */}
+        <div className="relative z-10 p-6 md:p-12 text-center">
+          <div className="inline-flex items-center gap-2 bg-red-600/20 border border-red-500/30 rounded-full px-5 py-2 mb-6">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[10px] font-black text-white uppercase tracking-[0.3em]">Live Draw Session</span>
           </div>
-          <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tight text-white">
-            {phase === 'spinning' && 'SHUFFLING TEAMS...'}
-            {phase === 'drawing' && `Drawing Team ${currentDrawIndex} of ${totalTeams}...`}
-            {phase === 'bracket' && 'Knockout Bracket'}
+
+          <h2 className="text-3xl md:text-6xl font-black italic uppercase tracking-tighter text-white mb-8">
+            {phase === 'spinning' && <span className="animate-pulse">🎰 SHUFFLING TEAMS</span>}
+            {phase === 'drawing' && isRevealing && <span className="text-yellow-400">🥁 REVEALING...</span>}
+            {phase === 'drawing' && !isRevealing && latestTeam && <span className="text-cyan-400">✨ TEAM CONFIRMED</span>}
+            {phase === 'drawing' && !isRevealing && !latestTeam && <span>⚡ NEXT TEAM INCOMING</span>}
+            {phase === 'bracket' && <span className="text-yellow-400">🏆 FINAL BRACKET</span>}
           </h2>
 
-          {/* Info Button */}
-          {/* Info Button */}
-          <div className="absolute right-0 top-0">
-            <button
-              onClick={() => setShowInfo(true)}
-              className="bg-white/5 hover:bg-white/10 text-white/50 hover:text-white rounded-full w-8 h-8 flex items-center justify-center transition-all border border-white/10"
-            >
-              <span className="font-bold text-xs">?</span>
-            </button>
+          {/* Progress Section */}
+          {phase === 'drawing' && (
+            <div className="max-w-md mx-auto mb-12">
+              <div className="h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-[1px]">
+                <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(34,211,238,0.5)]" style={{ width: `${progressPercent}%` }} />
+              </div>
+              <div className="flex justify-between mt-3 px-1 text-[10px] font-black tracking-widest text-white/40">
+                <span>{currentDrawIndex} POSITIONED</span>
+                <span>{totalTeams} TOTAL TEAMS</span>
+              </div>
+            </div>
+          )}
+
+          {/* Main Phase Content */}
+          <div className="space-y-12">
+            {/* Spinning Phase */}
+            {phase === 'spinning' && (
+              <div className="relative py-12 flex items-center justify-center min-h-[300px]">
+                <div className="absolute w-64 h-64 rounded-full border border-white/5 animate-[spin_10s_linear_infinite]" />
+                <div className="absolute w-48 h-48 rounded-full border border-white/10 animate-[spin_15s_linear_infinite_reverse]" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 opacity-50">
+                  {spinningTeams.slice(0, 16).map(t => (
+                    <div key={t.id} className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">{t.name}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Drawing Phase */}
+            {phase === 'drawing' && (
+              <div className="animate-fade-in grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 items-start">
+
+                {/* LEFT: REVEAL CARD */}
+                <div className="lg:col-span-8 flex flex-col items-center">
+                  <div className="relative w-full max-w-2xl">
+                    <div className={`relative bg-[#0c1225]/80 backdrop-blur-xl border border-white/10 rounded-[40px] p-8 md:p-16 text-center transform transition-all duration-500 ${isRevealing ? 'scale-95 opacity-50' : 'scale-100 opacity-100'}`}>
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[2px] bg-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.8)]" />
+
+                      {isRevealing ? (
+                        <div className="py-8">
+                          <div className="text-[11px] font-black text-white/30 tracking-[0.4em] mb-4">SEARCHING ARENA...</div>
+                          <div className="text-4xl md:text-6xl font-black text-white/10 uppercase italic overflow-hidden h-16">{slotName}</div>
+                        </div>
+                      ) : latestTeam ? (
+                        <div className="animate-pop-in py-8">
+                          <div className="text-[11px] font-black text-cyan-400 tracking-[0.4em] mb-4">✨ SELECTION CONFIRMED ✨</div>
+                          <div className="text-4xl md:text-7xl font-black text-white uppercase italic drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] mb-8 break-words leading-tight">{latestTeam.name}</div>
+                          <div className="inline-block bg-white/5 border border-white/10 rounded-2xl px-6 py-2 text-[10px] font-black text-white/60 tracking-widest">POSITION SECURED</div>
+                        </div>
+                      ) : (
+                        <div className="py-12 opacity-20">
+                          <div className="text-6xl mb-6">🏏</div>
+                          <div className="text-sm font-black uppercase tracking-widest">Awaiting Command...</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT: DRAWN LIST / SIDEBAR */}
+                <div className="lg:col-span-4">
+                  {drawnTeams.length > 0 ? (
+                    <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 h-full min-h-[400px]">
+                      <h3 className="text-[11px] font-black text-white/30 uppercase tracking-[0.4em] mb-6 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+                        Secured Positions
+                      </h3>
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                        {drawnTeams.map((team, idx) => (
+                          <div key={team.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:bg-white/10 transition-all">
+                            <div className="flex items-center gap-4 truncate">
+                              <span className="text-[10px] font-black text-cyan-500 w-6">#{idx + 1}</span>
+                              <span className="font-black text-xs uppercase text-white truncate group-hover:text-cyan-400 transition-colors">{team.name}</span>
+                            </div>
+                            <span className="text-[10px] opacity-20">✅</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white/5 border border-white/10 border-dashed rounded-[32px] p-12 text-center opacity-20 flex flex-col items-center justify-center min-h-[400px]">
+                      <div className="text-4xl mb-4">⌛</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest leading-loose">History will<br />appear here</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Bracket Phase */}
+            {phase === 'bracket' && (
+              <div className="animate-fade-in px-4 pb-12">
+                <div className="flex gap-2 p-1 bg-white/5 rounded-3xl mb-12 flex-wrap justify-center overflow-x-auto scrollbar-hide">
+                  {['CSM', 'CSE', 'ECE', 'FINALS'].map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab)} className={`px-8 py-4 rounded-2xl text-[10px] font-black tracking-widest transition-all ${activeTab === tab ? 'bg-white text-black shadow-xl scale-105' : 'text-white/40 hover:text-white hover:bg-white/5'}`}>{tab}</button>
+                  ))}
+                </div>
+
+                <div className="space-y-12 max-w-4xl mx-auto">
+                  {bracketRounds.filter(round => {
+                    if (activeTab === 'FINALS') return round.name.includes('Inter-Dept') || round.name.includes('Grand Final')
+                    return round.name.includes(activeTab)
+                  }).map((round, rIdx) => (
+                    <div key={rIdx} className="space-y-6">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-4 rounded-2xl border-2 bg-gradient-to-br ${getDeptColor(round.name)} font-black text-xs uppercase tracking-widest`}>
+                          {round.name}
+                        </div>
+                        <div className="flex-1 h-[1px] bg-white/10" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {round.matches.map((m: any, mIdx: number) => (
+                          <div key={mIdx} className="bg-white/5 border border-white/10 rounded-32 p-6 flex items-center gap-4 justify-between">
+                            <div className="flex-1 font-black text-xs md:text-sm uppercase truncate text-right">{m.team_a?.name || m.team_a_label || 'TBD'}</div>
+                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-black text-[10px] shrink-0 text-white/40">VS</div>
+                            <div className="flex-1 font-black text-xs md:text-sm uppercase truncate text-left">{m.team_b?.name || m.team_b_label || 'TBD'}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Info Modal */}
-        {showInfo && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-[#0a0f1a] border border-white/10 rounded-2xl p-6 md:p-8 w-full max-w-md shadow-2xl relative">
-              <button
-                onClick={() => setShowInfo(false)}
-                className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
-              >
-                ✕
-              </button>
-
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-black text-cricket-500 uppercase tracking-widest mb-1">Tournament Format</h3>
-                <div className="h-0.5 w-12 bg-cricket-500/50 mx-auto rounded-full"></div>
-              </div>
-
-              <div className="space-y-6 text-sm text-slate-300">
-                <div>
-                  <h4 className="font-bold text-white uppercase tracking-wider text-xs mb-2 border-l-2 border-cricket-500 pl-2">Stage 1: Dept Qualifiers</h4>
-                  <ul className="space-y-2 ml-2">
-                    <li className="flex justify-between">
-                      <span>CSM (8 Teams)</span>
-                      <span className="text-white font-mono opacity-60">QF → SF → Final</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span>CSE (5 Teams)</span>
-                      <span className="text-white font-mono opacity-60">Elim → SF → Final</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span>ECE (2 Teams)</span>
-                      <span className="text-white font-mono opacity-60">Final Match</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-white uppercase tracking-wider text-xs mb-2 border-l-2 border-cricket-500 pl-2">Stage 2: Grand Finals</h4>
-                  <p className="opacity-80">The 3 Department Winners compete in a final knockout stage to determine the champion.</p>
-                </div>
-
-                <div className="bg-white/5 rounded-lg p-3 border border-white/10 mt-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-blue-400">ℹ️</span>
-                    <span className="font-bold text-white text-xs uppercase tracking-wide">Fair Play System</span>
-                  </div>
-                  <p className="text-xs opacity-70 leading-relaxed">
-                    All matchups are generated using a <strong>secure randomized draw algorithm</strong>. Team positions and pairings are completely shuffled to ensure fair competition.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {phase === 'spinning' && (
-          <div className="relative h-[300px] w-full flex items-center justify-center overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-t from-cricket-500/10 to-transparent pointer-events-none"></div>
-            {/* The Vortex */}
-            <div className="relative w-full h-full">
-              {spinningTeams.slice(0, 12).map((team, idx) => (
-                <div
-                  key={`vortex-${idx}-${team.id}`}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-vortex"
-                  style={{
-                    animationDelay: `${idx * 0.25}s`,
-                    animationDuration: `${2 + Math.random() * 2}s`
-                  }}
-                >
-                  <div
-                    className="whitespace-nowrap font-black text-sm md:text-xl uppercase italic tracking-tighter text-cricket-400 opacity-80"
-                    style={{ transform: `translateX(${Math.cos(idx) * 120}px) translateY(${Math.sin(idx) * 120}px)` }}
-                  >
-                    {team.name}
-                  </div>
-                </div>
-              ))}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-32 h-32 rounded-full border-2 border-cricket-500/20 animate-pulse bg-cricket-500/5"></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {phase === 'drawing' && (
-          <div className="animate-pop-in">
-            <div className="relative h-24 bg-white/5 border border-white/10 rounded-2xl overflow-hidden mb-8">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex flex-col animate-slot text-center">
-                  {/* Ticker of names */}
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="py-2">
-                      {spinningTeams.map((t, tidx) => (
-                        <div key={`${i}-${tidx}`} className="text-2xl md:text-4xl font-black uppercase italic tracking-tighter text-white opacity-20 py-2">
-                          {t.name}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="absolute inset-0 pointer-events-none border-y-4 border-cricket-500/30 flex items-center justify-center bg-gradient-to-b from-[#0f172a] via-transparent to-[#0f172a]">
-                <div className="w-full h-px bg-cricket-500/50"></div>
-              </div>
-            </div>
-            {drawnTeams.length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Validated Squads</div>
-                  <div className="flex-1 h-px bg-white/10"></div>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {drawnTeams.map((team, idx) => (
-                    <div
-                      key={team.id}
-                      className="bg-cricket-500/10 border border-cricket-500/20 rounded-2xl p-4 text-center animate-pop-in relative overflow-hidden group"
-                    >
-                      <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-30 transition-opacity">
-                        <span className="text-2xl font-black italic">#{idx + 1}</span>
-                      </div>
-                      <div className="text-[9px] font-black text-cricket-500 uppercase tracking-widest mb-1">Entry #{idx + 1}</div>
-                      <div className="font-black text-xs md:text-sm uppercase italic tracking-tight truncate text-white">{team.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {spinningTeams.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Awaiting Draw</div>
-                  <div className="flex-1 h-px bg-white/5"></div>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {spinningTeams.map((team) => (
-                    <div key={team.id} className="bg-white/5 border border-white/10 rounded-xl p-3 text-center grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all cursor-default">
-                      <div className="font-black text-xs uppercase tracking-tight truncate text-slate-400">{team.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {phase === 'bracket' && (
-          <div className="animate-fadeIn">
-            {/* Bracket Tabs */}
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-              {['CSM', 'CSE', 'ECE', 'FINALS'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab
-                    ? 'bg-cricket-500 text-white shadow-lg'
-                    : 'bg-white/5 text-slate-500 hover:text-white hover:bg-white/10'
-                    }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-6 mb-6">
-              {bracketRounds
-                .filter(round => {
-                  if (activeTab === 'FINALS') return round.name.includes('Inter-Dept') || round.name.includes('Grand Final')
-                  if (activeTab === 'CSM') return round.name.includes('CSM')
-                  if (activeTab === 'CSE') return round.name.includes('CSE')
-                  if (activeTab === 'ECE') return round.name.includes('ECE')
-                  // Only fallback to showing all if tab is unexpected, or random draw (no dept name)
-                  if (!round.name.includes('CSM') && !round.name.includes('CSE') && !round.name.includes('ECE') && !round.name.includes('Inter-Dept') && !round.name.includes('Grand')) return true
-                  return false
-                })
-                .map((round, roundIdx) => (
-                  <div key={roundIdx} className="animate-fadeIn">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="text-[10px] font-black text-cricket-500 uppercase tracking-widest">
-                        {(round.matches[0] as any)?.group ? <span className="text-white/80 mr-2">{(round.matches[0] as any).group}</span> : null}
-                        {round.name}
-                      </div>
-                      <div className="flex-1 h-px bg-white/10"></div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {round.matches.map((match: any, matchIdx) => (
-                        <div key={matchIdx} className="bg-white/5 border border-white/10 rounded-xl p-3">
-                          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                            Match {match.match_num < 10 ? `0${match.match_num}` : match.match_num}
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex-1 text-center">
-                              <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_a ? 'text-white' : 'text-slate-600 italic'}`}>
-                                {match.team_a?.name || match.team_a_label || (match.source_match_a ? `Winner of Match ${match.source_match_a}` : (() => {
-                                  // Complex generic logic for non-specific brackets might be broken by filtering rounds index-wise
-                                  // But inter-dept has specific labels/source matches, so we rely on those!
-                                  const prevRound = bracketRounds[roundIdx - 1] // Warning: roundIdx here is from filter map? No, map arg.
-                                  // Actually, standard random draw won't work well with this generic logic if filtered. 
-                                  // But inter-dept uses source_match_a significantly. 
-                                  // Let's keep TBD fallback but rely on source_match.
-                                  return 'TBD'
-                                })())}
-                              </div>
-                              {match.is_bye && (
-                                <span className="inline-block mt-1 text-[8px] font-black text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded uppercase tracking-widest">BYE</span>
-                              )}
-                            </div>
-                            <div className="px-2 text-slate-600 font-black text-[10px]">VS</div>
-                            <div className="flex-1 text-center">
-                              <div className={`font-black text-xs uppercase tracking-tight truncate ${match.team_b ? 'text-white' : 'text-slate-600 italic'}`}>
-                                {match.team_b?.name || match.team_b_label || (match.source_match_b ? `Winner of Match ${match.source_match_b}` : (() => {
-                                  return 'TBD'
-                                })())}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              {/* Show empty state if no matches for tab */}
-              {bracketRounds.filter(round => {
-                if (activeTab === 'FINALS') return round.name.includes('Inter-Dept') || round.name.includes('Grand Final')
-                if (activeTab === 'CSM') return round.name.includes('CSM')
-                if (activeTab === 'CSE') return round.name.includes('CSE')
-                if (activeTab === 'ECE') return round.name.includes('ECE')
-                return false
-              }).length === 0 && bracketRounds.length > 0 && (activeTab === 'CSM' || activeTab === 'CSE' || activeTab === 'ECE' || activeTab === 'FINALS') && (
-                  <div className="text-center py-8 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                    No matches scheduled for this stage
-                  </div>
-                )}
-            </div>
-
-            {byeTeams.length > 0 && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
-                <div className="text-[9px] font-black text-yellow-500 uppercase tracking-widest mb-1">
-                  Teams with Bye (Advance to Next Round)
-                </div>
-                <div className="flex flex-wrap gap-1.5 justify-center mt-2">
-                  {byeTeams.map((t) => (
-                    <span key={t.id} className="text-xs font-black text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-lg">{t.name}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <button onClick={() => setShowInfo(true)} className="fixed bottom-8 right-8 w-12 h-12 rounded-2xl bg-white/10 border border-white/20 text-white font-black z-[110] hover:bg-white/20 transition-all shadow-2xl">?</button>
       </div>
+
+      {showInfo && (
+        <div className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-3xl p-8 flex items-center justify-center" onClick={() => setShowInfo(false)}>
+          <div className="bg-[#0c1225] border border-white/20 rounded-[40px] p-8 md:p-12 w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-3xl font-black text-white italic uppercase mb-8 border-b border-white/10 pb-4 text-center">🏆 TOURNAMENT ARCHITECTURE</h3>
+            <div className="space-y-6">
+              <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                <span className="text-cyan-400 font-black text-[10px] tracking-widest block mb-1">STAGE I</span>
+                <p className="font-bold text-sm text-white/80 uppercase">All-Department Qualifiers — Find your champions.</p>
+              </div>
+              <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                <span className="text-yellow-400 font-black text-[10px] tracking-widest block mb-1">STAGE II</span>
+                <p className="font-bold text-sm text-white/80 uppercase">Knockout Grand Finals — Only the elite survive.</p>
+              </div>
+            </div>
+            <button onClick={() => setShowInfo(false)} className="mt-10 w-full bg-white text-black p-4 rounded-2xl font-black uppercase tracking-widest hover:bg-cyan-400 transition-colors">ACKNOWLEDGED</button>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .rounded-32 { border-radius: 32px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(34, 211, 238, 0.4); }
+      `}</style>
     </div>
   )
 }

@@ -359,7 +359,7 @@ export default function Dashboard() {
                           <div className="font-bold text-xs md:text-sm leading-tight text-white uppercase italic truncate">
                             {m.team_a?.name} vs {m.team_b?.name}
                           </div>
-                          <div className="text-[9px] md:text-[10px] text-white/40 mt-0.5 md:mt-1 uppercase font-bold tracking-tighter truncate">📍 {m.venue}</div>
+
                         </div>
                       </div>
                     ))
@@ -471,7 +471,7 @@ export default function Dashboard() {
                           <div className="font-bold text-sm md:text-base text-white uppercase italic">
                             {m.team_a?.name || 'TBD'} vs {m.team_b?.name || 'TBD'}
                           </div>
-                          <div className="text-[10px] text-white/40 mt-1 uppercase font-bold">📍 {m.venue}</div>
+
                         </div>
                         {m.status === 'completed' && (
                           <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-[10px] font-bold uppercase">Done</span>
