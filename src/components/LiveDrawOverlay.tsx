@@ -32,22 +32,50 @@ class DrawAudioPlayer {
   private suspenseAudio: HTMLAudioElement | null = null
   private revealAudio: HTMLAudioElement | null = null
   private fanfareAudio: HTMLAudioElement | null = null
+  public isUnlocked = false
 
   constructor() {
     if (typeof window !== 'undefined') {
       this.suspenseAudio = new Audio('/sounds/nikitakondrashev-suspense-248067.mp3')
       this.suspenseAudio.loop = true
       this.suspenseAudio.volume = 0.5
+      this.suspenseAudio.preload = 'auto'
 
       this.revealAudio = new Audio('/sounds/reveal.mp3')
       this.revealAudio.volume = 0.7
+      this.revealAudio.preload = 'auto'
 
       this.fanfareAudio = new Audio('/sounds/fanfare.mp3')
       this.fanfareAudio.volume = 0.6
+      this.fanfareAudio.preload = 'auto'
+    }
+  }
+
+  // This MUST be called from a user interaction (click) to unlock audio in browsers
+  async unlock() {
+    try {
+      if (this.suspenseAudio) {
+        this.suspenseAudio.muted = true
+        await this.suspenseAudio.play()
+        this.suspenseAudio.pause()
+        this.suspenseAudio.muted = false
+      }
+      if (this.revealAudio) {
+        this.revealAudio.muted = true
+        await this.revealAudio.play()
+        this.revealAudio.pause()
+        this.revealAudio.muted = false
+      }
+      this.isUnlocked = true
+      return true
+    } catch (err) {
+      console.warn('Audio unlock failed:', err)
+      return false
     }
   }
 
   playSuspense() {
+    if (!this.isUnlocked) return
     this.suspenseAudio?.play().catch(() => { })
   }
 
@@ -59,6 +87,7 @@ class DrawAudioPlayer {
   }
 
   playReveal() {
+    if (!this.isUnlocked) return
     if (this.revealAudio) {
       this.revealAudio.currentTime = 0
       this.revealAudio.play().catch(() => { })
@@ -66,6 +95,7 @@ class DrawAudioPlayer {
   }
 
   playFanfare() {
+    if (!this.isUnlocked) return
     this.fanfareAudio?.play().catch(() => { })
   }
 
@@ -127,6 +157,7 @@ export default function LiveDrawOverlay() {
   const [latestTeam, setLatestTeam] = useState<TeamInfo | null>(null)
   const [slotName, setSlotName] = useState('')
   const [isRevealing, setIsRevealing] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
 
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const slotIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -140,6 +171,17 @@ export default function LiveDrawOverlay() {
     if (!audioRef.current) audioRef.current = new DrawAudioPlayer()
     return audioRef.current
   }, [])
+
+  const handleUnmute = async () => {
+    const player = getAudio()
+    const success = await player.unlock()
+    if (success) {
+      setIsMuted(false)
+      if (phase === 'spinning' || phase === 'drawing') {
+        player.playSuspense()
+      }
+    }
+  }
 
   const shuffleArray = (arr: TeamInfo[]) => {
     const a = [...arr]
@@ -171,7 +213,7 @@ export default function LiveDrawOverlay() {
       audioRef.current?.cleanup()
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [phase]) // Dependency on phase to ensure audio state is consistent
 
   const fetchPersistedState = async () => {
     try {
@@ -183,7 +225,9 @@ export default function LiveDrawOverlay() {
         spinningTeamsRef.current = teams; allTeamNamesRef.current = teams.map((t: TeamInfo) => t.name)
         setDrawnTeams(ds.drawnTeams || []); setCurrentDrawIndex(ds.currentDrawIndex || 0)
         setTotalTeams(ds.totalTeams || 0); setBracketRounds(ds.bracket || []); setByeTeams(ds.byeTeams || [])
-        if (ds.phase === 'spinning' || ds.phase === 'drawing') getAudio().playSuspense()
+        if (ds.phase === 'spinning' || ds.phase === 'drawing') {
+          // Autoplay will likely block this, so isMuted remains true
+        }
         if (ds.phase === 'spinning') {
           spinIntervalRef.current = setInterval(() => setSpinningTeams(prev => shuffleArray(prev)), 100)
         }
@@ -241,19 +285,12 @@ export default function LiveDrawOverlay() {
   }
 
   const handleDrawEnd = () => {
-    clearTimers(); getAudio().stopSuspense(); setActive(false); setPhase('idle')
+    clearTimers(); getAudio().stopSuspense(); setActive(false); setPhase('idle'); setIsMuted(true)
   }
 
   if (!active) return null
 
   const progressPercent = totalTeams > 0 ? (currentDrawIndex / totalTeams) * 100 : 0
-
-  const getDeptIcon = (name: string) => {
-    if (name.includes('CSM')) return '💻'
-    if (name.includes('CSE')) return '⚙️'
-    if (name.includes('ECE')) return '📡'
-    return '🏆'
-  }
 
   const getDeptColor = (name: string) => {
     if (name.includes('CSM')) return 'from-blue-600/30 to-cyan-600/20 text-blue-400 border-blue-500/30'
@@ -265,6 +302,22 @@ export default function LiveDrawOverlay() {
   return (
     <div className="fixed inset-0 bg-[#020617] backdrop-blur-3xl z-[100] flex items-start justify-center overflow-y-auto p-4 md:p-8">
       {showConfetti && <Confetti />}
+
+      {/* Audio Interaction Overlay */}
+      {isMuted && (
+        <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm flex items-center justify-center p-6">
+          <button
+            onClick={handleUnmute}
+            className="group relative bg-[#0c1225] border border-cyan-500/30 rounded-[32px] p-8 md:p-12 text-center shadow-[0_0_50px_rgba(34,211,238,0.2)] hover:shadow-[0_0_80px_rgba(34,211,238,0.4)] transition-all transform hover:scale-105 active:scale-95"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 rounded-[32px] pointer-events-none" />
+            <div className="text-6xl mb-6 group-hover:animate-bounce">🔊</div>
+            <h3 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Live Session Started</h3>
+            <p className="text-cyan-400/60 font-black text-xs uppercase tracking-[0.2em] mb-8">Tap to Join Arena \u0026 Enable Sound</p>
+            <div className="bg-cyan-500 text-black px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(34,211,238,0.5)]">ENTER ARENA</div>
+          </button>
+        </div>
+      )}
 
       <div className="relative bg-[#020617] border border-white/10 rounded-[32px] md:rounded-[48px] w-full max-w-5xl min-h-[80vh] overflow-hidden shadow-2xl flex flex-col">
         <GlowingOrbs />
@@ -412,11 +465,20 @@ export default function LiveDrawOverlay() {
           </div>
         </div>
 
-        <button onClick={() => setShowInfo(true)} className="fixed bottom-8 right-8 w-12 h-12 rounded-2xl bg-white/10 border border-white/20 text-white font-black z-[110] hover:bg-white/20 transition-all shadow-2xl">?</button>
+        {/* Bottom controls */}
+        <div className="relative z-10 p-6 flex justify-between items-center bg-black/20 backdrop-blur-md border-t border-white/5">
+          <button
+            onClick={() => setIsMuted(true)}
+            className="flex items-center gap-2 text-[10px] font-black text-white/40 hover:text-white transition-colors"
+          >
+            {isMuted ? '🔇 MUTED' : '🔊 SOUND ON'}
+          </button>
+          <button onClick={() => setShowInfo(true)} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white/40 font-black hover:bg-white/10 transition-all">?</button>
+        </div>
       </div>
 
       {showInfo && (
-        <div className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-3xl p-8 flex items-center justify-center" onClick={() => setShowInfo(false)}>
+        <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-3xl p-8 flex items-center justify-center" onClick={() => setShowInfo(false)}>
           <div className="bg-[#0c1225] border border-white/20 rounded-[40px] p-8 md:p-12 w-full max-w-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-3xl font-black text-white italic uppercase mb-8 border-b border-white/10 pb-4 text-center">🏆 TOURNAMENT ARCHITECTURE</h3>
             <div className="space-y-6">
