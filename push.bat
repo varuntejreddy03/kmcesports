@@ -1,52 +1,50 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo [🚀 KMCE ESPORTS - GIT PUSH ASSISTANT]
+echo.
 echo =======================================
+echo   🚀 KMCE ESPORTS - GIT PUSH ASSISTANT
+echo =======================================
+echo.
 
-:: 1. Check if git is initialized
-if not exist ".git" (
-    echo [!] Git not found. Initializing...
-    git init
-    git remote add origin https://github.com/varuntejreddy03/kmcesports.git
-)
+:: Detect current branch name
+for /f "tokens=*" %%i in ('git rev-parse --abbrev-ref HEAD') do set BRANCH=%%i
 
-:: 2. Check for remote origin
+:: Check if origin exists
 git remote get-url origin >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [!] Remote origin not set. Adding...
+    echo [!] Remote 'origin' not found. Adding default...
     git remote add origin https://github.com/varuntejreddy03/kmcesports.git
 )
 
-:: 3. Stage changes
-echo [*] Staging all changes...
+echo [*] Current Branch: !BRANCH!
+echo [*] Staging changes...
 git add .
 
-:: 4. Prompt for commit message
-set /p commit_msg="Enter commit message (default: 'update live draw ui and fixes'): "
-if "!commit_msg!"=="" set commit_msg=update live draw ui and fixes
+set /p msg="Enter commit message (Press Enter for default): "
+if "!msg!"=="" set msg=Update: Live Draw UI polish and layout fixes
 
-:: 5. Commit
-echo [*] Committing changes: %commit_msg%
-git commit -m "%commit_msg%"
+echo [*] Committing...
+git commit -m "!msg!"
 
-:: 6. Push to GitHub
-echo [*] Pushing to GitHub (main branch)...
-git push -u origin main
+echo [*] Pushing to GitHub...
+git push origin !BRANCH!
 
-if %errorlevel% neq 0 (
+if %errorlevel% equ 0 (
     echo.
-    echo [!] Push failed. Possible reasons:
-    echo     - Branch name might be 'master' instead of 'main'
-    echo     - You need to login (git credentials)
-    echo     - There are remote changes to pull first
+    echo =======================================
+    echo   ✅ SUCCESS: Changes are now on GitHub!
+    echo =======================================
+) else (
     echo.
-    set /p retry="Try pushing to 'master' instead? (y/n): "
-    if "!retry!"=="y" (
-        git push -u origin master
-    )
+    echo =======================================
+    echo   ❌ FAILED: The push did not go through.
+    echo   Possible fixes:
+    echo   1. Check your internet connection.
+    echo   2. Run 'git pull origin !BRANCH!' first.
+    echo   3. Ensure you are logged into Git.
+    echo =======================================
 )
 
-echo =======================================
-echo [✅] Done! 
+echo.
 pause
